@@ -41,7 +41,7 @@ import yaml
 
 # Local imports
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import archive, heartbeat, main_entry, notify, paths, reports, ring, schedule  # noqa
+from lib import archive, failure_summary, heartbeat, main_entry, notify, paths, reports, ring, schedule  # noqa
 
 
 # ---------- token-limit detection ----------
@@ -141,11 +141,15 @@ class Agent:
             except TimeoutError as e:
                 logf.write(f"\n!!! TIMEOUT: {e}\n")
                 ring.append_failed(self.name, day, f"Timeout: {e}", log_file)
+                self._emit_failure_summary(day, log_file, log_dir,
+                                          f"Timeout after {self.timeout_s}s")
                 heartbeat.clear()
                 return False
             except Exception as e:
                 logf.write(f"\n!!! EXCEPTION: {e}\n")
                 ring.append_failed(self.name, day, f"Exception: {e}", log_file)
+                self._emit_failure_summary(day, log_file, log_dir,
+                                          f"Exception: {e}")
                 heartbeat.clear()
                 return False
 
@@ -164,6 +168,8 @@ class Agent:
                 heartbeat.clear()
                 return False
             ring.append_failed(self.name, day, f"Subprocess rc={rc}", log_file)
+            self._emit_failure_summary(day, log_file, log_dir,
+                                      f"Subprocess rc={rc}")
             notify.notify_failed(day, self.name, str(log_file))
             heartbeat.clear()
             return False
@@ -178,8 +184,25 @@ class Agent:
         ring.append_failed(self.name, day,
                            f"Subprocess rc={rc} but no DONE entry appended by agent",
                            log_file)
+        self._emit_failure_summary(day, log_file, log_dir,
+                                  f"Subprocess rc={rc} but no DONE entry appended")
         heartbeat.clear()
         return False
+
+    def _emit_failure_summary(self, day: int, log_file: Path, log_dir: Path,
+                              reason: str) -> None:
+        """Write _failure_<agent>_dayN.md and macOS notify."""
+        extra = []
+        for name in ("_build.log", "_test.log", "_lint.log"):
+            p = log_dir / name
+            if p.exists():
+                extra.append(p)
+        summary = failure_summary.write(
+            agent=self.name, day=day, role=self.role, model=self.model,
+            reason=reason, agent_log=log_file, extra_log_files=extra,
+        )
+        print(f"  📝 failure summary: {summary}")
+        print(f"     view: sw fail")
 
     def _build_brief(self, day: int, log_dir: Path, log_file: Path) -> str:
         spec = paths.ROOT / self._spec_relative_path()
@@ -374,6 +397,16 @@ def cmd_clear_cooldown(_cfg: dict) -> None:
     print("Cooldown cleared.")
 
 
+def cmd_fail(_cfg: dict) -> None:
+    """Print the most recent failure summary."""
+    latest = failure_summary.latest_summary()
+    if latest is None:
+        print("No failure summaries found.")
+        return
+    print(f"Latest: {latest}\n")
+    print(latest.read_text(encoding="utf-8"))
+
+
 def cmd_approve(_cfg: dict) -> None:
     gated, payload = schedule.is_awaiting_approval()
     if not gated:
@@ -478,7 +511,7 @@ def main():
     parser.add_argument("command", choices=[
         "next", "today", "status", "ring", "resume", "recover",
         "archive", "weekly", "daily", "resolve", "refresh",
-        "schedule", "clear-cooldown", "approve", "clear-approval",
+        "schedule", "clear-cooldown", "approve", "clear-approval", "fail",
         "coder", "validator", "reporter", "reviewer",
     ])
     parser.add_argument("--dry-run", action="store_true",
@@ -516,6 +549,7 @@ def main():
         "clear-cooldown":   lambda: cmd_clear_cooldown(cfg),
         "approve":          lambda: cmd_approve(cfg),
         "clear-approval":   lambda: cmd_approve(cfg),  # alias
+        "fail":             lambda: cmd_fail(cfg),
     }
     if args.command in dispatch:
         dispatch[args.command]()

@@ -46,9 +46,9 @@ struct HomeView: View {
         switch hour {
         case 5..<7:   return [GhibliColors.lanternOrange, GhibliColors.wheatGold]
         case 7..<11:  return [GhibliColors.skyBlue, GhibliColors.cloudWhite]
-        case 11..<15: return [Color(red: 0.53, green: 0.81, blue: 0.98), GhibliColors.cloudWhite]
+        case 11..<15: return [GhibliColors.noonSky, GhibliColors.cloudWhite]
         case 15..<19: return [GhibliColors.lanternOrange.opacity(0.9), GhibliColors.wheatGold.opacity(0.7)]
-        default:      return [GhibliColors.nightIndigo, Color(red: 0.24, green: 0.28, blue: 0.54)]
+        default:      return [GhibliColors.nightIndigo, GhibliColors.nightDeep]
         }
     }
 

@@ -17,7 +17,11 @@ enum GhibliColors {
 
     // Night: deep indigo sky, golden stars
     static let nightIndigo   = Color(red: 0.18, green: 0.21, blue: 0.42)  // #2E366B
+    static let nightDeep     = Color(red: 0.24, green: 0.28, blue: 0.54)  // #3D478A — midnight gradient base
     static let starGold      = Color(red: 0.99, green: 0.95, blue: 0.74)  // #FCF2BD
+
+    // Noon: bright sunlit sky above the sunflower field
+    static let noonSky       = Color(red: 0.53, green: 0.81, blue: 0.98)  // #87CEF9
 
     // Totoro's soft gray fur
     static let totoroGray    = Color(red: 0.42, green: 0.42, blue: 0.45)  // #6B6B73

@@ -41,3 +41,6 @@ targets:
       - path: SunnyWalkerTests
     dependencies:
       - target: SunnyWalker
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES

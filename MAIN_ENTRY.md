@@ -4,7 +4,7 @@ _A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-05-29T22:44:13+08:00**
+Last updated: **2026-05-30T00:22:31+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
@@ -22,9 +22,10 @@ Last updated: **2026-05-29T22:44:13+08:00**
 - No active heartbeat — system is idle / not running
 
 ## 🔁  Recent ring entries (last 8)
-- 🟡 `[A]` Day  1  2026-05-29 22:32:10+08:00  
-- ✅ `[A]` Day  1  2026-05-29 22:35:51+08:00  → B
-- ✅ `[B]` Day  1  2026-05-29 22:43:35+08:00  → C
+- 🟡 `[A]` Day  1  2026-05-30 00:11:46+08:00  
+- ✅ `[A]` Day  1  2026-05-30 00:13:26+08:00  → B
+- 🟡 `[B]` Day  1  2026-05-30 00:18:47+08:00  
+- ✅ `[B]` Day  1  2026-05-30 00:22:30+08:00  → C
 
 Full ring: `orchestrator/current/ring.md`
 
@@ -39,4 +40,5 @@ Full ring: `orchestrator/current/ring.md`
 
 ## 🗂️  Active verbose logs (not yet archived)
 - `orchestrator/logs/2026-05-29`
+- `orchestrator/logs/2026-05-30`
 

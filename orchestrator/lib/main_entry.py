@@ -12,7 +12,7 @@ power-out, or coming back after vacation. It tells you exactly:
 from __future__ import annotations
 import datetime as dt
 
-from . import heartbeat, ring, schedule
+from . import failure_summary, heartbeat, ring, schedule
 from .paths import (DAILY, LOGS, MAIN_ENTRY, PROGRESS, RING, WEEKLY)
 
 
@@ -169,6 +169,11 @@ def render(project_name: str, project_description: str = "") -> str:
             lines.append(f"- **[{e.agent}] Day {e.day} {e.status}** — logs: `{log_dir}`")
         for e in attn:
             lines.append(f"- **[D] Day {e.day}** — {e.human_attention}")
+        # Surface the latest failure summary for one-glance access
+        latest = failure_summary.latest_summary()
+        if latest is not None:
+            lines.append(f"- 📝 Latest failure summary: `{latest}`")
+            lines.append(f"  Quick view: `sw fail`")
         lines.append("")
 
     # Verbose log dirs (active, not yet archived)

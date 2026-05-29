@@ -1,0 +1,8 @@
+2026-05-29 22:43:31.390 xcodebuild[41980:16001204] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+error: Cannot code sign because the target does not have an Info.plist file and one is not being generated automatically. Apply an Info.plist file to the target using the INFOPLIST_FILE build setting or generate one automatically by setting the GENERATE_INFOPLIST_FILE build setting to YES (recommended). (in target 'SunnyWalkerTests' from project 'SunnyWalker')
+Testing failed:
+	Cannot code sign because the target does not have an Info.plist file and one is not being generated automatically. Apply an Info.plist file to the target using the INFOPLIST_FILE build setting or generate one automatically by setting the GENERATE_INFOPLIST_FILE build setting to YES (recommended).
+	Testing cancelled because the build failed.
+
+** TEST FAILED **
+

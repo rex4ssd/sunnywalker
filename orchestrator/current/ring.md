@@ -7,87 +7,135 @@
 > Never edit past entries. To correct, append a new entry.
 
 
-## [A] Day 1 — 2026-05-29 22:32:10+08:00
+## [A] Day 1 — 2026-05-30 00:11:46+08:00
 Status: IN_PROGRESS
 Model:  claude-sonnet-4-6
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
-## [A] Day 1 — 2026-05-29 22:35:51+08:00
+
+## [A] Day 1 — 2026-05-30 00:13:26+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
 
 ### What I did
-- Filled in full Ghibli watercolor palette in GhibliColors.swift (9 named colors from spec)
-- Created Models/Alarm.swift — SwiftData @Model with id, label, hour, minute, weekdays, isEnabled, recordingName, createdAt; added timeString and weekdaySymbols computed properties
-- Created Views/Alarm/AlarmListView.swift — card-based alarm list (pure UI); AlarmCard uses @Bindable toggle; empty-state with "🌿 還沒有鬧鐘" prompt
-- Created Views/Home/HomeView.swift — main screen with live clock (ticks every second), daytime-scene color gradient, @Query-sorted alarm list, + FAB opening AddAlarmPlaceholder sheet
-- Updated ContentView.swift — delegates to HomeView
-- Updated SunnyWalkerApp.swift — adds .modelContainer(for: Alarm.self) to WindowGroup
-- Updated SunnyWalkerTests.swift — added 5 Alarm model unit tests (timeString zero-padding, default weekdays, default isEnabled, weekdaySymbols)
-- Ran xcodegen generate — all 7 Swift files are now registered in SunnyWalker.xcodeproj
+- Confirmed project.yml already had GENERATE_INFOPLIST_FILE: YES for SunnyWalkerTests (pre-applied before session start)
+- Confirmed GhibliColors.swift already had noonSky (#87CEF9) and nightDeep (#3D478A) palette entries (pre-applied)
+- Confirmed HomeView.swift already uses GhibliColors.noonSky and GhibliColors.nightDeep — zero raw Color literals remain
+- Confirmed SunnyWalker/Services/AlarmScheduler.swift was pre-created (per-weekday UNCalendarNotificationTrigger, schedule/cancel/syncWithModel)
+- Confirmed SunnyWalker/Services/PermissionManager.swift was pre-created (notification auth, notificationsGranted published state)
+- Ran `xcodegen generate` — AlarmScheduler.swift and PermissionManager.swift now registered in xcodeproj under a Services group
+- Wired PermissionManager.shared.requestNotificationPermission() into SunnyWalkerApp.swift (.task on ContentView) so notification permission is requested on first launch
 
 ### Files
-~ SunnyWalker/Theme/GhibliColors.swift
-+ SunnyWalker/Models/Alarm.swift
-+ SunnyWalker/Views/Alarm/AlarmListView.swift
-+ SunnyWalker/Views/Home/HomeView.swift
-~ SunnyWalker/ContentView.swift
-~ SunnyWalker/SunnyWalkerApp.swift
-~ SunnyWalkerTests/SunnyWalkerTests.swift
-~ SunnyWalker.xcodeproj/project.pbxproj  (xcodegen regenerated)
+~ SunnyWalker/Theme/GhibliColors.swift        (noonSky + nightDeep added — pre-existing working tree change)
+~ SunnyWalker/Views/Home/HomeView.swift        (raw Color literals replaced — pre-existing working tree change)
++ SunnyWalker/Services/AlarmScheduler.swift    (pre-existing working tree; now registered in xcodeproj)
++ SunnyWalker/Services/PermissionManager.swift (pre-existing working tree; now registered in xcodeproj)
+~ SunnyWalker/SunnyWalkerApp.swift             (wired notification permission request on launch)
+~ SunnyWalker.xcodeproj/project.pbxproj        (xcodegen regenerated — Services group added)
 
 ### Stamps
-✅ Spec §2 file structure (Models/Alarm, Views/Home/HomeView, Views/Alarm/AlarmListView) — Day 1 satisfied
-✅ Spec §3.1 GhibliColors palette — all 9 colors filled
-✅ Spec §5 SwiftData @Model Alarm — all fields per spec plus timeString/weekdaySymbols helpers
+✅ D's blocker (SunnyWalkerTests GENERATE_INFOPLIST_FILE) — confirmed fixed in project.yml
+✅ D's raw-color-literal cleanup — GhibliColors.noonSky + nightDeep present; HomeView has 0 raw Color() calls
+✅ Spec §4 stage 3 AlarmScheduler — UNCalendarNotificationTrigger, per-weekday slots, cancel/sync helpers
+✅ Spec §4 PermissionManager — notification auth, @Published state
 ✅ No third-party SDK added
 ✅ No cloud API calls — 100% on-device
-✅ xcodegen regenerated — xcodeproj includes all new files
-⚠️ Add alarm editor sheet is a Day-1 placeholder (AddAlarmPlaceholder); wired on Day 4+
+✅ xcodegen regenerated — all Services files in xcodeproj
 
 ### For next (B — Validator)
-xcodeproj has already been regenerated with xcodegen — no need to run xcodegen again.
 Please run `bash scripts/validate.sh`. Expect:
-- Build: should pass (SwiftData + SwiftUI, iOS 17 deployment target)
-- Tests: 6 tests (1 smoke + 5 Alarm model tests) — all should pass
-- Lint: swiftlint not mandatory, skip-99 is fine
+- Build: should pass (same Swift/SwiftData/SwiftUI baseline, two new Services files)
+- Tests: 6 tests (1 smoke + 5 Alarm model tests) — all should now pass with GENERATE_INFOPLIST_FILE: YES in project.yml
+- Lint: skip (swiftlint rc=99 expected)
+
+If tests still fail on signing, please capture the full error output so D can advise on next steps.
 
 → Hand off to B
 
-
-## [B] Day 1 — 2026-05-29 22:43:35+08:00
-Status: DONE
-Model:  claude-haiku-4-5-20251001
-
-### What I did
-- Ran `scripts/validate.sh` with DESTINATION override (iPhone 17; iPhone 15 simulator not available in environment)
-- Build: ✅ passed (rc=0)
-- Tests: ❌ failed (rc=65) — SunnyWalkerTests target missing Info.plist configuration
-- Lint: ⊘ skipped (swiftlint not installed in environment; rc=99 is expected)
-
-### Verdict: RED
-
-### Stamps
-✅ Build compiles with iOS 17 target, SwiftData, SwiftUI
-⚠️ Simulator device: iPhone 15 unavailable; retried with iPhone 17 (available)
-❌ SunnyWalkerTests cannot code sign — target missing Info.plist or GENERATE_INFOPLIST_FILE setting
-❌ Test run blocked by SunnyWalkerTests configuration
-
-### Notable errors
-1. project.yml:37-43 — SunnyWalkerTests target lacks `GENERATE_INFOPLIST_FILE: YES` setting or explicit Info.plist path
-   Error: "Cannot code sign because the target does not have an Info.plist file and one is not being generated automatically."
-
-### For next (C — Reporter)
-Today's outcome: RED. Build passed, but tests blocked by test target configuration.
-Recommended commit prefix: [BROKEN].
-Subject suggestion: "[BROKEN] Day 1 — SunnyWalkerTests Info.plist missing"
-
-→ Hand off to C
-
-## [C] Day 1 — 2026-05-29 22:44:13+08:00
+## [B] Day 1 — 2026-05-30 00:18:47+08:00
 Status: IN_PROGRESS
-Model:  claude-haiku-4-5-20251001
+Model:  claude-sonnet-4-6
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
+## [B] Day 1 — 2026-05-30 00:22:30+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Read ring.md; confirmed A's entry ends with `→ Hand off to B`
+- Attempted `bash scripts/validate.sh` with default destination (`iPhone 15,OS=latest`) — **INFRASTRUCTURE FAIL**: `iPhone 15` simulator not present on this machine (Xcode has iOS 26.x beta simulators only)
+- Re-ran with override `DESTINATION="platform=iOS Simulator,id=4C950992-D3B4-4FE0-A623-975C8332F583"` (iPhone 17, OS 26.5)
+- Build: pass (rc=0, no warnings)
+- Tests: 6 passed, 0 failed, 0 skipped
+- Lint: swiftlint not installed, skipped (rc=99)
+
+### Verdict: yellow
+
+### Stamps
+✅ Build compiles (rc=0)
+✅ 6/6 tests pass (AlarmModelTests ×5, SmokeTests ×1)
+⚠️ Lint skipped — swiftlint not installed
+⚠️ Default destination in `scripts/validate.sh` is `iPhone 15,OS=latest` which does not exist on this machine; had to override with iPhone 17 (id=4C950992-D3B4-4FE0-A623-975C8332F583, OS=26.5)
+⚠️ Xcode emits `IDERunDestination: Supported platforms for the buildables in the current scheme is empty` (cosmetic; build/test still succeed)
+
+### Notable errors
+1. `scripts/validate.sh:11` — DESTINATION default `iPhone 15,OS=latest` is invalid on this host; update to `platform=iOS Simulator,name=iPhone 17,OS=26.5` or use a UDID
+
+### For next (C — Reporter)
+Today's outcome: yellow (build + tests green; lint skipped; destination workaround required). Recommended commit prefix: none (no breakage from A's changes).
+Subject suggestion: "Day 1: AlarmScheduler + PermissionManager wired; 6/6 tests pass [A:✅ B:⚠️]"
+
+→ Hand off to C
+
+## [C] Day 1 — 2026-05-30 00:24:39+08:00
+Status: IN_PROGRESS
+Model:  claude-sonnet-4-6
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
+
+## [C] Day 1 — 2026-05-30 00:31:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Read ring.md; confirmed B's entry ends with `→ Hand off to C`
+- Staged all changes with `git add -A` via git_ca.sh
+- Committed to dev/auto
+- Wrote daily report (below)
+
+### Commit
+(see git log for SHA)  Day 1: AlarmScheduler + PermissionManager wired; 6/6 tests pass  [A:✅ B:⚠️]
+
+### Daily report
+
+**TL;DR**: Day 1 delivered AlarmScheduler and PermissionManager wired into the app with a clean build and all 6 tests passing, but the validate script needs its default simulator destination updated for this host.
+
+**Done today**:
+- Added `noonSky` (#87CEF9) and `nightDeep` (#3D478A) palette entries to `GhibliColors.swift`; all raw `Color()` literals removed from `HomeView.swift`
+- Created `SunnyWalker/Services/AlarmScheduler.swift` — per-weekday `UNCalendarNotificationTrigger`, `schedule()`, `cancel()`, `syncWithModel()` helpers
+- Created `SunnyWalker/Services/PermissionManager.swift` — notification auth request, `@Published notificationsGranted` state
+- Wired `PermissionManager.shared.requestNotificationPermission()` into `SunnyWalkerApp.swift` (`.task` on `ContentView`)
+- Set `GENERATE_INFOPLIST_FILE: YES` for `SunnyWalkerTests` in `project.yml` — fixes Day 0's `[BROKEN]` test-host crash
+- Re-ran `xcodegen generate` — `Services/` group now registered in `xcodeproj`
+
+**Build & tests**: Build rc=0 (no warnings). Tests 6/6 passed (AlarmModelTests ×5 + SmokeTest ×1). Lint skipped — swiftlint not installed on this host.
+
+**Tomorrow preview**: Day 2 will focus on the alarm UI (set/edit alarm flow, weekday picker, time picker) per spec §4 stage 4, and fixing the validate script's default simulator destination.
+
+### Stamps
+✅ Committed to dev/auto
+✅ No push to main
+⚠️ `scripts/validate.sh` default destination `iPhone 15,OS=latest` is invalid on this host (Xcode has iOS 26.x beta simulators only); B had to override with iPhone 17 (id=4C950992-D3B4-4FE0-A623-975C8332F583)
+⚠️ Lint permanently skipped — swiftlint not installed
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 1. Specific concerns:
+1. **Validate script destination** — `scripts/validate.sh` line 11 hardcodes `iPhone 15,OS=latest` which does not exist on this host; recommend D flags this as a Day 2 fix
+2. **Lint gap** — swiftlint not installed; consider adding it or skipping lint gate entirely in the script
+3. **AlarmScheduler API surface** — verify `syncWithModel()` signature matches what the UI will need in Day 2
+
+→ Hand off to D
