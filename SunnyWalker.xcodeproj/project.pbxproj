@@ -1,0 +1,420 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */; };
+		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		6038E36000101404AEC7372B /* GhibliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */; };
+		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
+		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		67D4C7C450593D2F0A999EAC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9CDE5F91F9849D6056C19DD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B16869256E59B2A3381C61E8;
+			remoteInfo = SunnyWalker;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0972897111DE3E819D823136 /* SunnyWalker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SunnyWalker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliColors.swift; sourceTree = "<group>"; };
+		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8A39961C2B11BD747210DF5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
+		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		095C19C14024F6CD35129004 = {
+			isa = PBXGroup;
+			children = (
+				64D650D499538406B85A625F /* SunnyWalker */,
+				5426B93631556471059DA32A /* SunnyWalkerTests */,
+				C638D6224AA4077166EFFC67 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2819B31AAA627270102010BD /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		5426B93631556471059DA32A /* SunnyWalkerTests */ = {
+			isa = PBXGroup;
+			children = (
+				C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */,
+			);
+			path = SunnyWalkerTests;
+			sourceTree = "<group>";
+		};
+		64D650D499538406B85A625F /* SunnyWalker */ = {
+			isa = PBXGroup;
+			children = (
+				2819B31AAA627270102010BD /* Theme */,
+				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
+				B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */,
+				7BD2360682B2434A47F2021F /* Info.plist */,
+				9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */,
+			);
+			path = SunnyWalker;
+			sourceTree = "<group>";
+		};
+		C638D6224AA4077166EFFC67 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0972897111DE3E819D823136 /* SunnyWalker.app */,
+				A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7559288E79C6BA3A31945BF7 /* SunnyWalkerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC23E2996D68BC7F705C54E4 /* Build configuration list for PBXNativeTarget "SunnyWalkerTests" */;
+			buildPhases = (
+				8F1C497970AA68FAC116D791 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7CFCD6C5D876F680449DD99D /* PBXTargetDependency */,
+			);
+			name = SunnyWalkerTests;
+			packageProductDependencies = (
+			);
+			productName = SunnyWalkerTests;
+			productReference = A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B16869256E59B2A3381C61E8 /* SunnyWalker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8850D1A92F66DBAEC416A06A /* Build configuration list for PBXNativeTarget "SunnyWalker" */;
+			buildPhases = (
+				4FB60F10CA141CB3050F07D2 /* Sources */,
+				523852C83B0CD689ACE0DB05 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SunnyWalker;
+			packageProductDependencies = (
+			);
+			productName = SunnyWalker;
+			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9CDE5F91F9849D6056C19DD5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 3CB33E2368DAD785BABEE546 /* Build configuration list for PBXProject "SunnyWalker" */;
+			developmentRegion = "zh-Hant";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				"zh-Hant",
+			);
+			mainGroup = 095C19C14024F6CD35129004;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C638D6224AA4077166EFFC67 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B16869256E59B2A3381C61E8 /* SunnyWalker */,
+				7559288E79C6BA3A31945BF7 /* SunnyWalkerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		523852C83B0CD689ACE0DB05 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4FB60F10CA141CB3050F07D2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
+				6038E36000101404AEC7372B /* GhibliColors.swift in Sources */,
+				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8F1C497970AA68FAC116D791 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7CFCD6C5D876F680449DD99D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B16869256E59B2A3381C61E8 /* SunnyWalker */;
+			targetProxy = 67D4C7C450593D2F0A999EAC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		22D186CCB9AB9DA8171AF873 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.SunnyWalkerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SunnyWalker.app/SunnyWalker";
+			};
+			name = Release;
+		};
+		2449D46962494FA319B3F28E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		4AB2E359AE8081DED87B3944 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SunnyWalker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.sunnywalker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		60937BD4E4755298A6F7F065 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SunnyWalker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.sunnywalker;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		86BE7228D43B315B3E6C4322 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		DB6C75ECCFC4720EBE89CE83 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.SunnyWalkerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SunnyWalker.app/SunnyWalker";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3CB33E2368DAD785BABEE546 /* Build configuration list for PBXProject "SunnyWalker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				86BE7228D43B315B3E6C4322 /* Debug */,
+				2449D46962494FA319B3F28E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8850D1A92F66DBAEC416A06A /* Build configuration list for PBXNativeTarget "SunnyWalker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60937BD4E4755298A6F7F065 /* Debug */,
+				4AB2E359AE8081DED87B3944 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CC23E2996D68BC7F705C54E4 /* Build configuration list for PBXNativeTarget "SunnyWalkerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB6C75ECCFC4720EBE89CE83 /* Debug */,
+				22D186CCB9AB9DA8171AF873 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9CDE5F91F9849D6056C19DD5 /* Project object */;
+}
