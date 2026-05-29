@@ -18,10 +18,10 @@ agents:
     model: claude-sonnet-4-6
     timeout_s: 3600
   validator:
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     timeout_s: 1800
   reporter:
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     timeout_s: 900
   reviewer:
     model: claude-opus-4-6

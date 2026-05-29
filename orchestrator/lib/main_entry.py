@@ -149,13 +149,23 @@ def render(project_name: str, project_description: str = "") -> str:
         lines.append("- (none yet)")
     lines.append("")
 
-    # Open blockers (FAILED / PAUSED entries)
-    blockers = [e for e in ents if e.status in ("FAILED", "PAUSED_TOKEN_LIMIT")]
+    # Open blockers — only show FAILED/PAUSED that don't have a later H (human-resolved) entry
+    blockers = []
+    for i, e in enumerate(ents):
+        if e.status not in ("FAILED", "PAUSED_TOKEN_LIMIT"):
+            continue
+        # Look forward: is there an H entry after this that handed back to this agent's letter?
+        resolved = any(later.agent == "H" and later.status == "DONE"
+                       and later.handoff_to == e.agent
+                       for later in ents[i + 1:])
+        if not resolved:
+            blockers.append(e)
+
     attn = [e for e in ents if e.human_attention]
     if blockers or attn:
         lines.append("## 🚨  Open blockers / human attention")
         for e in blockers:
-            log_dir = LOGS / dt.date.today().isoformat()  # best guess
+            log_dir = LOGS / dt.date.today().isoformat()
             lines.append(f"- **[{e.agent}] Day {e.day} {e.status}** — logs: `{log_dir}`")
         for e in attn:
             lines.append(f"- **[D] Day {e.day}** — {e.human_attention}")

@@ -95,6 +95,7 @@ class Agent:
             "claude",
             "-p", full_prompt,
             "--output-format", "stream-json",
+            "--verbose",            # required by claude CLI when -p uses stream-json
             "--model", self.model,
             "--max-turns", "60",
         ]
@@ -482,10 +483,21 @@ def main():
     ])
     parser.add_argument("--dry-run", action="store_true",
                         help="Print prompts and intended actions without invoking claude.")
+    parser.add_argument("--model",
+                        help="Override the model for ALL agents this run "
+                             "(e.g. --model claude-sonnet-4-6). Useful for saving "
+                             "Opus quota — run all 4 with Sonnet/Haiku.")
     args = parser.parse_args()
 
     cfg = load_config()
     paths.ensure_dirs()
+
+    # Apply --model override across all agents
+    if args.model:
+        for role in ("coder", "validator", "reporter", "reviewer"):
+            cfg["agents"][role]["model"] = args.model
+        print(f"[override] All agents using model: {args.model}")
+
     agents = build_agents(cfg, dry_run=args.dry_run)
 
     dispatch = {

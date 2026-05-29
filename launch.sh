@@ -181,6 +181,9 @@ else
   record_fail "pytest"
 fi
 
+# Belt-and-braces: regenerate MAIN_ENTRY in case any test polluted it
+python3 sw.py refresh >/dev/null 2>&1 || true
+
 # ===================================================================
 step "6/8  Sanity: sw status"
 

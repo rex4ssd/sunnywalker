@@ -11,7 +11,10 @@
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
 		6038E36000101404AEC7372B /* GhibliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
+		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
+		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
 		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
+		E409258EA2C6052DDE696951 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB6388EF249B7365D9B3B48 /* HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,6 +29,9 @@
 
 /* Begin PBXFileReference section */
 		0972897111DE3E819D823136 /* SunnyWalker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SunnyWalker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14909DF5F592C0045CF04728 /* AlarmListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmListView.swift; sourceTree = "<group>"; };
+		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
 		770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliColors.swift; sourceTree = "<group>"; };
 		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8A39961C2B11BD747210DF5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -61,16 +67,51 @@
 			path = SunnyWalkerTests;
 			sourceTree = "<group>";
 		};
+		6218564575F4EA0F85D3DEC8 /* Alarm */ = {
+			isa = PBXGroup;
+			children = (
+				14909DF5F592C0045CF04728 /* AlarmListView.swift */,
+			);
+			path = Alarm;
+			sourceTree = "<group>";
+		};
 		64D650D499538406B85A625F /* SunnyWalker */ = {
 			isa = PBXGroup;
 			children = (
+				734DAF79700E2E80CC76C73B /* Models */,
 				2819B31AAA627270102010BD /* Theme */,
+				6E2FDA7104A9144C4D64DBF5 /* Views */,
 				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
 				B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */,
 				7BD2360682B2434A47F2021F /* Info.plist */,
 				9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */,
 			);
 			path = SunnyWalker;
+			sourceTree = "<group>";
+		};
+		6E2FDA7104A9144C4D64DBF5 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				6218564575F4EA0F85D3DEC8 /* Alarm */,
+				77D06D74C8F83D818905D2F4 /* Home */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		734DAF79700E2E80CC76C73B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				60114EB5C3B3CEE759BABCDF /* Alarm.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		77D06D74C8F83D818905D2F4 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				1EB6388EF249B7365D9B3B48 /* HomeView.swift */,
+			);
+			path = Home;
 			sourceTree = "<group>";
 		};
 		C638D6224AA4077166EFFC67 /* Products */ = {
@@ -168,8 +209,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */,
+				8672D8B3917813013073515A /* AlarmListView.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
 				6038E36000101404AEC7372B /* GhibliColors.swift in Sources */,
+				E409258EA2C6052DDE696951 /* HomeView.swift in Sources */,
 				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

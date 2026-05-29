@@ -1,6 +1,7 @@
-// SunnyWalker — SunnyWalkerApp.swift  |  Day 0  |  bootstrap entry point
+// SunnyWalker — SunnyWalkerApp.swift  |  Day 1  |  app entry + SwiftData container
 
 import SwiftUI
+import SwiftData
 
 @main
 struct SunnyWalkerApp: App {
@@ -8,5 +9,6 @@ struct SunnyWalkerApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: Alarm.self)
     }
 }
