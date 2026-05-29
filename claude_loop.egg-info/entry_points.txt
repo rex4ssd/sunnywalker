@@ -1,0 +1,2 @@
+[console_scripts]
+sw = orchestrator.orchestrator:main

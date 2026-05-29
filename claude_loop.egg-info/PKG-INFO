@@ -1,0 +1,64 @@
+Metadata-Version: 2.4
+Name: claude_loop
+Version: 0.1.0
+Summary: 4-agent ring orchestration framework (A:Coder, B:Validator, C:Reporter+CI, D:Reviewer)
+Author-email: Rex <keep.going@m2k.com.tw>
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: PyYAML>=6.0
+
+# SunnyWalker
+
+A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI, Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
+
+## Quick start
+
+```bash
+# 1. One-time setup
+export ANTHROPIC_API_KEY=sk-ant-...
+./run.sh setup
+
+# 2. Run today's dev cycle (~30-60 min, ~$1.60)
+./run.sh today
+
+# 3. Inspect
+./run.sh status
+cat orchestrator/logs/$(date +%F)/d_review.md
+```
+
+## Documents
+- `docs/first_idea.md` — original concept
+- `docs/swift_native_spec.md` — full Swift + SwiftUI implementation spec
+- `docs/multi_agent_workflow.md` — 4-agent automation design
+
+## The 4 AI agents
+| | Role | Model | Cost/day |
+|---|---|---|---|
+| A | Coder — writes Swift | Sonnet 4.6 | ~$0.32 |
+| B | Validator — build + test + lint | Haiku 4.5 | ~$0.02 |
+| C | Reporter + CI — daily report + git | Haiku 4.5 | ~$0.03 |
+| D | Reviewer — evaluate + tomorrow brief | Opus 4.6 | ~$1.20 |
+
+## Manual scripts
+- `scripts/validate.sh` — xcodebuild + tests + swiftlint
+- `scripts/git_ca.sh "<msg>"` — safe commit + push to `dev/auto`
+- `scripts/dev.sh build | test | lint | sim | logs | clean | branch`
+
+## Safety rails
+- AI A cannot run `git` or `xcodebuild`
+- AI B cannot modify code
+- AI C can only push to `dev/auto`, never `main`
+- AI D is read-only
+- You manually `git merge dev/auto → main` when satisfied
+
+## Daily cadence (7-day MVP)
+| Day | Theme |
+|---|---|
+| 1 | Project skeleton, Models, Theme |
+| 2 | HomeView, AlarmListView (dummy data) |
+| 3 | AlarmScheduler + notifications |
+| 4 | AudioRecorder + RecordingView |
+| 5 | SpeechRecognizer + AlarmRingView |
+| 6 | ParentalGate + Settings + SwiftData |
+| 7 | Polish + App Store assets + TestFlight |

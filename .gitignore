@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Python venv
+.venv/
+__pycache__/
+*.pyc
+
+# Xcode
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Orchestrator runtime
+orchestrator/logs/*/
+!orchestrator/logs/.gitkeep
+
+# Secrets
+.env
+*.pem
+*.p8
+*.mobileprovision
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,4 @@
+# this is a comment
+# another comment
+weekday,start,end,stop_after,enabled
+mon,07:00,23:00,C,true

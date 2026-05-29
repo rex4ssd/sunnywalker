@@ -1,0 +1,54 @@
+# claude_loop config — project-specific.
+# Copy this whole orchestrator/ folder into another project and edit ONLY this
+# file. The lib/ code, prompts/, and orchestrator.py are project-agnostic.
+
+# ---------- project identity ----------
+project:
+  name: SunnyWalker
+  description: |
+    A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
+    Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
+
+# Path to the implementation spec, relative to repo root.
+spec_path: docs/swift_native_spec.md
+
+# ---------- agents ----------
+agents:
+  coder:
+    model: claude-sonnet-4-6
+    timeout_s: 3600
+  validator:
+    model: claude-haiku-4-5
+    timeout_s: 1800
+  reporter:
+    model: claude-haiku-4-5
+    timeout_s: 900
+  reviewer:
+    model: claude-opus-4-6
+    timeout_s: 1800
+
+# ---------- pipeline behavior ----------
+stop_on_failure: true
+auto_archive_on_day_complete: true   # move verbose logs to archive after D's End of Day
+
+# ---------- git safety ----------
+git:
+  auto_push_branch: dev/auto
+  protected_branch: main
+
+# ---------- milestones (used by progress.md) ----------
+milestones:
+  - day: 1
+    title: "Project skeleton, Models, Theme"
+  - day: 2
+    title: "HomeView, AlarmListView (dummy data)"
+  - day: 3
+    title: "AlarmScheduler + local notifications"
+  - day: 4
+    title: "AudioRecorder + RecordingView"
+  - day: 5
+    title: "SpeechRecognizer + AlarmRingView"
+  - day: 6
+    title: "ParentalGate + Settings + SwiftData"
+  - day: 7
+    title: "Polish + App Store assets + TestFlight"

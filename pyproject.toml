@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude_loop"
+version = "0.1.0"
+description = "4-agent ring orchestration framework (A:Coder, B:Validator, C:Reporter+CI, D:Reviewer)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Rex", email = "keep.going@m2k.com.tw" }]
+license = { text = "MIT" }
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+# After `pip install -e .` you get a global `sw` command.
+# Add more aliases here if you want (e.g. claude-loop = ...).
+sw = "orchestrator.orchestrator:main"
+
+[tool.setuptools]
+# We have a flat layout under orchestrator/. Tell setuptools to find it.
+packages = ["orchestrator", "orchestrator.lib"]
+
+[tool.setuptools.package-data]
+orchestrator = ["prompts/*.md", "config.yaml", "*.ini", "*.csv", "REUSE.md"]
