@@ -130,21 +130,32 @@ fi
 step "4/8  xcodebuild — does the skeleton compile?"
 
 if [ -d SunnyWalker.xcodeproj ]; then
-  # Pick a simulator destination automatically
-  DEST="platform=iOS Simulator,name=iPhone 15"
-  if ! xcrun simctl list devices available 2>/dev/null | grep -q "iPhone 15"; then
-    # Fallback to any available iPhone
-    DEST_NAME=$(xcrun simctl list devices available 2>/dev/null | grep "iPhone" | head -1 | sed -E 's/.*\(([^)]+)\).*/\1/' || true)
-    [ -n "$DEST_NAME" ] && DEST="platform=iOS Simulator,id=$DEST_NAME"
-  fi
-  echo "  destination: $DEST"
+  # Find the first available iPhone simulator — its UDID is the 36-char
+  # parenthesized hex string on the device line.
+  SIM_LINE=$(xcrun simctl list devices available 2>/dev/null \
+              | grep -E "iPhone.*\([A-F0-9-]{36}\)" \
+              | head -1)
+  SIM_UDID=$(echo "$SIM_LINE" | grep -oE "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}" | head -1)
+  SIM_NAME=$(echo "$SIM_LINE" | sed -E 's/^[[:space:]]*([^(]+) \(.*$/\1/')
 
-  if xcodebuild -scheme SunnyWalker -destination "$DEST" \
-       -derivedDataPath .build -quiet build 2>&1 | tail -20; then
-    ok "Build PASSED"
+  if [ -n "$SIM_UDID" ]; then
+    DEST="platform=iOS Simulator,id=$SIM_UDID"
+    echo "  destination: $DEST"
+    echo "  device:      $SIM_NAME ($SIM_UDID)"
   else
-    err "Build FAILED — see lines above"
-    record_fail "xcodebuild"
+    err "No iOS simulator available. Open Xcode → Window → Devices to install one."
+    record_fail "no-simulator"
+    DEST=""
+  fi
+
+  if [ -n "$DEST" ]; then
+    if xcodebuild -scheme SunnyWalker -destination "$DEST" \
+         -derivedDataPath .build build 2>&1 | tail -30; then
+      ok "Build PASSED"
+    else
+      err "Build FAILED — see lines above"
+      record_fail "xcodebuild"
+    fi
   fi
 else
   warn "Skipped — no .xcodeproj yet"
@@ -153,7 +164,17 @@ fi
 # ===================================================================
 step "5/8  pytest — framework self-tests"
 
-if python3 -m pytest tests/ --tb=short -q 2>&1 | tail -10; then
+# Auto-install pytest if missing in current python
+if ! python3 -c "import pytest" 2>/dev/null; then
+  warn "pytest not installed in $(python3 -c 'import sys; print(sys.prefix)') — installing"
+  python3 -m pip install -q pytest 2>&1 | tail -3 || true
+fi
+# Also ensure pyyaml is there (in case venv is fresh)
+if ! python3 -c "import yaml" 2>/dev/null; then
+  python3 -m pip install -q pyyaml 2>&1 | tail -3 || true
+fi
+
+if python3 -m pytest tests/ --tb=short -q 2>&1 | tail -15; then
   ok "All pytest tests passed"
 else
   err "Some tests failed"

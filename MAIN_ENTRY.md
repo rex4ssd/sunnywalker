@@ -1,10 +1,8 @@
-# SunnyWalker — Main Entry
+# TestProject — Main Entry
 
-_A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
-Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
-_
+_x_
 
-Last updated: **2026-05-29T18:08:17+08:00**
+Last updated: **2026-05-29T18:14:53+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
@@ -14,7 +12,9 @@ Last updated: **2026-05-29T18:08:17+08:00**
 
 ## ⏰  Schedule, cooldown & approval
 - ✅ No active cooldown (cooldown_hours = 4.0)
-- ✅ Today runs full A→B→C→D (no stop_after configured)
+- ⏸  **Awaiting your approval** — paused after `[B]` at `2026-05-29 18:14:53+08:00`
+- Reason: stop_after=B
+- Continue: `sw approve` (then `sw next`)
 
 ## 💓  Heartbeat (crash detection)
 - No active heartbeat — system is idle / not running
@@ -34,5 +34,5 @@ Full ring: `orchestrator/current/ring.md`
 - `orchestrator/progress/progress.md`
 
 ## 🗂️  Active verbose logs (not yet archived)
-- `orchestrator/logs/2026-05-29`
+- (empty)
 
