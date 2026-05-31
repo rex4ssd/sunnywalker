@@ -210,3 +210,40 @@ Model:  claude-haiku-4-5-20251001
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
+## [C] Day 1 — 2026-05-31 14:03:45+08:00
+Status: DONE
+Model:  claude-haiku-4-5-20251001
+
+### What I did
+- Staged all changes (orchestrator metadata + scripts updates)
+- Committed to dev/auto via `git_ca.sh`
+- Wrote daily report
+
+### Commit
+`5929060`  Day 1: UI components + Ghibli theme + SwiftData models; 12/12 tests pass  [A:✅ B:✅]
+
+### Daily report
+
+**TL;DR**: Day 1 complete — A built core UI components & Ghibli theme system; B validated (green); 12/12 tests pass, build clean.
+
+**Done today**:
+- A created 8 new Swift files: GhibliFonts, Animations, VoiceClip model, WakePhrase model, CloudBackground, GhibliButton, WatercolorCard, TotoroAvatar
+- A integrated CloudBackground into HomeView (visual layer structure)
+- A added 6 new test cases (3 VoiceClip + 3 WakePhrase) to SunnyWalkerTests
+- A updated project.pbxproj with all new file references & build phase entries
+- B validated: build passes, all 12 tests pass (1 smoke + 5 AlarmModel + 3 VoiceClip + 3 WakePhrase)
+- B noted: lint skipped (swiftlint not installed on system), no code quality issues found
+
+**Build & tests**: ✅ Build pass | ✅ Tests 12/12 pass | ⚠️ Lint not run (infrastructure)
+
+**Tomorrow preview**: Day 2 will wire AlarmScheduler (alarm trigger + silence/snooze UI) and PermissionManager (microphone access flow).
+
+### Stamps
+✅ Pushed to dev/auto (5929060)
+✅ No push to main
+✅ All code from A committed; spec §2–5 complete for Day 1
+
+### For next (D — Reviewer)
+Evaluate against Day 1 spec requirements: §2 (file structure), §3 (theme), §5 (models), and test coverage. No blocking issues found. A's watercolor component structure is placeholder for final Ghibli art assets (documented as TODO in TotoroAvatar).
+
+→ Hand off to D
