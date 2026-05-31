@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmRingView.swift  |  Day 4  |  full-screen alarm ring with audio + speech stub
+// SunnyWalker — AlarmRingView.swift  |  Day 5  |  alarm ring with real speech + task-cancellation fix
 
 import SwiftUI
 
@@ -10,6 +10,7 @@ struct AlarmRingView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @State private var wiggle = false
     @State private var showingReward = false
+    @State private var speechTask: Task<Void, Never>?  // stored so handleWakeUp can cancel it
 
     private var scene: DaytimeScene {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: Date()))
@@ -54,15 +55,21 @@ struct AlarmRingView: View {
         .onAppear {
             wiggle = true
             startAudio()
-            Task {
+            speechTask = Task {
                 try? await Task.sleep(for: .seconds(5))
-                speechRecognizer.startListening { keyword in
-                    print("SpeechRecognizer: matched keyword '\(keyword)' — triggering wake-up")
-                    handleWakeUp()
+                guard !Task.isCancelled else { return }
+                do {
+                    try speechRecognizer.startListening { keyword in
+                        print("SpeechRecognizer: matched '\(keyword)' — triggering wake-up")
+                        handleWakeUp()
+                    }
+                } catch {
+                    print("SpeechRecognizer: failed to start — \(error.localizedDescription)")
                 }
             }
         }
         .onDisappear {
+            speechTask?.cancel()
             audioPlayer.stop()
             speechRecognizer.stop()
         }
@@ -72,6 +79,7 @@ struct AlarmRingView: View {
     }
 
     private func handleWakeUp() {
+        speechTask?.cancel()
         audioPlayer.stop()
         speechRecognizer.stop()
         showingReward = true

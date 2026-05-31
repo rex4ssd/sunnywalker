@@ -64,6 +64,7 @@ struct AlarmListView: View {
 
 private struct AlarmCard: View {
     @Bindable var alarm: Alarm
+    @State private var showingRecording = false
 
     var body: some View {
         WatercolorCard {
@@ -88,6 +89,17 @@ private struct AlarmCard: View {
                     }
                 }
                 Spacer()
+                Button {
+                    showingRecording = true
+                } label: {
+                    Image(systemName: alarm.recordingName.isEmpty ? "mic" : "mic.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(alarm.recordingName.isEmpty
+                            ? GhibliColors.totoroGray.opacity(0.6)
+                            : GhibliColors.leafFresh)
+                }
+                .padding(.trailing, 14)
+                .accessibilityLabel(alarm.recordingName.isEmpty ? "錄製起床音" : "已錄製起床音")
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(GhibliColors.leafFresh)
                     .labelsHidden()
@@ -99,6 +111,9 @@ private struct AlarmCard: View {
         .animation(.easeInOut(duration: 0.2), value: alarm.isEnabled)
         .onChange(of: alarm.isEnabled) { _, _ in
             Task { try? await AlarmScheduler.shared.syncWithModel(alarm: alarm) }
+        }
+        .sheet(isPresented: $showingRecording) {
+            RecordingView(alarm: alarm)
         }
     }
 }

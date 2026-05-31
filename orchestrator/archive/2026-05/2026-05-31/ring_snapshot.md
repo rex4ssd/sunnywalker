@@ -179,177 +179,6 @@ A executed the Day 2 brief with precision: all carry-overs from Day 1 resolved, 
 → End of Day 2
 
 
-## [A] Day 3 — 2026-05-31 15:33:01+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Added `soundFileName: String` (default `"totoro_breath.caf"`) to `Alarm.swift` — reconciles spec §4 AlarmScheduler reference
-- Created `Views/Settings/AlarmEditorView.swift` — DatePicker (wheel), TextField, weekday multi-select chips, save button wired to SwiftData + AlarmScheduler
-- Wired `AlarmCard` toggle in `AlarmListView.swift` to call `AlarmScheduler.shared.syncWithModel(alarm:)` via `.onChange`
-- Expanded `PermissionManager.swift` with `requestMicrophonePermission()` (AVAudioApplication) and `requestSpeechPermission()` (SFSpeechRecognizer), plus combined `requestAllPermissions()`
-- Updated `SunnyWalkerApp.swift` to call `requestAllPermissions()` (was `requestNotificationPermission()` only)
-- Created `Views/Alarm/AlarmRingView.swift` — full-screen ZStack, DaytimeScene gradient, CloudBackground, TotoroAvatar with wiggle animation, "我起床了！" GhibliButton
-- Updated `HomeView.swift`: replaced `AddAlarmPlaceholder` sheet with `AlarmEditorView`, added `showingAlarmRing` state + `.fullScreenCover(AlarmRingView)`, long-press TotoroAvatar triggers ring view for visual testing
-
-### Files
-+ SunnyWalker/Views/Settings/AlarmEditorView.swift
-+ SunnyWalker/Views/Alarm/AlarmRingView.swift
-~ SunnyWalker/Models/Alarm.swift
-~ SunnyWalker/Views/Home/HomeView.swift
-~ SunnyWalker/Views/Alarm/AlarmListView.swift
-~ SunnyWalker/Services/PermissionManager.swift
-~ SunnyWalker/SunnyWalkerApp.swift
-
-### Stamps
-✅ Spec §4 (AlarmScheduler) Day 3 satisfied — soundFileName on model, schedule/cancel wired to toggle
-✅ Spec §4 stage 5 (AlarmRingView) visual shell delivered — wiggle avatar, dismiss button
-✅ First-launch permission flow complete — notifications + microphone + speech
-✅ No third-party SDK added
-✅ No cloud API calls — AVAudioApplication.requestRecordPermission() and SFSpeechRecognizer are all on-device
-✅ Theme tokens used throughout new code — zero raw color/font literals
-⚠️ AlarmScheduler still uses `.default` sound (not `alarm.soundFileName`) — sound .caf files not yet in bundle, safe to wire once assets exist
-⚠️ `sampleAlarms` @Model without ModelContext carried over from Day 2 — not blocking
-
-### For next (B — Validator)
-Please run `bash scripts/validate.sh`. Expect:
-- Build: should pass — all new files are valid Swift; note two NEW files need .pbxproj registration (see list below)
-- Tests: 12 existing tests should still pass; no new test targets added (no new model logic)
-- Lint: swiftlint not installed; may warn about missing tool
-
-**New files B must verify are registered in `.pbxproj`**:
-1. `SunnyWalker/Views/Settings/AlarmEditorView.swift`
-2. `SunnyWalker/Views/Alarm/AlarmRingView.swift`
-
-Both files need entries in: PBXBuildFile, PBXFileReference, the correct group (Settings / Alarm), and Sources build phase.
-
-→ Hand off to B
-
-
-## [B] Day 3 — 2026-05-31 15:33:33+08:00
-Status: IN_PROGRESS
-Model:  claude-sonnet-4-6
-
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
-
-
-## [B] Day 3 — 2026-05-31 15:45:00+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Ran `scripts/validate.sh` — failed at step 1 due to infrastructure bug (see below)
-- Re-ran xcodebuild directly with correct simulator UDID to get real Swift build errors
-- Verified new file presence on disk vs. `.pbxproj` registration
-
-### Infrastructure bug (validate.sh, NOT A's fault)
-`sed 's/^\s*//'` in macOS BSD sed does **not** strip leading whitespace from `xcrun simctl` output.
-Result: `DESTINATION="platform=iOS Simulator,name=    iPhone 17 Pro"` (4 leading spaces) → xcodebuild exits 70 before reaching Swift compilation.
-**Fix for C/D**: change `sed 's/^\s*//'` to `sed 's/^[[:space:]]*//'` in `scripts/validate.sh` line 16.
-
-### Build (direct xcodebuild with correct UDID)
-- Build: **FAIL** (exit code 65)
-- Tests: SKIPPED (build failed)
-- Lint: SKIPPED (swiftlint not installed)
-
-### Root cause
-Both new Swift files A created are on disk but absent from `SunnyWalker.xcodeproj/project.pbxproj`:
-- `SunnyWalker/Views/Settings/AlarmEditorView.swift` — 0 matches in pbxproj
-- `SunnyWalker/Views/Alarm/AlarmRingView.swift` — 0 matches in pbxproj
-
-Swift compiler errors:
-1. `HomeView.swift:38:60 — cannot find 'AlarmRingView' in scope`
-2. `HomeView.swift:84:13 — cannot find 'AlarmEditorView' in scope`
-
-This is the exact Day 2 recurrence that D flagged as risk #1.
-
-### Verdict: red
-
-### Stamps
-❌ Build fails — two new files unregistered in `.pbxproj`
-❌ `AlarmEditorView.swift` missing from PBXBuildFile, PBXFileReference, Settings group, Sources phase
-❌ `AlarmRingView.swift` missing from PBXBuildFile, PBXFileReference, Alarm group, Sources phase
-⚠️ `scripts/validate.sh` has macOS BSD sed incompatibility — exits 70 before real Swift errors
-⚠️ swiftlint still not installed — lint step permanently skipped
-
-### Notable errors
-1. `SunnyWalker/Views/Home/HomeView.swift:38` — `cannot find 'AlarmRingView' in scope` (not in pbxproj)
-2. `SunnyWalker/Views/Home/HomeView.swift:84` — `cannot find 'AlarmEditorView' in scope` (not in pbxproj)
-
-### For next (C — Reporter)
-Today's outcome: **red**. Build fails — `.pbxproj` must be fixed before commit.
-Recommended commit prefix: `[BROKEN-FIXED]` (after C performs the same `.pbxproj` surgery as Day 2).
-
-**C must add both files to four sections of `SunnyWalker.xcodeproj/project.pbxproj`**:
-1. `AlarmEditorView.swift` → PBXBuildFile + PBXFileReference + Settings group + Sources build phase
-2. `AlarmRingView.swift` → PBXBuildFile + PBXFileReference + Alarm group (alongside AlarmListView) + Sources build phase
-
-Also fix `scripts/validate.sh` line 16: `sed 's/^\s*//'` → `sed 's/^[[:space:]]*//'`
-
-Subject suggestion: "Day 3: AlarmEditorView + AlarmRingView + permission flow wired"
-
-→ Hand off to C
-
-
-## [C] Day 3 — 2026-05-31 15:36:34+08:00
-Status: IN_PROGRESS
-Model:  claude-sonnet-4-6
-
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
-
-
-## [C] Day 3 — 2026-05-31 15:39:30+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Read ring.md — confirmed B's last entry ends with `→ Hand off to C`
-- Confirmed B's verdict: **red** (build failed — 2 new Swift files missing from `.pbxproj`)
-- Performed `.pbxproj` surgery: registered `AlarmEditorView.swift` and `AlarmRingView.swift` in all four required sections (PBXBuildFile, PBXFileReference, group, Sources build phase); created Settings group under Views
-- Fixed `scripts/validate.sh` line 16: `sed 's/^\s*//'` → `sed 's/^[[:space:]]*//'` (BSD sed incompatibility B diagnosed)
-- Ran `bash scripts/validate.sh` — build pass, tests pass, lint skipped
-- Staged all changes and committed using `bash scripts/git_ca.sh`
-
-### Commit
-95bde3d  [BROKEN-FIXED] Day 3: AlarmEditorView + AlarmRingView + permission flow wired  [A:✅ B:❌ C:✅]
-
-### Daily report
-
-**TL;DR**: Day 3 delivered AlarmEditorView, AlarmRingView, full permission flow, and AlarmScheduler toggle wiring — build fixed by C after recurring `.pbxproj` registration gap.
-
-**Done today**:
-- `Alarm.swift`: Added `soundFileName: String` (default `"totoro_breath.caf"`) — reconciles spec §4 AlarmScheduler reference
-- `Views/Settings/AlarmEditorView.swift` (new): DatePicker wheel, TextField label, weekday multi-select chips, save → SwiftData + AlarmScheduler.schedule
-- `Views/Alarm/AlarmRingView.swift` (new): Full-screen ZStack, DaytimeScene gradient, CloudBackground, TotoroAvatar wiggle, "我起床了！" GhibliButton; accessible via long-press on TotoroAvatar in HomeView
-- `AlarmListView.swift` (AlarmCard): toggle now calls `AlarmScheduler.shared.syncWithModel(alarm:)` via `.onChange`
-- `PermissionManager.swift`: Added `requestMicrophonePermission()` (AVAudioApplication) + `requestSpeechPermission()` (SFSpeechRecognizer) + combined `requestAllPermissions()`
-- `SunnyWalkerApp.swift`: First-launch calls `requestAllPermissions()` (was notifications-only)
-- `HomeView.swift`: `AddAlarmPlaceholder` → real `AlarmEditorView` sheet; `showingAlarmRing` state + `.fullScreenCover(AlarmRingView)`
-- `project.pbxproj`: Registered both new files (4 sections each); created Settings group under Views
-- `scripts/validate.sh`: Fixed BSD sed incompatibility (line 16)
-
-**Build & tests**: Build pass (rc=0), 12/12 tests pass (rc=0), swiftlint skipped (not installed)
-
-**Tomorrow preview**: D reviews Day 3 and writes Day 4 brief; expected focus is voice recording integration (AVAudioRecorder) and WakePhrase management UI
-
-### Stamps
-✅ Pushed to dev/auto (95bde3d)
-✅ No push to main
-✅ Build pass, tests pass after `.pbxproj` fix
-⚠️ Recurring `.pbxproj` gap — third consecutive day; D should mandate automation in validate.sh
-⚠️ AlarmScheduler still uses `.default` sound (not `alarm.soundFileName`) — assets not yet in bundle
-⚠️ 12 tests pass but no new tests added for Day 3 AlarmScheduler scheduling logic
-
-### For next (D — Reviewer)
-Please evaluate against spec Day 3. Specific concerns:
-1. **Recurring .pbxproj gap**: This is the third day in a row. B suggested adding a validate.sh step that diffs Swift files on disk against pbxproj entries. Please mandate this in Day 4 brief.
-2. **AlarmScheduler sound**: `alarm.soundFileName` is on the model but the scheduler still uses `.default` — sound .caf files not in bundle yet. Is this acceptable to defer?
-3. **No new tests**: A added AlarmScheduler wiring logic (`syncWithModel`) but no new unit tests. Day 4 brief should request scheduler unit tests.
-4. **Voice integration readiness**: Day 3 AlarmRingView is a visual shell only. Day 4 should begin AVAudioRecorder recording flow and WakePhrase matching stub.
-
-→ Hand off to D
-
-
 ## [D] Day 3 — 2026-05-31 16:05:00+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
@@ -441,4 +270,242 @@ Day 3 milestone is fully delivered: `AlarmEditorView`, `AlarmRingView` (visual s
 - `orchestrator/current/ring.md` last 4 entries
 
 → End of Day 3
+
+
+## [A] Day 4 — 2026-05-31 16:17:12+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Added pbxproj registration check to `scripts/validate.sh` (item 0 — step 0/4, exits non-zero with clear error if any `.swift` file is missing from `.pbxproj`)
+- Created `AudioPlayer.swift` — `@MainActor ObservableObject` wrapping `AVAudioPlayer`, `play(url:loop:)` / `stop()` / `@Published isPlaying`
+- Created `SpeechRecognizer.swift` — stub class with correct public interface; `startListening` prints to console; Day 5 wires full SFSpeechRecognizer on-device recognition
+- Modified `AlarmRingView.swift` — accepts `alarm: Alarm? = nil`; on `.onAppear` plays recording (falls back to bundle sound, logs "no recording — skipping" if neither found); 5s delay then calls `SpeechRecognizer.startListening`; "我起床了！" button stops audio + shows `RewardView`; `onDismiss` chain returns to HomeView
+- Created `RewardView.swift` — full-screen `wheatGold` ZStack with "你好棒！🌟" + `TotoroAvatar`; auto-dismisses after 3s via `Task.sleep`
+- Modified `AlarmScheduler.swift` — `content.sound` changed from `.default` to `UNNotificationSound(named: UNNotificationSoundName(rawValue: alarm.soundFileName))`
+- Modified `HomeView.swift` — passes `alarms.first` to `AlarmRingView` for visual testing
+- Added 4 unit tests: `AudioPlayerTests` (initial state, stop-when-idle) + `AlarmSoundTests` (default soundFileName, mutability)
+
+### Files
+~ scripts/validate.sh
++ SunnyWalker/Services/AudioPlayer.swift
++ SunnyWalker/Services/SpeechRecognizer.swift
+~ SunnyWalker/Views/Alarm/AlarmRingView.swift
++ SunnyWalker/Views/Alarm/RewardView.swift
+~ SunnyWalker/Services/AlarmScheduler.swift
+~ SunnyWalker/Views/Home/HomeView.swift
+~ SunnyWalkerTests/SunnyWalkerTests.swift
+
+### Stamps
+✅ Spec §4 stage 2 (AudioPlayer) satisfied
+✅ Spec §4 stage 5 (AlarmRingView full flow — audio + 5s delay + speech stub + RewardView) satisfied
+✅ Validate.sh pbxproj check — recurring 3-day broken-build root cause eliminated
+✅ No third-party SDK added
+✅ No cloud API calls — all on-device
+✅ Theme tokens throughout — zero raw color/font literals in new code
+✅ 4 new unit tests added (16 total after C registers new files and build succeeds)
+⚠️ SpeechRecognizer is a stub — `startListening` prints to console only; Day 5 wires real SFSpeechRecognizer
+⚠️ No `.caf` audio assets in bundle yet — `AudioPlayer` will print "no recording — skipping" on first run; acceptable until assets are added
+⚠️ 3 new `.swift` files need `.pbxproj` registration before build (AudioPlayer.swift, SpeechRecognizer.swift, RewardView.swift)
+
+### For next (B — Validator)
+Please run `bash scripts/validate.sh`. The new step 0/4 will likely report 3 unregistered files — that is expected and intentional (the check is working). C must add them to `.pbxproj`.
+
+**New files requiring `.pbxproj` registration (all four sections: PBXBuildFile, PBXFileReference, group, Sources build phase):**
+- `SunnyWalker/Services/AudioPlayer.swift`
+- `SunnyWalker/Services/SpeechRecognizer.swift`
+- `SunnyWalker/Views/Alarm/RewardView.swift`
+
+Expect:
+- pbxproj check: FAIL (3 files unregistered — expected; C fixes)
+- Build: FAIL (same 3 files not in project — C fixes)
+- Tests: skipped (build failed)
+- Lint: skipped or warnings only
+
+→ Hand off to B
+
+
+## [B] Day 4 — 2026-05-31 16:17:51+08:00
+Status: IN_PROGRESS
+Model:  claude-sonnet-4-6
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
+
+## [B] Day 4 — 2026-05-31 16:18:27+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Ran `bash scripts/validate.sh`
+- [0/4] pbxproj check: FAIL — 3 files not registered in `.pbxproj`
+- [1/4] Build: FAIL — `AlarmRingView.swift` references types from unregistered files
+- [2/4] Tests: SKIPPED (build failed)
+- [3/4] Lint: SKIPPED (swiftlint not installed)
+
+### Verdict: red
+
+### Stamps
+❌ pbxproj check: RewardView.swift, AudioPlayer.swift, SpeechRecognizer.swift not registered
+❌ Build FAILED — 3 "cannot find in scope" errors, all caused by missing .pbxproj entries
+⚠️ Tests skipped (build failed)
+⚠️ swiftlint not installed (skipped)
+
+### Notable errors
+1. AlarmRingView.swift:9 — `cannot find 'AudioPlayer' in scope`
+2. AlarmRingView.swift:10 — `cannot find 'SpeechRecognizer' in scope`
+3. AlarmRingView.swift:70 — `cannot find 'RewardView' in scope`
+
+### For next (C — Reporter)
+Today's outcome: red. This is an expected infrastructure failure — all 3 build errors trace to `.pbxproj` registration gap for A's 3 new files (AudioPlayer.swift, SpeechRecognizer.swift, RewardView.swift). A explicitly flagged this in the handoff. The new `validate.sh` step 0/4 correctly detected and reported all 3 missing files — the automation is working.
+
+C must add all 3 files to `.pbxproj` in all four required sections (PBXBuildFile, PBXFileReference, correct group, Sources build phase), then re-run `bash scripts/validate.sh` to confirm green before committing. Recommended commit prefix: [BROKEN].
+
+Subject suggestion: "Day 4: AudioPlayer + SpeechRecognizer stub + RewardView + AlarmRingView audio/speech wired"
+
+→ Hand off to C
+
+
+## [C] Day 4 — 2026-05-31 16:20:57+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Confirmed B's `red` verdict (expected — 3 new .swift files unregistered in .pbxproj)
+- Added AudioPlayer.swift, SpeechRecognizer.swift, RewardView.swift to all 4 required .pbxproj sections (PBXBuildFile, PBXFileReference, group, Sources build phase)
+- Re-ran `bash scripts/validate.sh` → pbxproj=0, build=0, test=0, lint=99 (swiftlint absent — expected)
+- Committed and pushed to dev/auto
+
+### Commit
+d6c3454  [BROKEN-FIXED] Day 4: AudioPlayer + SpeechRecognizer stub + RewardView + AlarmRingView audio/speech wired  [A:✅ B:❌ C:✅]
+
+### Daily report
+
+**TL;DR**: Day 4 delivered audio playback (AudioPlayer), speech stub (SpeechRecognizer), reward screen (RewardView), and a fully wired AlarmRingView — plus the automated pbxproj check that eliminates the recurring 3-day build-break pattern.
+
+**Done today**:
+- AudioPlayer.swift: `@MainActor ObservableObject` wrapping AVAudioPlayer with `play(url:loop:)` / `stop()` / `@Published isPlaying`
+- SpeechRecognizer.swift: stub class with correct public interface; `startListening` prints to console; Day 5 wires real SFSpeechRecognizer
+- AlarmRingView.swift: on `.onAppear` plays recording (falls back to bundle sound, logs "no recording — skipping" if neither found); 5s delay then calls `SpeechRecognizer.startListening`; "我起床了！" button stops audio + shows RewardView; `onDismiss` chain returns to HomeView
+- RewardView.swift: full-screen wheatGold ZStack with "你好棒！🌟" + TotoroAvatar; auto-dismisses after 3s
+- AlarmScheduler.swift: `content.sound` now uses `UNNotificationSound(named:)` from `alarm.soundFileName` instead of `.default`
+- HomeView.swift: passes `alarms.first` to AlarmRingView for visual testing
+- validate.sh pbxproj diff check: step [0/4] now greps every .swift on disk against .pbxproj — the 3-day recurring broken-build root cause is eliminated
+- SunnyWalkerTests.swift: 4 new unit tests (AudioPlayer initial state, stop-when-idle; AlarmSoundTests default soundFileName, mutability) → 16 tests total
+
+**Build & tests**: build pass, 16/16 tests pass, lint skipped (swiftlint not installed)
+
+**Tomorrow preview**: Day 5 wires real SFSpeechRecognizer on-device recognition in AlarmRingView, adds confetti/polish to RewardView, and validates the full alarm ring → voice dismiss → reward cycle end-to-end
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+✅ Build pass + 16/16 tests pass
+✅ .pbxproj automation live — step [0/4] in validate.sh now catches unregistered files automatically
+⚠️ SpeechRecognizer is stub only — real SFSpeechRecognizer wired in Day 5
+⚠️ No .caf audio assets yet — AudioPlayer prints "no recording — skipping" on first run (acceptable until assets added)
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 4. Specific concerns:
+1. `SpeechRecognizer` is intentionally a stub — verify A's `startListening` console-print approach is acceptable for Day 4 scope (full wiring is Day 5's primary task)
+2. Verify `AlarmRingView` audio fallback logic (recording → bundle sound → log skip) matches spec §4 stage 5 intent
+3. Note that `.pbxproj` automation is now in validate.sh [0/4] — the 3-day recurring broken-build should not recur in Day 5+
+
+→ Hand off to D
+
+
+## [D] Day 4 — 2026-05-31 16:28:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### Verdict: on_track
+Completion: 90%
+
+Day 4 milestone is fully delivered: `AudioPlayer`, `SpeechRecognizer` stub, `AlarmRingView` with audio/speech/reward flow, `RewardView`, `AlarmScheduler` sound fix, and — most importantly — the `validate.sh` pbxproj diff check that ends the 3-day consecutive broken-build cycle. Code quality is consistently high: `@MainActor`, `async/await`, theme tokens throughout, zero third-party SDKs added. The 10% gap is expected scope deferral: SpeechRecognizer is intentionally a stub (Day 5's primary task), no `.caf` audio assets exist yet, and RewardView has no confetti (deferred per brief constraints). Two latent bugs are flagged below for Day 5 to fix before wiring the real SFSpeechRecognizer.
+
+### Alignment with spec
+- ✅ Milestone Day 4 (AudioPlayer, SpeechRecognizer stub, AlarmRingView flow, RewardView, AlarmScheduler sound): All items delivered per brief. Spec §4 stage 5 flow (play → 5s delay → listen → stop/dismiss → reward → home) is structurally correct.
+- ✅ Aesthetic / UX: `RewardView` uses `GhibliColors.wheatGold` + `GhibliColors.forestDeep` + `GhibliFonts.title(40)` — all tokens. `AlarmRingView` uses `DaytimeScene` gradient, `CloudBackground`, `TotoroAvatar` wiggle per spec. Zero raw color or font literals in Day 4 code.
+- ✅ On-device only: `AudioPlayer` wraps `AVAudioPlayer` (native). `SpeechRecognizer` is a stub with no network calls. `AlarmScheduler` uses `UNNotificationSound(named:)`. No third-party dependencies introduced.
+
+### Code quality (spot-checked)
+- `Services/AudioPlayer.swift`: Clean `@MainActor ObservableObject`. AVAudioSession `.playback` category correct for alarm use. `prepareToPlay()` before `play()` is good practice. **Gap**: `player?.delegate` is never set, so `isPlaying` never auto-resets when non-looping playback ends naturally. For the current always-`loop: true` use case this is harmless, but if Day 5 introduces one-shot playback (e.g., a UI tap sound), callers will see `isPlaying = true` stuck forever. Adding `player?.delegate = self` + `audioPlayerDidFinishPlaying` in Day 5 would close this.
+- `Services/SpeechRecognizer.swift` (stub): Correct `@MainActor`, correct `@Published` properties matching spec §4 interface (`recognizedText`, `matchedKeyword`), correct callback signature `(String) -> Void`. Stub is safe. **Interface risk**: the stub's `startListening` does not throw, but the spec §4 real implementation requires `try audioEngine.start()` which throws. Day 5 must either add `throws` to the interface or catch internally — if the interface changes, `AlarmRingView`'s call site needs updating too.
+- `Views/Alarm/AlarmRingView.swift`: Audio fallback chain (recording → bundle sound → log skip) matches spec §4 stage 5 intent. `.fullScreenCover(onDismiss: { dismiss() })` chain correctly threads RewardView dismissal back to HomeView. **Latent bug**: the `Task { try? await Task.sleep(for: .seconds(5)); speechRecognizer.startListening {...} }` inside `.onAppear` runs unconditionally — if the user taps "我起床了！" within the 5-second window, `handleWakeUp()` fires and the reward sheet appears, but after 5 seconds the Task wakes and calls `startListening` on an already-dismissed (or dismissing) context. With the stub this only prints; with Day 5's real `AVAudioEngine`, this could start an audio tap on a torn-down view. Fix: store the Task in a `@State var audioTask: Task<Void, Never>?` and cancel it in `handleWakeUp()`.
+- `Views/Alarm/RewardView.swift`: Minimal and correct. `.task { try? await Task.sleep(for: .seconds(3)); dismiss() }` is the right SwiftUI idiom for auto-dismiss. No raw literals. No animation beyond TotoroAvatar (confetti deliberately deferred to Day 5).
+- `scripts/validate.sh` pbxproj check: Null-safe `find ... -print0` + `while IFS= read -r -d ''` loop is correct POSIX shell. `basename`+`grep -q` approach is simple and effective. It caught all 3 missing files on first run exactly as designed. Exit-code aggregation (99=skipped, non-zero non-99 = fail) is correct.
+
+### Process
+- A: Executed item 0 (validate.sh) first per brief instruction — correct priority. Explicit list of 3 new files for B with expected failure behavior — B needed no guessing. 4 unit tests added (16 total). Handoff was comprehensive and honest about deferreds.
+- B: Correctly ran all 4 validate.sh steps. Confirmed the new [0/4] pbxproj check caught all 3 files. Verdict "red" is accurate. Handoff to C was precise: named all 3 files, named all 4 pbxproj sections needed.
+- C: All 3 files added to all 4 pbxproj sections. Re-ran validate.sh before committing (build=0, test=0). Commit message format correct `[BROKEN-FIXED] Day 4: ...`. Daily report accurate. One ongoing miss: C still has not added the automated pbxproj check itself (it was A who added it today per the Day 3 brief) — C's role is infrastructure repair, not new automation. No fault here; the automation request was correctly fulfilled by A.
+
+### Risks / blockers
+1. **SpeechRecognizer stub → real wiring is Day 5's critical path**: `SFSpeechRecognizer` + `AVAudioEngine` + `requiresOnDeviceRecognition = true` must work on a real device with Taiwanese Mandarin. Simulator will not test this adequately. Day 5 A should flag if simulator-only is the only test environment available.
+2. **AlarmRingView Task cancellation gap**: described above. Must be fixed before real `AVAudioEngine` is wired or Day 5 will see a crash/warning when users tap the button fast.
+3. **`startListening` interface not `throws`**: stub hides this mismatch. Day 5 must decide: add `throws` to stub interface now, or catch internally in the real implementation. The former is cleaner and should be done in Day 5 alongside wiring.
+4. **No `.caf` audio assets in bundle**: `totoro_breath.caf` and `leaf_rustle.caf` are referenced in spec §3.3 and by `AudioPlayer` fallback but don't exist. All audio paths silently skip on device. Day 5 should either add placeholder `.caf` files or document the limitation clearly.
+5. **AudioRecorder.swift and RecordingView.swift not yet created**: spec §2 lists both in the file structure; spec §4 stage 2 gives full AudioRecorder code. Without these, the parent recording flow (the app's key differentiator) cannot be tested end-to-end. Day 5 or Day 6 must address.
+6. **`sampleAlarms` @Model without ModelContext**: carried from Day 2. Low priority.
+
+### Stamps
+✅ Day 4 brief items 0–5 all delivered — validate.sh automation, AudioPlayer, SpeechRecognizer stub, AlarmRingView full flow, RewardView, AlarmScheduler sound fix
+✅ validate.sh [0/4] pbxproj check live and working — 3-day recurring broken-build root cause eliminated
+✅ Theme tokens enforced — zero raw color/font literals in Day 4 code
+✅ Build pass + 16/16 tests pass
+✅ No third-party SDKs added
+⚠️ AlarmRingView Task not cancelled on early `handleWakeUp()` — latent bug, harmless with stub, risky with real AVAudioEngine
+⚠️ `startListening` not marked `throws` — interface will need update when real implementation lands
+⚠️ No `.caf` audio assets — audio playback silently skips on device
+⚠️ AudioRecorder + RecordingView not yet built — parent recording flow untestable
+❌ Nothing truly broken — previous ❌ (pbxproj) is now fixed
+
+### For next (A — Coder)  ← TOMORROW's brief
+
+**Primary task**: Wire real on-device `SpeechRecognizer` with `SFSpeechRecognizer` + `AVAudioEngine`; fix the Task-cancellation gap in `AlarmRingView`; create `AudioRecorder.swift` and a minimal `RecordingView`.
+
+**Specific work items**:
+1. Modify: `SunnyWalker/Services/SpeechRecognizer.swift`
+   - Replace stub body with spec §4 full implementation: `SFSpeechRecognizer(locale: "zh-TW")`, `AVAudioEngine`, `requiresOnDeviceRecognition = true`, `shouldReportPartialResults = true`, keyword list `["我起床了","好的","知道了","起床囉"]`
+   - Change `startListening(onMatch:)` to `throws` (or catch `audioEngine.start()` internally and surface as a `@Published var error`)
+   - Acceptance: on a real device (or sim if speech is available), saying "我起床了" triggers `onMatch`; console shows matched keyword
+
+2. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - Store the 5s-delay Task in `@State private var speechTask: Task<Void, Never>?`
+   - In `handleWakeUp()`: call `speechTask?.cancel()` before `audioPlayer.stop()`
+   - Update `startListening` call site to handle `throws` (wrap in `do/catch`, log error)
+   - Acceptance: tapping "我起床了！" within 5s no longer causes a dangling Task calling `startListening` after dismissal
+
+3. Create: `SunnyWalker/Services/AudioRecorder.swift`
+   - Implement spec §4 stage 2 code exactly: `@MainActor`, `AVAudioRecorder`, `.playAndRecord` session, `.m4a` output to `Documents/Recordings/`, `@Published isRecording`, `@Published currentURL`
+   - Acceptance: compiles; `RecordingView` can use it as `@StateObject`
+
+4. Create: `SunnyWalker/Views/Settings/RecordingView.swift`
+   - Record button → calls `audioRecorder.start(named: alarmID.uuidString)`
+   - Stop button → calls `audioRecorder.stop()`, updates `alarm.recordingName`
+   - Playback button → previews the recording via `AudioPlayer`
+   - Acceptance: parent can record a voice clip and see it saved; AlarmEditorView can navigate to it
+
+5. Modify: `SunnyWalker/Views/Alarm/RewardView.swift`
+   - Add confetti animation (pure SwiftUI — multiple `Image(systemName: "star.fill")` particles with random offsets + `.animation(.easeOut.repeatCount(1))`; OR use `ConfettiSwiftUI` if A judges it safe — note spec §3.3 explicitly lists it, it's pure SwiftUI)
+   - Acceptance: dismissing the alarm shows animated stars/confetti before auto-dismiss
+
+**Carry-overs from today**:
+- `.caf` audio assets still absent — `AudioPlayer` fallback silently skips; acceptable until assets are added
+- `sampleAlarms @Model without ModelContext` (low priority — do not block Day 5)
+- `AudioPlayer.isPlaying` doesn't auto-reset for non-loop playback (add delegate only if using non-loop paths in Day 5)
+
+**Constraints**:
+- `requiresOnDeviceRecognition = true` is mandatory — this is the spec's privacy guarantee; never remove it
+- No third-party SDKs except `ConfettiSwiftUI` (pure SwiftUI, explicitly listed in spec §3.3) if used for confetti
+- Explicitly list every new `.swift` file in your "For next (B)" section — validate.sh [0/4] will catch them if not registered
+- Keep 16 tests passing; add at least 2 tests for `SpeechRecognizer` (keyword matching logic) or `AudioRecorder` (file URL construction)
+
+**Files to read first**:
+- Spec §4 stage 2 (AudioRecorder full code) and stage 4 (SpeechRecognizer full code)
+- `SunnyWalker/Services/SpeechRecognizer.swift` (stub — replace body, keep interface)
+- `SunnyWalker/Views/Alarm/AlarmRingView.swift` (add Task cancellation)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 4
 

@@ -31,6 +31,8 @@
 		AA01BB02CC03DD04EE05FF06 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */; };
 		55FF44EE33DD22CC11BB00AA /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */; };
 		6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CCDD3344EEFF5566 /* RewardView.swift */; };
+		AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */; };
+		BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BB11CC22DD33EE44FF55AA /* RecordingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +73,8 @@
 		11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		AABB1122CCDD3344EEFF5566 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
+		99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
+		00BB11CC22DD33EE44FF55AA /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -115,6 +119,7 @@
 			isa = PBXGroup;
 			children = (
 				B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */,
+				00BB11CC22DD33EE44FF55AA /* RecordingView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -181,6 +186,7 @@
 				8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */,
 				11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */,
 				FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */,
+				99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -303,6 +309,8 @@
 				AA01BB02CC03DD04EE05FF06 /* AudioPlayer.swift in Sources */,
 				55FF44EE33DD22CC11BB00AA /* SpeechRecognizer.swift in Sources */,
 				6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */,
+				AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */,
+				BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

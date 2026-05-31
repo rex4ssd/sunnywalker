@@ -99,3 +99,43 @@ final class WakePhraseTests: XCTestCase {
         XCTAssertTrue(WakePhrase.defaultKeywords.allSatisfy { $0.locale == "zh-TW" })
     }
 }
+
+@MainActor
+final class AudioRecorderTests: XCTestCase {
+
+    func testInitialIsRecordingIsFalse() {
+        let recorder = AudioRecorder()
+        XCTAssertFalse(recorder.isRecording)
+    }
+
+    func testInitialCurrentURLIsNil() {
+        let recorder = AudioRecorder()
+        XCTAssertNil(recorder.currentURL)
+    }
+
+    func testStopWhenIdleKeepsIsRecordingFalse() {
+        let recorder = AudioRecorder()
+        recorder.stop()
+        XCTAssertFalse(recorder.isRecording)
+    }
+}
+
+@MainActor
+final class SpeechRecognizerTests: XCTestCase {
+
+    func testInitialRecognizedTextIsEmpty() {
+        let recognizer = SpeechRecognizer()
+        XCTAssertEqual(recognizer.recognizedText, "")
+    }
+
+    func testInitialMatchedKeywordIsNil() {
+        let recognizer = SpeechRecognizer()
+        XCTAssertNil(recognizer.matchedKeyword)
+    }
+
+    func testStopWhenNotListeningIsNoop() {
+        let recognizer = SpeechRecognizer()
+        recognizer.stop()  // should not crash when called before startListening
+        XCTAssertEqual(recognizer.recognizedText, "")
+    }
+}
