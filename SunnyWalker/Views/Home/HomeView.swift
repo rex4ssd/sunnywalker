@@ -1,4 +1,4 @@
-// SunnyWalker — HomeView.swift  |  Day 1  |  main screen (time + alarm list)
+// SunnyWalker — HomeView.swift  |  Day 2  |  main screen (time + Totoro + alarm list)
 
 import SwiftUI
 import SwiftData
@@ -11,8 +11,11 @@ struct HomeView: View {
     @State private var currentTime = Date()
     @State private var showingAddAlarm = false
 
-    // Ticks every second to keep the clock display live
     private let clockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var scene: DaytimeScene {
+        DaytimeScene.current(hour: Calendar.current.component(.hour, from: currentTime))
+    }
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -21,7 +24,9 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 clockHeader
                     .padding(.top, 56)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 12)
+                TotoroAvatar()
+                    .padding(.bottom, 8)
                 AlarmListView(alarms: alarms)
             }
             addButton
@@ -34,28 +39,11 @@ struct HomeView: View {
 
     private var background: some View {
         LinearGradient(
-            colors: sceneColors,
+            colors: scene.gradientColors,
             startPoint: .top,
             endPoint: .bottom
         )
         .ignoresSafeArea()
-    }
-
-    // Colours shift with the time of day — gives kids the "world is changing" feeling
-    private var sceneColors: [Color] {
-        let hour = Calendar.current.component(.hour, from: currentTime)
-        switch hour {
-        case 5..<7:   return [GhibliColors.lanternOrange, GhibliColors.wheatGold]
-        case 7..<11:  return [GhibliColors.skyBlue, GhibliColors.cloudWhite]
-        case 11..<15: return [GhibliColors.noonSky, GhibliColors.cloudWhite]
-        case 15..<19: return [GhibliColors.lanternOrange.opacity(0.9), GhibliColors.wheatGold.opacity(0.7)]
-        default:      return [GhibliColors.nightIndigo, GhibliColors.nightDeep]
-        }
-    }
-
-    private var clockTextColor: Color {
-        let hour = Calendar.current.component(.hour, from: currentTime)
-        return hour >= 19 || hour < 5 ? GhibliColors.starGold : GhibliColors.nightIndigo
     }
 
     // MARK: - Clock header
@@ -63,14 +51,14 @@ struct HomeView: View {
     private var clockHeader: some View {
         VStack(spacing: 6) {
             Text(currentTime, format: .dateTime.hour().minute())
-                .font(.system(size: 76, weight: .bold, design: .rounded))
-                .foregroundStyle(clockTextColor)
+                .font(GhibliFonts.clock())
+                .foregroundStyle(scene.clockTextColor)
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.3), value: currentTime)
 
             Text(currentTime, format: .dateTime.weekday(.wide).month().day())
-                .font(.title3.weight(.medium))
-                .foregroundStyle(clockTextColor.opacity(0.7))
+                .font(GhibliFonts.subtitle())
+                .foregroundStyle(scene.clockTextColor.opacity(0.7))
         }
     }
 
@@ -89,14 +77,13 @@ struct HomeView: View {
                 .shadow(color: GhibliColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
         }
         .padding(24)
-        // Alarm editor sheet will be wired on Day 4+
         .sheet(isPresented: $showingAddAlarm) {
             AddAlarmPlaceholder()
         }
     }
 }
 
-// MARK: - Day 1 placeholder sheet
+// MARK: - Placeholder sheet (wired in Day 4+)
 
 private struct AddAlarmPlaceholder: View {
     @Environment(\.dismiss) private var dismiss
@@ -107,10 +94,10 @@ private struct AddAlarmPlaceholder: View {
                 Text("🚧")
                     .font(.system(size: 56))
                 Text("新增鬧鐘")
-                    .font(.title2.bold())
+                    .font(GhibliFonts.title(24))
                     .foregroundStyle(GhibliColors.nightIndigo)
                 Text("設定畫面將在 Day 4 完成")
-                    .font(.subheadline)
+                    .font(GhibliFonts.caption())
                     .foregroundStyle(GhibliColors.totoroGray)
             }
             .padding()

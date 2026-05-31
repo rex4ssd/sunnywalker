@@ -24,4 +24,8 @@ enum GhibliFonts {
     static func clock(_ size: CGFloat = 76) -> Font {
         .system(size: size, weight: .bold, design: .rounded)
     }
+
+    static func subtitle(_ size: CGFloat = 18) -> Font {
+        .system(size: size, weight: .medium, design: .rounded)
+    }
 }

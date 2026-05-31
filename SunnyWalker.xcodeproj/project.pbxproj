@@ -25,6 +25,7 @@
 		75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395FEB57BFB047F0B4263EBA /* GhibliButton.swift */; };
 		D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */; };
 		D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */; };
+		A1D2E3F4A5B6C7D8E9F0A1B2 /* DaytimeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 		395FEB57BFB047F0B4263EBA /* GhibliButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliButton.swift; sourceTree = "<group>"; };
 		0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
 		C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotoroAvatar.swift; sourceTree = "<group>"; };
+		2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaytimeScene.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -137,6 +139,7 @@
 			children = (
 				1EB6388EF249B7365D9B3B48 /* HomeView.swift */,
 				88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */,
+				2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -270,6 +273,7 @@
 				75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */,
 				D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */,
 				D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */,
+				A1D2E3F4A5B6C7D8E9F0A1B2 /* DaytimeScene.swift in Sources */,
 				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

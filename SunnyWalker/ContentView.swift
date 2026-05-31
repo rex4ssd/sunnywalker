@@ -1,10 +1,12 @@
-// SunnyWalker — ContentView.swift  |  Day 1  |  root view → HomeView
+// SunnyWalker — ContentView.swift  |  Day 2  |  root NavigationStack → HomeView
 
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        HomeView()
+        NavigationStack {
+            HomeView()
+        }
     }
 }
 

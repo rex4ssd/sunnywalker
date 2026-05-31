@@ -1,9 +1,12 @@
-// SunnyWalker — TotoroAvatar.swift  |  Day 1  |  forest-spirit mascot (blinks every 5 s)
+// SunnyWalker — TotoroAvatar.swift  |  Day 2  |  forest-spirit mascot (blinks every 5 s)
 
 import SwiftUI
 
 struct TotoroAvatar: View {
     @State private var isBlinking = false
+
+    // Timer.publish per spec §3.3 — drives the 5-second blink cadence
+    private let blinkTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
@@ -33,7 +36,13 @@ struct TotoroAvatar: View {
             .offset(y: -68)
         }
         .frame(width: 120, height: 140)
-        .onAppear { scheduleBlink() }
+        .onReceive(blinkTimer) { _ in
+            withAnimation(GhibliAnimations.blinkClose) { isBlinking = true }
+            // 120 ms delay before reopening — GCD one-shot is the right tool here
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                withAnimation(GhibliAnimations.blinkOpen) { isBlinking = false }
+            }
+        }
     }
 
     private var eye: some View {
@@ -52,16 +61,6 @@ struct TotoroAvatar: View {
         Triangle()
             .fill(GhibliColors.totoroGray)
             .frame(width: 22, height: 28)
-    }
-
-    private func scheduleBlink() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            withAnimation(GhibliAnimations.blinkClose) { isBlinking = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(GhibliAnimations.blinkOpen) { isBlinking = false }
-                scheduleBlink()
-            }
-        }
     }
 }
 

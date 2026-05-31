@@ -1,9 +1,9 @@
-# Live Progress — last update 2026-05-31T13:56:30+08:00
+# Live Progress — last update 2026-05-31T14:45:12+08:00
 
-Current day: **1**
+Current day: **2**
 
 ## Milestones
-- [ ] **Day 1**: Project skeleton, Models, Theme
+- [x] **Day 1**: Project skeleton, Models, Theme
 - [ ] **Day 2**: HomeView, AlarmListView (dummy data)
 - [ ] **Day 3**: AlarmScheduler + local notifications
 - [ ] **Day 4**: AudioRecorder + RecordingView
