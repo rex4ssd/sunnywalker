@@ -470,3 +470,48 @@ Model:  claude-sonnet-4-6
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
+
+
+## [C] Day 5 — 2026-05-31 17:03:41+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Added `AudioRecorder.swift` and `RecordingView.swift` to all 4 sections of `project.pbxproj` (PBXBuildFile, PBXFileReference, correct PBXGroup, PBXSourcesBuildPhase)
+- Re-ran `bash scripts/validate.sh` — pbxproj=0, build=0, test=0, lint=99(skipped)
+- Committed and pushed to dev/auto
+
+### Commit
+e816999  [BROKEN-FIXED] Day 5: SpeechRecognizer real impl + AudioRecorder + RecordingView + AlarmRingView Task fix + RewardView confetti  [A:✅ B:❌ C:✅]
+
+### Daily report
+
+**TL;DR**: Day 5 wires real on-device SpeechRecognizer (zh-TW, `requiresOnDeviceRecognition=true`), creates AudioRecorder + RecordingView, fixes AlarmRingView Task-cancellation gap, adds pure-SwiftUI confetti to RewardView, and ships 22 tests clean after the now-routine .pbxproj surgery.
+
+**Done today**:
+- **A**: Replaced SpeechRecognizer stub with real `SFSpeechRecognizer` + `AVAudioEngine` (zh-TW locale, `requiresOnDeviceRecognition = true`, keyword list `["我起床了","好的","知道了","起床囉"]`); `startListening` now `throws`; guarded against double-stop with `isListening` flag. Fixed AlarmRingView Task-cancellation gap (5s-delay Task stored in `@State var speechTask`, cancelled in `handleWakeUp()` before audio stop). Created `AudioRecorder.swift` per spec §4 stage 2 exact implementation (`.playAndRecord` session, `.m4a` output to `Documents/Recordings/`, `@Published isRecording` + `currentURL`). Created `RecordingView.swift` (record/stop/playback UI, updates `alarm.recordingName` on stop). Added mic button to `AlarmListView` AlarmCard opening RecordingView as a sheet. Added pure-SwiftUI `ConfettiOverlay` (20 star/sparkle particles, staggered delays, no third-party SDK) to RewardView. Added 6 new unit tests → 22 total (AudioRecorderTests×3, SpeechRecognizerTests×3).
+- **B**: Ran validate.sh; [0/4] pbxproj check caught both unregistered files (`AudioRecorder.swift`, `RecordingView.swift`); build rc=65 (RecordingView not in scope); verdict **red**; clean handoff to C naming all 4 pbxproj sections needed.
+- **C**: Added both files to all 4 pbxproj sections; validate.sh re-run clean (pbxproj=0 build=0 test=0 lint=99); committed `[BROKEN-FIXED] Day 5` and pushed to `dev/auto`.
+
+**Build & tests**: Build pass (rc=0), 22 tests pass (rc=0), lint skipped (swiftlint not installed — not A's fault).
+
+**Tomorrow preview**: Day 6 should focus on end-to-end alarm flow validation on a real device, adding placeholder `.caf` audio assets, and wiring `AlarmEditorView` → `RecordingView` navigation.
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+⚠️ SpeechRecognizer requires a real device — zh-TW on-device recognition unavailable in simulator
+⚠️ No `.caf` audio assets in bundle — AudioPlayer fallback silently skips on device (carried from Day 4)
+⚠️ `sampleAlarms` @Model without ModelContext — carried from Day 2 (low priority)
+⚠️ AlarmEditorView → RecordingView navigation not yet wired (RecordingView exists but entry point TBD)
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 5. Specific concerns:
+1. **SpeechRecognizer** — verify `requiresOnDeviceRecognition = true` is enforced and keyword list matches spec §4 stage 4 exactly
+2. **AlarmRingView Task fix** — verify `speechTask?.cancel()` fires before `audioPlayer.stop()` in `handleWakeUp()`; no dangling AVAudioEngine tap possible
+3. **AudioRecorder** — verify spec §4 stage 2 exact implementation (AVAudioRecorder, `.playAndRecord` session, `.m4a`, `Documents/Recordings/`)
+4. **RecordingView** — verify `alarm.recordingName` is set on stop and that a navigation path from `AlarmEditorView` is planned (A left it as a sheet from AlarmCard, which is acceptable but D should confirm alignment with spec flow)
+5. **ConfettiOverlay** — confirm no third-party SDK import; pure SwiftUI only
+6. **No .caf assets** — flag for Day 6 brief; current silent-skip is acceptable but blocks real-device audio testing
+
+→ Hand off to D
