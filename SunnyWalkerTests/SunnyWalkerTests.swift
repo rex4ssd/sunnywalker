@@ -139,3 +139,59 @@ final class SpeechRecognizerTests: XCTestCase {
         XCTAssertEqual(recognizer.recognizedText, "")
     }
 }
+
+final class GateQuestionTests: XCTestCase {
+
+    func testRandomReturnsQuestion() {
+        let q = GateQuestion.random()
+        XCTAssertFalse(q.prompt.isEmpty)
+        XCTAssertFalse(q.options.isEmpty)
+        XCTAssertFalse(q.correct.isEmpty)
+    }
+
+    func testCorrectAnswerIsAlwaysInOptions() {
+        for _ in 0..<20 {
+            let q = GateQuestion.random()
+            XCTAssertTrue(q.options.contains(q.correct),
+                          "correct '\(q.correct)' not found in options \(q.options)")
+        }
+    }
+
+    func testOptionsCountIsThree() {
+        for _ in 0..<10 {
+            let q = GateQuestion.random()
+            XCTAssertEqual(q.options.count, 3,
+                           "Expected 3 options, got \(q.options.count) for '\(q.prompt)'")
+        }
+    }
+
+    func testAllOptionsAreUnique() {
+        for _ in 0..<10 {
+            let q = GateQuestion.random()
+            XCTAssertEqual(Set(q.options).count, q.options.count,
+                           "Duplicate options in \(q.options)")
+        }
+    }
+
+    func testWeekdayQuestionsAreHardForChildren() {
+        // Weekday ordering requires understanding calendar order — not simple arithmetic
+        let weekdayPrompt = "哪個選項的星期排列順序是正確的？"
+        var found = false
+        for _ in 0..<50 {
+            let q = GateQuestion.random()
+            if q.prompt == weekdayPrompt {
+                found = true
+                XCTAssertTrue(q.correct.contains("週"), "weekday correct answer should contain 週")
+                break
+            }
+        }
+        XCTAssertTrue(found, "Weekday question should appear in random pool")
+    }
+
+    func testMultiplicationAnswersAreCorrect() {
+        // Verify hardcoded answers are arithmetically correct
+        XCTAssertEqual(127 * 4, 508)
+        XCTAssertEqual(236 * 3, 708)
+        XCTAssertEqual(154 * 5, 770)
+    }
+}

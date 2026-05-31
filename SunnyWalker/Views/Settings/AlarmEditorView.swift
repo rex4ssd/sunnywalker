@@ -7,10 +7,13 @@ struct AlarmEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    // tempAlarm carries a stable UUID so RecordingView writes to the right file
+    @State private var tempAlarm = Alarm(label: "起床囉", hour: 7, minute: 0)
     @State private var selectedTime = Date()
     @State private var label = "起床囉"
     @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]  // Mon–Fri default
     @State private var isSaving = false
+    @State private var showingRecording = false
 
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
@@ -25,6 +28,7 @@ struct AlarmEditorView: View {
                         timePicker
                         labelField
                         weekdayPicker
+                        recordingRow
                         saveButton
                     }
                     .padding(24)
@@ -93,6 +97,45 @@ struct AlarmEditorView: View {
         }
     }
 
+    private var recordingRow: some View {
+        WatercolorCard {
+            Button { showingRecording = true } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: tempAlarm.recordingName.isEmpty ? "mic" : "mic.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(
+                            tempAlarm.recordingName.isEmpty
+                                ? GhibliColors.totoroGray.opacity(0.6)
+                                : GhibliColors.leafFresh
+                        )
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("錄音喚醒語")
+                            .font(GhibliFonts.caption())
+                            .foregroundStyle(GhibliColors.nightIndigo)
+                        Text(tempAlarm.recordingName.isEmpty ? "尚未錄音" : "已錄音 ✅")
+                            .font(GhibliFonts.caption(14))
+                            .foregroundStyle(
+                                tempAlarm.recordingName.isEmpty
+                                    ? GhibliColors.totoroGray
+                                    : GhibliColors.forestDeep
+                            )
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(GhibliColors.totoroGray.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showingRecording) {
+            RecordingView(alarm: tempAlarm)
+        }
+    }
+
     private var saveButton: some View {
         GhibliButton("儲存鬧鐘", color: GhibliColors.lanternOrange) {
             saveAlarm()
@@ -106,15 +149,14 @@ struct AlarmEditorView: View {
         isSaving = true
         let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
         let trimmed = label.trimmingCharacters(in: .whitespaces)
-        let alarm = Alarm(
-            label: trimmed.isEmpty ? "起床囉" : trimmed,
-            hour: comps.hour ?? 7,
-            minute: comps.minute ?? 0
-        )
-        alarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
-        modelContext.insert(alarm)
+        // Reuse tempAlarm so the stable UUID matches any recording already saved to disk
+        tempAlarm.label = trimmed.isEmpty ? "起床囉" : trimmed
+        tempAlarm.hour = comps.hour ?? 7
+        tempAlarm.minute = comps.minute ?? 0
+        tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
+        modelContext.insert(tempAlarm)
         Task {
-            try? await AlarmScheduler.shared.schedule(alarm: alarm)
+            try? await AlarmScheduler.shared.schedule(alarm: tempAlarm)
             await MainActor.run {
                 isSaving = false
                 dismiss()

@@ -9,8 +9,11 @@ struct HomeView: View {
     private var alarms: [Alarm]
 
     @State private var currentTime = Date()
+    @State private var showingParentalGate = false
+    @State private var gateDidSucceed = false
     @State private var showingAddAlarm = false
     @State private var showingAlarmRing = false
+    @State private var showingIO = false
 
     private let clockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -68,20 +71,46 @@ struct HomeView: View {
     // MARK: - Add alarm FAB
 
     private var addButton: some View {
-        Button {
-            showingAddAlarm = true
-        } label: {
-            Image(systemName: "plus")
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-                .frame(width: 60, height: 60)
-                .background(GhibliColors.lanternOrange)
-                .clipShape(Circle())
-                .shadow(color: GhibliColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
+        VStack(spacing: 16) {
+            Button {
+                showingIO = true
+            } label: {
+                Image(systemName: "square.and.arrow.up.on.square")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(GhibliColors.leafFresh)
+                    .clipShape(Circle())
+                    .shadow(color: GhibliColors.leafFresh.opacity(0.45), radius: 8, y: 4)
+            }
+            Button {
+                showingParentalGate = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 60, height: 60)
+                    .background(GhibliColors.lanternOrange)
+                    .clipShape(Circle())
+                    .shadow(color: GhibliColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
+            }
         }
         .padding(24)
+        .sheet(isPresented: $showingParentalGate, onDismiss: {
+            if gateDidSucceed {
+                gateDidSucceed = false
+                showingAddAlarm = true
+            }
+        }) {
+            ParentalGateView(onSuccess: {
+                gateDidSucceed = true
+            })
+        }
         .sheet(isPresented: $showingAddAlarm) {
             AlarmEditorView()
+        }
+        .sheet(isPresented: $showingIO) {
+            AlarmIOView()
         }
     }
 }

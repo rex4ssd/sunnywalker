@@ -33,6 +33,11 @@
 		6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CCDD3344EEFF5566 /* RewardView.swift */; };
 		AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */; };
 		BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BB11CC22DD33EE44FF55AA /* RecordingView.swift */; };
+		DD22EE33FF44AA55BB66CC11 /* ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */; };
+		FF44AA55BB66CC11DD22EE33 /* MarkdownAlarmIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */; };
+		11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */; };
+		44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */ = {isa = PBXBuildFile; fileRef = 33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */; };
+		660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +80,11 @@
 		AABB1122CCDD3344EEFF5566 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
 		99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		00BB11CC22DD33EE44FF55AA /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
+		EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
+		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
+		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
+		55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = leaf_rustle.caf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -93,8 +103,18 @@
 				770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */,
 				A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */,
 				0721562310FD4FD889EE77C0 /* Animations.swift */,
+				22CCDD33EE44FF5500AABB11 /* Sounds */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		22CCDD33EE44FF5500AABB11 /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */,
+				55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */,
+			);
+			path = Sounds;
 			sourceTree = "<group>";
 		};
 		5426B93631556471059DA32A /* SunnyWalkerTests */ = {
@@ -120,6 +140,8 @@
 			children = (
 				B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */,
 				00BB11CC22DD33EE44FF55AA /* RecordingView.swift */,
+				CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */,
+				00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -187,6 +209,7 @@
 				11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */,
 				FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */,
 				99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */,
+				EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -277,6 +300,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */,
+				44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */,
+				660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -311,6 +336,9 @@
 				6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */,
 				AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */,
 				BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */,
+				DD22EE33FF44AA55BB66CC11 /* ParentalGateView.swift in Sources */,
+				FF44AA55BB66CC11DD22EE33 /* MarkdownAlarmIO.swift in Sources */,
+				11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

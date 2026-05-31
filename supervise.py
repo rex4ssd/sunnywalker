@@ -173,6 +173,22 @@ def main():
     completed_days = 0
     consecutive_failures = 0
 
+    # 啟動時若 stop_after 已經過了，這個 session 忽略它（避免立刻退場）
+    _stop_after_ignored = False
+    if args.stop_after:
+        try:
+            hh, mm = map(int, args.stop_after.split(":"))
+            now = datetime.now()
+            already_past = (now.hour, now.minute) >= (hh, mm) and (hh >= 12 or now.hour < 12)
+            if already_past:
+                logger.warning(
+                    f"⚠️  stop_after={args.stop_after} 已過（現在 {now.strftime('%H:%M')}），"
+                    f"本次 session 忽略，跑到 max_days 為止。"
+                )
+                _stop_after_ignored = True
+        except ValueError:
+            pass
+
     # Ctrl+C 善後
     def _sigint(signum, frame):
         logger.warning("\n⚠️  收到 Ctrl+C，準備乾淨退場...")
@@ -191,7 +207,7 @@ def main():
             break
 
         # ── 退場條件 2：stop_after 時間到 ──
-        if args.stop_after:
+        if args.stop_after and not _stop_after_ignored:
             try:
                 hh, mm = map(int, args.stop_after.split(":"))
                 now = datetime.now()
