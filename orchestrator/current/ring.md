@@ -840,9 +840,52 @@ The fix is a one-line addition to `SunnyWalkerTests/SunnyWalkerTests.swift`: add
 → Hand off to C
 
 
-## [C] Day 9 — 2026-06-01 01:47:10+08:00
-Status: IN_PROGRESS
+## [C] Day 9 — 2026-06-01 01:49:36+08:00
+Status: DONE
 Model:  claude-sonnet-4-6
 
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+### What I did
+- Applied B's one-line fix: added `import AVFoundation` to `SunnyWalkerTests/SunnyWalkerTests.swift`
+- Re-ran `bash scripts/validate.sh` — build rc=0, test rc=0, pbxproj check pass, lint skipped (not installed)
+- Staged all changes and committed via `scripts/git_ca.sh`
+- Wrote daily report (below)
+- Pushed to dev/auto
+
+### Commit
+8891bdb  [BROKEN-FIXED] Day 9: audio assets + AudioPlayer delegate + app icon + iPad layout — fixed missing import AVFoundation  [A:✅ B:❌→✅]
+
+### Daily report
+
+**TL;DR**: Day 9 resolved the last three device-QA blockers — ambient `.caf` tones, `AudioPlayer.isPlaying` auto-reset, and app icon — and added iPad two-column layout; a one-line test-import fix from C restored green tests (36/36).
+
+**Done today**:
+- Replaced silent `.caf` sine tones with multi-harmonic arpeggios (`totoro_breath.caf` C-E-G ascending 2.06s, `leaf_rustle.caf` C-E-G descending 1.81s) — `AudioPlayer` no longer logs "skipping playback" on device
+- Added `AVAudioPlayerDelegate` to `AudioPlayer`: `player?.delegate = self` + `audioPlayerDidFinishPlaying` → `isPlaying = false` via `@MainActor Task`; closes the Day 4 latent bug for non-looping paths
+- Generated 1024×1024 app icon PNG (sunrise sky gradient, sun, clouds, "SW" text) via PIL; `Contents.json` updated — `xcodebuild archive` no longer warns "Missing App Icon"
+- Added iPad two-column layout to `HomeView` using `@Environment(\.horizontalSizeClass)`: `HStack` clock/avatar left + `AlarmListView` right when `sizeClass == .regular`; iPhone layout unchanged
+- Refactored `checkPendingAlarm()` to accept injected `delegate: AppDelegate?` parameter — now unit-testable without `UIApplicationMain`
+- Added 3 new tests (net 33→36): `testAudioPlayerIsPlayingAutoResets`, `testCheckPendingAlarmClearsPendingID`, `testCheckPendingAlarmWithNilDelegateIsNoop`
+- B caught missing `import AVFoundation` in test file (compile error, verdict red); C added the import and re-ran validate.sh to confirm green before commit
+
+**Build & tests**: build rc=0, 36/36 tests pass, pbxproj check pass, lint skipped (swiftlint not installed)
+
+**Tomorrow preview**: D will assess remaining gaps — synthetic `.caf` assets (still not real Ghibli sounds), app icon is a programmatic placeholder, and any new items D identifies for the Day 10 brief.
+
+### Stamps
+✅ Pushed to dev/auto (8891bdb)
+✅ No push to main
+✅ B's red verdict resolved — `import AVFoundation` added; tests compile and pass
+✅ 36/36 tests green after fix
+⚠️ `.caf` tones are harmonic sine arpeggios — better than 440 Hz single tone, but not real ambient recordings
+⚠️ App icon uses programmatic PIL rendering with system font — illustrated icon still a future design task
+⚠️ `testNotificationNameValue` is a trivial string constant check (carried from Day 8)
+⚠️ `checkPendingAlarm()` tested via injection; real `UIApplication.shared.delegate` path still untestable in XCTest
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 9 (audio assets, AudioPlayer delegate, app icon, iPad layout). Specific concerns:
+1. A's Day 9 `.caf` files are multi-harmonic sine arpeggios — they're audible and non-jarring but not the Ghibli ambient nature sounds the spec intends. D should decide whether this is acceptable for this stage or if real audio assets should be sourced soon.
+2. The app icon is programmatically generated (PIL, system font, solid-colour gradient) — no illustrated Ghibli watercolor art. May need a proper design asset before App Store submission.
+3. iPad layout is a first pass (`HStack` two-column) — no adaptive font sizes, no landscape handling. D should assess if more polish is needed before TestFlight.
+
+→ Hand off to D
 
