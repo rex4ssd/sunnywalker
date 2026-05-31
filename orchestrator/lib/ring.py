@@ -107,7 +107,7 @@ def next_agent() -> tuple[str, int]:
         raise RuntimeError(
             f"Last entry [{e.agent}] Day {e.day} is FAILED. "
             "Run a specific agent manually after fixing, "
-            "or run `./run.sh resolve` to mark resolved."
+            "or run `python sw.py resolve` to mark resolved."
         )
     if e.end_of_day is not None:
         return ("coder", e.end_of_day + 1)
@@ -146,7 +146,7 @@ def append_failed(agent_letter: str, day: int, reason: str, log_path: Path) -> N
         f"### Full log\n`{log_path}`\n\n"
         f"### For next\n"
         f"**Human intervention required.** Read the full log above. "
-        f"After fixing, run `./run.sh resolve` then `./run.sh next`.\n"
+        f"After fixing, run `python sw.py resolve` then `python sw.py next`.\n"
     )
     with RING.open("a", encoding="utf-8") as f:
         f.write(block)
@@ -163,7 +163,7 @@ def append_token_paused(agent_letter: str, day: int, log_path: Path,
         f"### Reason\nToken / rate limit hit. Subprocess returned credit-exhausted error.\n\n"
         f"### Last log\n`{log_path}`\n\n"
         f"### For next\n"
-        f"Auto-retryable. Run `./run.sh next` again when usage refreshes ({retry_after}).\n"
+        f"Auto-retryable. Run `python sw.py next` again when usage refreshes ({retry_after}).\n"
     )
     with RING.open("a", encoding="utf-8") as f:
         f.write(block)

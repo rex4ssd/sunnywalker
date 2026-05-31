@@ -146,6 +146,7 @@ class Agent:
             "--verbose",            # required by claude CLI when -p uses stream-json
             "--model", self.model,
             "--max-turns", "60",
+            "--dangerously-skip-permissions",  # orchestrator 控制環境，不需每次確認寫檔
         ]
         if self.allowed_tools:
             cmd += ["--allowedTools", ",".join(self.allowed_tools)]
@@ -180,13 +181,14 @@ class Agent:
             )
             status_thread.start()
 
+            t0 = time.time()   # 在 try 外初始化，exception 路徑也能計時
+            rc = -1
             try:
                 proc = subprocess.Popen(
                     cmd, cwd=paths.ROOT,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     text=True, bufsize=1,
                 )
-                t0 = time.time()
                 for line in proc.stdout:
                     logf.write(line)
                     logf.flush()

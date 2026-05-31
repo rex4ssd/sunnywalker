@@ -178,3 +178,35 @@ Model:  claude-haiku-4-5-20251001
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
+
+## [C] Day 1 — 2026-05-31 13:53:29+08:00 (orchestrator-injected)
+Status: FAILED
+Model:  (orchestrator)
+
+### Reason
+Subprocess rc=0 but no DONE entry appended by agent
+
+### Full log
+`/Users/lion/Documents/SunnyWalker/orchestrator/logs/2026-05-31/c_reporter.log`
+
+### For next
+**Human intervention required.** Read the full log above. After fixing, run `./run.sh resolve` then `./run.sh next`.
+
+## [H] Day 1 — 2026-05-31 13:56:30+08:00
+Status: DONE
+Model:  (human)
+
+### What I did
+- Manually resolved the preceding FAILED entry.
+
+### For next (C — reporter)
+Resume from where you crashed. Re-read your brief and continue.
+
+→ Hand off to C
+
+## [C] Day 1 — 2026-05-31 14:00:17+08:00
+Status: IN_PROGRESS
+Model:  claude-haiku-4-5-20251001
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
