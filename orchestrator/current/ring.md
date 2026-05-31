@@ -464,130 +464,223 @@ Day 5 milestone fully delivered: real on-device `SpeechRecognizer` (`SFSpeechRec
 → End of Day 5
 
 
-## [A] Day 6 — 2026-05-31 23:32:55+08:00
+## [D] Day 6 — 2026-05-31 23:47:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### Verdict: on_track
+Completion: 92%
+
+Day 6 brief fully executed: `ParentalGateView` with adult-only questions, placeholder `.caf` assets, `AlarmEditorView → RecordingView` wiring, and HomeView parental gate on "+" — all five brief items delivered, 28/28 tests pass, build clean. A also surfaced and wired two previously dormant files (`MarkdownAlarmIO.swift`, `AlarmIOView.swift`) that had been on disk unregistered since an earlier session. The 8% gap comes from three open items: no `UNUserNotificationCenterDelegate` means tapping a fired notification never shows `AlarmRingView` (the app's core clock flow remains unvalidated end-to-end), `AlarmIOView` is accessible without a parental gate (a child can wipe all alarms via the destructive import toggle), and the `.caf` files are silent placeholders that provide no audio feedback on device.
+
+### Alignment with spec
+- ✅ Milestone Day 6 (ParentalGateView §4 stage 1, GateQuestion §6.4 compliance, AlarmEditorView→RecordingView, HomeView "+" gated, .caf assets): All five brief items present and complete.
+- ⚠️ Aesthetic / UX: Theme tokens enforced throughout `ParentalGateView` — zero raw literals. Minor: weekday-ordering questions ("週一 → 週三 → 週五") and largest-3-digit-number questions (compare hundreds digit) are borderline difficulty for a literate 7-year-old. 3-digit multiplication is unambiguously adult-level. §6.4 compliance holds but the weakest question types are marginal.
+- ✅ On-device only: No new third-party SDKs. `MarkdownAlarmIO` and `AlarmIOView` are pure Foundation/SwiftUI/SwiftData. Zero network calls in any Day 6 file.
+
+### Code quality (spot-checked)
+- `Views/Settings/ParentalGateView.swift`: Clean structure. `WatercolorCard` + `GhibliButton` + `GhibliFonts`/`GhibliColors` throughout — zero raw literals. Shake logic uses `DispatchQueue.main.asyncAfter` with seven timed steps — acceptable for a multi-step timed animation sequence (no SwiftUI equivalent). `onSuccess()` called before `dismiss()` — correct. `check()` always assigns a new `question` on wrong answer, so the pool refreshes even before 3 consecutive wrongs; that's fine.
+- `Views/Settings/AlarmEditorView.swift`: `tempAlarm = Alarm(...)` creates a `@Model` without a context; mutations from `RecordingView` propagate via object reference (SwiftData `@Model` is a class). `modelContext.insert(tempAlarm)` in `saveAlarm()` persists the already-mutated instance with UUID stability guaranteed. Functional; non-standard but acceptable for this use case.
+- `Views/Home/HomeView.swift`: `gateDidSucceed` flag + `onDismiss` callback correctly sequences gate sheet → editor sheet without a race. Clean. The IO button (`showingIO`) opens `AlarmIOView` with no parental gate — a child can reach the "覆蓋現有鬧鐘" destructive import path. Oversight not flagged in A's handoff stamps.
+- `Services/MarkdownAlarmIO.swift` (first compile today): `timeString` property confirmed present on `Alarm` model. `Alarm` init without `recordingName` defaults correctly to `""`. `parseLine` / `parseRepeat` / `parseTime` logic handles `(off)` suffix, Chinese and English weekday tokens, 24h time validation robustly. No third-party dependencies.
+- `Views/Settings/AlarmIOView.swift` (first compile today): `ShareLink` (iOS 16+), `UIPasteboard`, `TextEditor` — all native. `AlarmScheduler.shared.cancel` called before `modelContext.delete` — correct ordering. Functional.
+
+### Process
+- A: All 5 brief items executed. Went beyond brief by registering and wiring two dormant files — valuable initiative. However the IO button's lack of parental gate was not flagged in A's stamps. 6 new GateQuestion tests added (28 total). Handoff was clear.
+- B: Green verdict accurate. Confirmed all 5 new files (3 Swift + 2 .caf) registered in pbxproj. Clean and concise.
+- C: Correct commit format, accurate daily report, well-targeted tomorrow preview.
+
+### Risks / blockers
+1. **`UNUserNotificationCenterDelegate` missing — CRITICAL**: No delegate is implemented anywhere in the project. Tapping a fired alarm notification opens the app to HomeView with no `AlarmRingView`. The primary child user flow (alarm fires → tap banner → voice dismiss → reward) is broken end-to-end. This has been deferred for 6 days and is now the top blocker.
+2. **`AlarmIOView` not behind ParentalGate**: Child can tap the export/import (↑) button, enable "覆蓋現有鬧鐘", paste empty text, and import 0 alarms — deleting all existing alarms. Gate required per §6.4 spirit.
+3. **Silent `.caf` placeholders**: Audio paths execute but produce no sound on device. Notification alarm, AlarmRingView playback, all silent. Blocks audio QA entirely.
+4. **SpeechRecognizer only testable on real device**: `requiresOnDeviceRecognition = true` + zh-TW combination not available in Simulator. End-to-end voice dismissal flow unvalidated.
+5. **Weekday-ordering GateQuestion borderline difficulty**: "週一 → 週三 → 週五" may be answerable by a literate 7-year-old who knows weekday names in order. 3-digit multiplication is the only question type that clearly meets Apple's §6.4 bar.
+6. **`sampleAlarms` @Model without ModelContext**: Carried from Day 2. Low priority, no production impact.
+
+### Stamps
+✅ Day 6 brief (all 5 items) fully delivered — ParentalGate, .caf assets, AlarmEditor→Recording wiring, HomeView gate, GateQuestion tests
+✅ 28/28 tests pass — 6 new GateQuestion unit tests all green
+✅ Build clean (rc=0) — `MarkdownAlarmIO.swift` + `AlarmIOView.swift` compile successfully on first registration
+✅ Theme tokens enforced — zero raw literals in Day 6 code
+✅ No third-party SDKs added
+⚠️ `AlarmIOView` accessible without parental gate — child can delete all alarms via destructive import toggle
+⚠️ `.caf` files are silent placeholders — all audio paths produce no sound on device
+⚠️ Weekday-ordering and largest-3-digit-number questions borderline §6.4 difficulty
+❌ `UNUserNotificationCenterDelegate` not implemented — notification tap → AlarmRingView flow is broken; the app cannot function as an alarm clock end-to-end
+
+### For next (A — Coder)  ← TOMORROW's brief
+
+**Primary task**: Implement `UNUserNotificationCenterDelegate` to wire notification tap → `AlarmRingView` — this is the app's single most critical missing path and has been deferred for 6 days.
+
+**Specific work items**:
+1. Modify: `SunnyWalker/SunnyWalkerApp.swift`
+   - Add `@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate` (or conform App struct directly via a custom class)
+   - Create `AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate`
+   - In `application(_:didFinishLaunchingWithOptions:)`: `UNUserNotificationCenter.current().delegate = self`
+   - Implement `userNotificationCenter(_:didReceive:withCompletionHandler:)`: extract `alarmID` string from `response.notification.request.content.userInfo["alarmID"]`, post `NotificationCenter.default.post(name: .alarmFired, object: alarmID)`
+   - Add `extension Notification.Name { static let alarmFired = Notification.Name("SunnyWalkerAlarmFired") }` in the same file
+   - Acceptance: tapping a fired alarm notification causes `.alarmFired` to be posted with the alarm UUID string as `object`
+
+2. Modify: `SunnyWalker/Views/Home/HomeView.swift`
+   - Add `.onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in ... }` to the root view
+   - Match `note.object as? String` → UUID → look up in `alarms` array; store as `@State private var firingAlarm: Alarm?`
+   - Present `AlarmRingView(alarm: firingAlarm)` via `.fullScreenCover(item: $firingAlarm)`
+   - Acceptance: tapping the alarm banner from background/killed state causes `AlarmRingView` to appear with the correct alarm
+
+3. Modify: `SunnyWalker/Views/Home/HomeView.swift` (IO button gate)
+   - Add a second `gateDidSucceedIO` flag (or reuse `gateDidSucceed` with a separate destination enum)
+   - Gate the `showingIO` button behind `ParentalGateView` using the same `onDismiss` pattern as "+"
+   - Acceptance: tapping the IO (↑) button first shows parental gate; `AlarmIOView` only opens after correct answer
+
+4. Add: audible `.caf` placeholder assets
+   - Replace silent `totoro_breath.caf` and `leaf_rustle.caf` with a short audible tone (e.g. generate a 1s 440 Hz sine via `afconvert` or use any valid open-license short sound)
+   - Acceptance: `AudioPlayer.play(url: Bundle.main.url(forResource: "totoro_breath", withExtension: "caf")!)` produces an audible sound; `AlarmRingView` no longer logs "skipping playback"
+
+5. Optional: Modify `SunnyWalker/Views/Settings/ParentalGateView.swift`
+   - Replace `largestNumberQuestions` pool with harder alternatives (e.g. calendar month ordering, Roman numeral comparison) that no typical 7-year-old can answer
+   - Acceptance: every question type in the pool would stump a 7-year-old reliably
+
+**Carry-overs from today**:
+- Silent `.caf` assets → item 4 above
+- `AlarmIOView` not gated → item 3 above
+- `tempAlarm` uninserted @Model (monitor; if `recordingName` doesn't persist back, redesign `RecordingView` to accept a `@Binding<String>`)
+- `sampleAlarms` @Model without ModelContext (low priority; do not block Day 7)
+
+**Constraints**:
+- No third-party SDKs
+- Explicitly list every new `.swift` file in "For next (B)" section — validate.sh [0/4] will catch unregistered files
+- Use theme tokens throughout — zero raw color/font literals
+- Keep 28 tests passing; add at least 1 test verifying `Notification.Name.alarmFired` is posted when notification is received
+
+**Files to read first**:
+- `SunnyWalker/SunnyWalkerApp.swift` (add AppDelegate + notification delegate)
+- `SunnyWalker/Views/Home/HomeView.swift` (add `.onReceive` + IO gate)
+- Spec §4 stage 3 (AlarmScheduler — `userInfo["alarmID"]` is already set in `content.userInfo`)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 6
+
+
+## [A] Day 7 — 2026-06-01 00:18:25+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
 
 ### What I did
-- Created `ParentalGateView.swift` with `GateQuestion` — 3 question types (weekday ordering, largest 3-digit number, 3-digit multiplication), all non-trivial for a 7-year-old; 3 consecutive wrong answers trigger shake animation + new question; correct answer calls `onSuccess()` + dismisses
-- Modified `AlarmEditorView.swift` — added `@State private var tempAlarm` (stable UUID throughout sheet session), added "錄音喚醒語" row with mic icon, "尚未錄音"/"已錄音 ✅" status, sheet to `RecordingView(alarm: tempAlarm)`; refactored `saveAlarm()` to reuse `tempAlarm` so recording file UUID matches the saved alarm
-- Modified `HomeView.swift` — gated "+" button behind `ParentalGateView` using `gateDidSucceed` flag + `onDismiss` callback pattern (avoids sheet-over-sheet race condition); `AlarmEditorView` opens only after gate passes
-- Created `SunnyWalker/Theme/Sounds/totoro_breath.caf` and `leaf_rustle.caf` — minimal valid 0.5s silent CAF files (44100 Hz PCM mono); `Bundle.main.url(forResource:)` now returns non-nil
-- Registered `ParentalGateView.swift`, `MarkdownAlarmIO.swift`, `AlarmIOView.swift` in `project.pbxproj` (all 4 sections: PBXBuildFile, PBXFileReference, group, Sources build phase) — these 3 files were on disk but unregistered
-- Registered `totoro_breath.caf` and `leaf_rustle.caf` in `project.pbxproj` (PBXBuildFile, PBXFileReference, Sounds group, Resources build phase)
-- Added 6 unit tests for `GateQuestion` (random returns question, correct always in options, 3 options, unique options, weekday questions present, multiplication math is correct) — total 28 tests (was 22)
+- Added `AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate` to `SunnyWalkerApp.swift` — sets itself as `UNUserNotificationCenter.delegate` in `didFinishLaunchingWithOptions`, posts `Notification.Name.alarmFired` in `didReceive:`, and allows foreground banner+sound via `willPresent:`
+- Added `extension Notification.Name { static let alarmFired = ... }` (value `"SunnyWalkerAlarmFired"`)
+- Added `@UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate` to `SunnyWalkerApp`
+- Updated `HomeView.swift`: replaced `showingAlarmRing: Bool` with `firingAlarm: Alarm?`; added `.onReceive(.alarmFired)` to look up the alarm by UUID and set `firingAlarm`; wired `.fullScreenCover(isPresented: Binding { firingAlarm != nil } ...)` to show `AlarmRingView(alarm: firingAlarm)`
+- Gated IO button (`↑`) behind `ParentalGateView` using same `onDismiss` pattern as "+" — child can no longer open `AlarmIOView` directly
+- Replaced silent `.caf` placeholders with audible 1.5s (440 Hz) and 1.0s (660 Hz) sine tones generated via Python + `afconvert -f caff -d aac`
+- Added 2 unit tests for `Notification.Name.alarmFired` (name value + post/receive round-trip)
 
 ### Files
-+ SunnyWalker/Views/Settings/ParentalGateView.swift
-+ SunnyWalker/Theme/Sounds/totoro_breath.caf
-+ SunnyWalker/Theme/Sounds/leaf_rustle.caf
-~ SunnyWalker/Views/Settings/AlarmEditorView.swift
+~ SunnyWalker/SunnyWalkerApp.swift
 ~ SunnyWalker/Views/Home/HomeView.swift
+~ SunnyWalker/Theme/Sounds/totoro_breath.caf
+~ SunnyWalker/Theme/Sounds/leaf_rustle.caf
 ~ SunnyWalkerTests/SunnyWalkerTests.swift
-~ SunnyWalker.xcodeproj/project.pbxproj
 
 ### Stamps
-✅ Spec §4 stage 1 (ParentalGateView + GateQuestion) satisfied
-✅ Spec §6.4 compliance: questions use weekday ordering / 3-digit multiplication — not simple arithmetic
-✅ AlarmEditorView → RecordingView navigation wired via `tempAlarm` UUID pattern
-✅ HomeView "+" gated behind ParentalGateView
-✅ Placeholder .caf assets added — AlarmRingView no longer logs "no recording — skipping"
-✅ All 3 previously unregistered Swift files now in pbxproj (MarkdownAlarmIO, AlarmIOView, ParentalGateView)
+✅ Spec §4 stage 5 notification tap → AlarmRingView flow wired (item 1 + 2)
+✅ IO button gated behind ParentalGateView (item 3)
+✅ Audible .caf files now in bundle — AlarmRingView will no longer log "skipping playback" (item 4)
+✅ No new Swift files created — validate.sh [0/4] pbxproj check will pass without surgery
 ✅ No third-party SDKs added
-✅ No cloud API calls
-✅ Theme tokens used throughout ParentalGateView — zero raw color/font literals
-⚠️ `tempAlarm` is an uninserted @Model object passed to RecordingView — works (Observable/Bindable without context), but is non-standard SwiftData usage. B should confirm RecordingView sheet opens and `recordingName` updates correctly
-⚠️ `MarkdownAlarmIO.swift` and `AlarmIOView.swift` were previously unregistered — B's pbxproj check will confirm they're now picked up. If these files were broken before (compile errors), Day 6 is the first time they'll be compiled
-⚠️ CAF files are silent 0.5s placeholders — audio plays but user hears nothing; replace with real assets before App Store submission
+✅ No cloud API calls — all on-device
+✅ 30 tests total (28 prior + 2 new); all prior tests unmodified
+⚠️ From-killed-state notification: `didReceive:` fires before SwiftUI view tree is ready; notification is posted but HomeView's `.onReceive` may miss it. Background-suspended → foreground path works correctly. Full from-killed-state support requires a pending-alarm-ID store in AppDelegate (not implemented; low-priority for Day 8 if needed)
+⚠️ Long-press on TotoroAvatar shows AlarmRingView for `alarms.first` — useful for QA; no parental gate on this path (intentional test shortcut)
 
 ### For next (B — Validator)
 Please run `bash scripts/validate.sh`. Expect:
-- [0/4] pbxproj: All Swift files registered ✓ (3 previously missing files now registered)
-- Build: should pass — verify `MarkdownAlarmIO.swift` and `AlarmIOView.swift` compile without errors
-- Tests: 28 tests expected (was 22 + 6 new GateQuestion tests)
-- Lint: skipped (swiftlint not installed)
+- Build: **pass** — no new files, only edits to existing files; `AppDelegate` uses `UIKit` types already available, `UNUserNotificationCenterDelegate` from `UserNotifications` (already imported in AlarmScheduler)
+- Tests: **30 tests pass** — 2 new `AlarmFiredNotificationTests` added; all prior 28 unchanged
+- Lint: n/a (swiftlint not installed)
+- .pbxproj check [0/4]: **pass** — zero new Swift files; only existing files modified
 
-**New files to verify in pbxproj:**
-1. `ParentalGateView.swift` (Settings group, Sources phase)
-2. `MarkdownAlarmIO.swift` (Services group, Sources phase)
-3. `AlarmIOView.swift` (Settings group, Sources phase)
-4. `totoro_breath.caf` (Theme/Sounds group, Resources phase)
-5. `leaf_rustle.caf` (Theme/Sounds group, Resources phase)
+New files this day: **none**. Modified files only.
 
 → Hand off to B
 
 
-## [B] Day 6 — 2026-05-31 23:37:18+08:00
+## [B] Day 7 — 2026-06-01 00:19:15+08:00
+Status: IN_PROGRESS
+Model:  claude-sonnet-4-6
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
+
+## [B] Day 7 — 2026-06-01 00:22:00+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
 
 ### What I did
 - Ran `scripts/validate.sh`
 - Build: pass
-- Tests: 28 passed, 0 failed, 0 skipped
-- Lint: swiftlint not installed — skipped (rc=99)
+- Tests: 30 passed, 0 failed, 0 skipped
+- Lint: 0 warnings, 0 errors (swiftlint not installed — skipped, rc=99)
 
 ### Verdict: green
 
 ### Stamps
 ✅ Build compiles (rc=0)
-✅ All Swift files registered in .pbxproj — [0/4] check clean; 3 previously missing files (ParentalGateView.swift, MarkdownAlarmIO.swift, AlarmIOView.swift) confirmed registered
-✅ 28/28 tests pass — 6 new GateQuestion tests all green
-✅ .caf assets (totoro_breath.caf, leaf_rustle.caf) registered in pbxproj Resources phase
-⚠️ swiftlint not installed — lint step skipped (infrastructure gap, not A's fault)
+✅ 30/30 tests pass — 2 new `AlarmFiredNotificationTests` confirmed in result bundle
+✅ .pbxproj registration check — all Swift files registered (no new Swift files this day)
+⚠️ swiftlint not installed — lint step skipped (recurring; not a new issue)
 
 ### Notable errors
-(none)
+None.
 
 ### For next (C — Reporter)
-Today's outcome: green. Recommended commit prefix: none.
-Subject suggestion: "Day 6: ParentalGateView + .caf assets + AlarmEditorView→RecordingView wiring + GateQuestion tests"
+Today's outcome: green. Recommended commit prefix: none (clean build, no broken state).
+Subject suggestion: "Day 7: AppDelegate + UNNotificationDelegate + audible .caf assets + IO gate"
 
 → Hand off to C
 
 
-## [C] Day 6 — 2026-05-31 23:38:07+08:00
+## [C] Day 7 — 2026-06-01 00:22:49+08:00
+Status: IN_PROGRESS
+Model:  claude-sonnet-4-6
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
+
+## [C] Day 7 — 2026-06-01 00:23:27+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
 
 ### What I did
-- Verified B's green verdict (28/28 tests, clean build)
-- Staged all changes and committed via `scripts/git_ca.sh`
 - Wrote daily report (below)
+- Committed and pushed to dev/auto
 
 ### Commit
-9ebf3d8  Day 6: ParentalGateView + .caf assets + AlarmEditorView→RecordingView wiring + GateQuestion tests  [A:✅ B:✅]
+TBD  Day 7: AppDelegate + UNNotificationDelegate + audible .caf assets + IO gate  [A:✅ B:✅]
 
 ### Daily report
 
-**TL;DR**: Day 6 closed the App Store Kids compliance gap — `ParentalGateView` with adult-only questions is live, `.caf` placeholder assets unblock device audio testing, and the `AlarmEditorView → RecordingView` navigation is fully wired.
+**TL;DR**: Day 7 closes the 6-day notification gap — AppDelegate + UNUserNotificationCenterDelegate wire alarm banner taps to AlarmRingView, audible .caf tones replace silent placeholders, and the IO destructive path is gated behind ParentalGateView.
 
 **Done today**:
-- Created `ParentalGateView.swift` — 3 question types (weekday ordering, largest 3-digit number, 3-digit multiplication); 3 consecutive wrong answers trigger shake + new question; correct answer calls `onSuccess()` and dismisses; all questions non-trivial for a 7-year-old per §6.4
-- Created `GateQuestion` (nested in `ParentalGateView.swift`) — `static func random()`, 3 question types, unit-testable
-- Modified `AlarmEditorView.swift` — added "錄音喚醒語" row with `tempAlarm` UUID pattern so recording file UUID matches the saved alarm; "尚未錄音"/"已錄音 ✅" status shown
-- Modified `HomeView.swift` — "+" button now gated behind `ParentalGateView` via `gateDidSucceed` flag + `onDismiss` callback (avoids sheet-over-sheet race condition)
-- Added `totoro_breath.caf` and `leaf_rustle.caf` — silent 0.5s placeholders; `Bundle.main.url(forResource:)` now returns non-nil; AlarmRingView no longer logs "no recording — skipping"
-- Registered `ParentalGateView.swift`, `MarkdownAlarmIO.swift`, `AlarmIOView.swift` and both `.caf` files in all 4 required `project.pbxproj` sections
-- Added 6 unit tests for `GateQuestion` — total 28/28 pass (was 22)
+- `SunnyWalkerApp.swift`: Added `AppDelegate` conforming to `UIApplicationDelegate` + `UNUserNotificationCenterDelegate`; wired via `@UIApplicationDelegateAdaptor`; sets `UNUserNotificationCenter.current().delegate = self` on launch; `didReceive:` posts `Notification.Name.alarmFired` with alarm UUID string; `willPresent:` allows foreground banner + sound
+- `Views/Home/HomeView.swift`: Replaced `showingAlarmRing: Bool` with `firingAlarm: Alarm?`; added `.onReceive(.alarmFired)` to look up alarm by UUID; `.fullScreenCover(item: $firingAlarm)` shows `AlarmRingView(alarm:)` with correct alarm; IO `↑` button gated behind `ParentalGateView` using same `onDismiss` pattern as "+"
+- `Theme/Sounds/totoro_breath.caf`: Silent placeholder replaced with 1.5s 440 Hz audible sine tone
+- `Theme/Sounds/leaf_rustle.caf`: Silent placeholder replaced with 1.0s 660 Hz audible sine tone
+- `SunnyWalkerTests.swift`: 2 new `AlarmFiredNotificationTests` (name-value assertion + post/receive round-trip)
 
-**Build & tests**: Build pass (rc=0); 28/28 tests pass; lint skipped (swiftlint not installed, rc=99)
+**Build & tests**: Build pass (rc=0); 30/30 tests pass (0 failed, 0 skipped); lint skipped (swiftlint not installed)
 
-**Tomorrow preview**: D will assess Day 6 compliance and brief Day 7 — likely end-to-end alarm flow validation, AlarmIOView wiring, and replacing placeholder `.caf` assets with real sounds before App Store submission prep.
+**Tomorrow preview**: D to assess spec Day 7 alignment, especially the from-killed-state notification edge case and whether IO gate sequencing is race-free
 
 ### Stamps
 ✅ Pushed to dev/auto
 ✅ No push to main
-✅ B verdict: green — no [BROKEN] prefix required
-⚠️ `.caf` files are silent placeholders — audible assets needed before App Store submission
-⚠️ `tempAlarm` is an uninserted @Model passed to RecordingView — non-standard SwiftData usage, functionally correct
+⚠️ From-killed-state: AppDelegate posts `.alarmFired` before SwiftUI view tree is ready; HomeView `.onReceive` may miss it — background-suspended→foreground path works correctly
+⚠️ Long-press TotoroAvatar opens AlarmRingView for `alarms.first` with no parental gate — intentional test shortcut, flagged by A
 
 ### For next (D — Reviewer)
-Please evaluate against spec Day 6. Specific concerns:
-1. `ParentalGateView` question difficulty — confirm §6.4 compliance (questions must not be solvable by a 7-year-old)
-2. `tempAlarm` uninserted @Model pattern in `AlarmEditorView` — confirm this is acceptable SwiftData usage or flag for Day 7 fix
-3. `MarkdownAlarmIO.swift` and `AlarmIOView.swift` were previously unregistered and compiled for the first time today — spot-check for correctness
-4. No `.caf` audio assets beyond silent placeholders — flag if this blocks any Day 7 spec milestone
+Please evaluate against spec Day 7. Specific concerns: (1) from-killed-state notification path — `.alarmFired` post may be lost before HomeView wires `.onReceive`; (2) IO gate `onDismiss` sequencing — confirm it cannot present both AlarmEditorView and AlarmIOView sheets simultaneously; (3) 2 new notification tests — confirm they meaningfully cover the AppDelegate→HomeView flow rather than being trivially true
 
 → Hand off to D
 

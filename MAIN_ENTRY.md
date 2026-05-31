@@ -4,14 +4,14 @@ _A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-05-31T23:37:32+08:00**
+Last updated: **2026-06-01T00:22:49+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **6**
-- Last entry: `[B] Day 6` — `DONE`
-- Next up: `[C] reporter` (Day 6)
+- Current day: **7**
+- Last entry: `[B] Day 7` — `DONE`
+- Next up: `[C] reporter` (Day 7)
 - Recovery command: `sw next`
 
 ## ⏰  Schedule, cooldown & approval
@@ -22,13 +22,14 @@ Last updated: **2026-05-31T23:37:32+08:00**
 - No active heartbeat — system is idle / not running
 
 ## 🔁  Recent ring entries (last 8)
-- ✅ `[D]` Day  1  2026-05-31 14:10:47+08:00  End Day 1
 - ✅ `[D]` Day  2  2026-05-31 15:38:00+08:00  End Day 2
 - ✅ `[D]` Day  3  2026-05-31 16:05:00+08:00  End Day 3
 - ✅ `[D]` Day  4  2026-05-31 16:28:00+08:00  End Day 4
 - ✅ `[D]` Day  5  2026-05-31 22:42:00+08:00  End Day 5
-- ✅ `[A]` Day  6  2026-05-31 23:32:55+08:00  → B
-- ✅ `[B]` Day  6  2026-05-31 23:37:18+08:00  → C
+- ✅ `[D]` Day  6  2026-05-31 23:47:00+08:00  End Day 6
+- ✅ `[A]` Day  7  2026-06-01 00:18:25+08:00  → B
+- 🟡 `[B]` Day  7  2026-06-01 00:19:15+08:00  
+- ✅ `[B]` Day  7  2026-06-01 00:22:00+08:00  → C
 
 Full ring: `orchestrator/current/ring.md`
 
@@ -46,6 +47,6 @@ Full ring: `orchestrator/current/ring.md`
 ## 🗂️  Active verbose logs (not yet archived)
 - `orchestrator/logs/2026-05-29`
 - `orchestrator/logs/2026-05-30`
-- `orchestrator/logs/2026-05-31`
+- `orchestrator/logs/2026-06-01`
 - `orchestrator/logs/supervisor`
 

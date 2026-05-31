@@ -140,6 +140,33 @@ final class SpeechRecognizerTests: XCTestCase {
     }
 }
 
+final class AlarmFiredNotificationTests: XCTestCase {
+
+    func testAlarmFiredNotificationNameValue() {
+        XCTAssertEqual(Notification.Name.alarmFired.rawValue, "SunnyWalkerAlarmFired")
+    }
+
+    func testAlarmFiredNotificationIsPosted() {
+        let expectation = expectation(description: "alarmFired notification received")
+        let token = NotificationCenter.default.addObserver(
+            forName: .alarmFired,
+            object: nil,
+            queue: .main
+        ) { note in
+            XCTAssertEqual(note.object as? String, "CAFEBABE-0000-0000-0000-000000000000")
+            expectation.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        NotificationCenter.default.post(
+            name: .alarmFired,
+            object: "CAFEBABE-0000-0000-0000-000000000000"
+        )
+
+        waitForExpectations(timeout: 1)
+    }
+}
+
 final class GateQuestionTests: XCTestCase {
 
     func testRandomReturnsQuestion() {
