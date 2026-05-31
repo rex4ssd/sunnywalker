@@ -12,6 +12,7 @@ final class Alarm {
     var weekdays: [Int]       // 1 = Sunday … 7 = Saturday
     var isEnabled: Bool
     var recordingName: String
+    var soundFileName: String
     var createdAt: Date
 
     init(label: String, hour: Int, minute: Int, recordingName: String = "") {
@@ -22,6 +23,7 @@ final class Alarm {
         self.weekdays = [2, 3, 4, 5, 6]  // Mon–Fri by default
         self.isEnabled = true
         self.recordingName = recordingName
+        self.soundFileName = "totoro_breath.caf"
         self.createdAt = .now
     }
 

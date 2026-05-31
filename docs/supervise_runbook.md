@@ -2,58 +2,52 @@
 
 > 不在電腦前的時段自動跑 `python sw.py today`，到設定時間或天數就乾淨退場。
 
-## TL;DR — 出門前複製貼上
+## TL;DR — 標準執行方式
 
 ```bash
 cd /Users/lion/Documents/SunnyWalker
 
-nohup python supervise.py \
+python supervise.py \
     --max-days 5 \
     --idle-min 30 \
     --stop-after 23:00 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+    --model claude-sonnet-4-6
 ```
+
+- **前景執行**，terminal 直接看到 `⟳` 進度、`✅ pass`、`❌ fail`
+- Ctrl+C 乾淨退場（lock 自動清除）
+- 關掉 terminal 也會乾淨退場（SIGHUP handler）
+- **重新執行就能接上**：狀態在 `ring.md`，supervisor 自動從上次停的地方繼續
 
 > **防呆**：重複執行會自動擋（lock file at `orchestrator/supervise.lock`）。
 > 若舊 process crash 殘留 lock，重啟時自動清除。
-> 錯誤訊息沉在 log 裡：`grep "已在執行" /tmp/sw_supervise.log`
-
-回家後：
-
-```bash
-tail -50 /tmp/sw_supervise.log     # 看大致狀況
-python sw.py status                 # MAIN_ENTRY
-git log --oneline -20               # 看跑了哪幾個 day
-```
 
 ---
 
 ## 1. 啟動方式
 
-### A. 推薦（背景跑 + 時間到自動退）
+### A. 推薦（前景跑，直接看進度）
 
 ```bash
-nohup python supervise.py \
+python supervise.py \
     --max-days 7 \
     --idle-min 30 \
     --poll-min 5 \
     --stop-after 23:00 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+    --model claude-sonnet-4-6
 ```
 
-- `nohup` + `disown` 關 terminal 也繼續跑
-- `--stop-after 23:00` 到 23 點自動退（避免半夜還在跑你已經回家睡覺）
-- `>>` append 模式，log 不會被重複執行蓋掉
+- Terminal 直接顯示每個 agent 的 `⟳` 即時進度
+- `--stop-after 23:00` 到 23 點自動退
+- 關 terminal 或 Ctrl+C 都會乾淨退場
+- 重新開 terminal 執行同一行，自動從上次停的地方接著跑
 
-### B. 前景跑（debug 用）
+### B. 強制重啟（有舊 process 在跑時）
 
 ```bash
-python supervise.py --max-days 1
+python supervise.py --max-days 5 --stop-after 23:00 \
+    --model claude-sonnet-4-6 --force
 ```
-
-直接看 stdout，按 Ctrl+C 乾淨退。
 
 ### C. 跑特定情境
 
@@ -103,16 +97,12 @@ agents:
 
 ```bash
 # 全 Sonnet（省錢但 D 評審較淺）
-nohup python supervise.py --max-days 5 --stop-after 23:00 \
-    --model claude-sonnet-4-6 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+python supervise.py --max-days 5 --stop-after 23:00 \
+    --model claude-sonnet-4-6
 
 # 全 Haiku（最便宜）
-nohup python supervise.py --max-days 5 \
-    --model claude-haiku-4-5-20251001 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+python supervise.py --max-days 5 \
+    --model claude-haiku-4-5-20251001
 ```
 
 ### 永久改某個 agent 的模型
@@ -254,10 +244,8 @@ python sw.py fail
 python sw.py resolve       # 清 FAILED 狀態
 python sw.py next          # 重跑該 agent
 
-# 或重啟 supervisor
-nohup python supervise.py --max-days 5 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+# 或重啟 supervisor（自動從上次停的地方接續）
+python supervise.py --max-days 5 --model claude-sonnet-4-6
 ```
 
 ### 想立刻停止 supervisor
@@ -279,12 +267,11 @@ bash setup_day0.sh --reset-only
 ### 出門 8 小時，期望跑完 3-4 天
 
 ```bash
-nohup python supervise.py \
+python supervise.py \
     --max-days 4 \
     --idle-min 20 \
     --stop-after 18:00 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+    --model claude-sonnet-4-6
 ```
 
 每天約 15-20 分鐘 + 20 分鐘 idle = ~40 分/天。8 小時可跑 ~12 個週期，但 `--max-days 4` 卡上限到 4 天就停。
@@ -292,12 +279,11 @@ disown
 ### 過夜跑，怕影響早上工作
 
 ```bash
-nohup python supervise.py \
+python supervise.py \
     --max-days 7 \
     --idle-min 30 \
     --stop-after 07:00 \
-    >> /tmp/sw_supervise.log 2>&1 &
-disown
+    --model claude-sonnet-4-6
 ```
 
 ### 想精準停在 B 之後

@@ -9,7 +9,7 @@ struct SunnyWalkerApp: App {
         WindowGroup {
             ContentView()
                 .task {
-                    await PermissionManager.shared.requestNotificationPermission()
+                    await PermissionManager.shared.requestAllPermissions()
                 }
         }
         .modelContainer(for: Alarm.self)

@@ -1,6 +1,8 @@
-// SunnyWalker — PermissionManager.swift  |  Day 2  |  centralized permission requests
+// SunnyWalker — PermissionManager.swift  |  Day 3  |  centralized permission requests
 
 import UserNotifications
+import AVFoundation
+import Speech
 import Foundation
 
 @MainActor
@@ -9,6 +11,16 @@ final class PermissionManager: ObservableObject {
     private init() {}
 
     @Published var notificationsGranted = false
+
+    // MARK: - All permissions (call once on first launch)
+
+    func requestAllPermissions() async {
+        await requestNotificationPermission()
+        await requestMicrophonePermission()
+        await requestSpeechPermission()
+    }
+
+    // MARK: - Individual requests
 
     func requestNotificationPermission() async {
         do {
@@ -23,5 +35,15 @@ final class PermissionManager: ObservableObject {
     func refreshNotificationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         notificationsGranted = settings.authorizationStatus == .authorized
+    }
+
+    func requestMicrophonePermission() async {
+        _ = await AVAudioApplication.requestRecordPermission()
+    }
+
+    func requestSpeechPermission() async {
+        await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            SFSpeechRecognizer.requestAuthorization { _ in cont.resume() }
+        }
     }
 }

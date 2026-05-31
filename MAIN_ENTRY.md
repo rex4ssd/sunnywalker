@@ -4,14 +4,14 @@ _A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-05-31T14:45:12+08:00**
+Last updated: **2026-05-31T15:36:34+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **2**
-- Last entry: `[B] Day 2` — `DONE`
-- Next up: `[C] reporter` (Day 2)
+- Current day: **3**
+- Last entry: `[B] Day 3` — `DONE`
+- Next up: `[C] reporter` (Day 3)
 - Recovery command: `sw next`
 
 ## ⏰  Schedule, cooldown & approval
@@ -23,8 +23,10 @@ Last updated: **2026-05-31T14:45:12+08:00**
 
 ## 🔁  Recent ring entries (last 8)
 - ✅ `[D]` Day  1  2026-05-31 14:10:47+08:00  End Day 1
-- ✅ `[A]` Day  2  2026-05-31 14:18:21+08:00  → B
-- ✅ `[B]` Day  2  2026-05-31 14:45:22+08:00  → C
+- ✅ `[D]` Day  2  2026-05-31 15:38:00+08:00  End Day 2
+- ✅ `[A]` Day  3  2026-05-31 15:33:01+08:00  → B
+- 🟡 `[B]` Day  3  2026-05-31 15:33:33+08:00  
+- ✅ `[B]` Day  3  2026-05-31 15:45:00+08:00  → C
 
 Full ring: `orchestrator/current/ring.md`
 

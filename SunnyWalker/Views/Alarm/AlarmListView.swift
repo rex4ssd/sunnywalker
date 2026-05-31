@@ -97,6 +97,9 @@ private struct AlarmCard: View {
         }
         .opacity(alarm.isEnabled ? 1.0 : 0.6)
         .animation(.easeInOut(duration: 0.2), value: alarm.isEnabled)
+        .onChange(of: alarm.isEnabled) { _, _ in
+            Task { try? await AlarmScheduler.shared.syncWithModel(alarm: alarm) }
+        }
     }
 }
 

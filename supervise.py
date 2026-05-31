@@ -112,7 +112,7 @@ def _kill_current_proc():
             logger.warning(f"   terminate 失敗: {e}")
 
 
-# ── 主執行：跑一次 sw today，stream stdout 到 logger ─────────────────────────
+# ── 主執行：跑一次 sw today，stdout 直透 terminal（保留 ⟳ 進度效果） ───────────
 def run_sw_today() -> int:
     global _current_proc
     cmd = [sys.executable, str(ROOT / "sw.py")]
@@ -120,16 +120,9 @@ def run_sw_today() -> int:
         cmd += ["--model", _model_override]
     cmd += ["today"]
     logger.info(f"▶  spawning: {' '.join(cmd)}")
-    _current_proc = subprocess.Popen(
-        cmd, cwd=ROOT,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1,
-    )
     t0 = time.time()
-    for line in _current_proc.stdout:
-        line = line.rstrip()
-        if line:
-            logger.info(f"  sw> {line}")
+    # 不 capture stdout — 直接透傳到 terminal，⟳ / ✅ / ❌ 效果完整顯示
+    _current_proc = subprocess.Popen(cmd, cwd=ROOT)
     rc = _current_proc.wait()
     dt_s = int(time.time() - t0)
     logger.info(f"◀  sw.py today exit rc={rc}  (took {dt_s}s)")
@@ -189,6 +182,7 @@ def main():
         sys.exit(0)
     signal.signal(signal.SIGINT, _sigint)
     signal.signal(signal.SIGTERM, _sigint)
+    signal.signal(signal.SIGHUP, _sigint)   # terminal 關閉時也乾淨退場
 
     while True:
         # ── 退場條件 1：max_days ──

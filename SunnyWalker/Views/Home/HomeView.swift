@@ -10,6 +10,7 @@ struct HomeView: View {
 
     @State private var currentTime = Date()
     @State private var showingAddAlarm = false
+    @State private var showingAlarmRing = false
 
     private let clockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -27,12 +28,14 @@ struct HomeView: View {
                     .padding(.bottom, 12)
                 TotoroAvatar()
                     .padding(.bottom, 8)
+                    .onLongPressGesture { showingAlarmRing = true }
                 AlarmListView(alarms: alarms)
             }
             addButton
         }
         .ignoresSafeArea(edges: .top)
         .onReceive(clockTick) { currentTime = $0 }
+        .fullScreenCover(isPresented: $showingAlarmRing) { AlarmRingView() }
     }
 
     // MARK: - Background
@@ -78,38 +81,11 @@ struct HomeView: View {
         }
         .padding(24)
         .sheet(isPresented: $showingAddAlarm) {
-            AddAlarmPlaceholder()
+            AlarmEditorView()
         }
     }
 }
 
-// MARK: - Placeholder sheet (wired in Day 4+)
-
-private struct AddAlarmPlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("🚧")
-                    .font(.system(size: 56))
-                Text("新增鬧鐘")
-                    .font(GhibliFonts.title(24))
-                    .foregroundStyle(GhibliColors.nightIndigo)
-                Text("設定畫面將在 Day 4 完成")
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(GhibliColors.totoroGray)
-            }
-            .padding()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("關閉") { dismiss() }
-                }
-            }
-        }
-    }
-}
 
 #Preview {
     HomeView()

@@ -13,7 +13,7 @@ DERIVED="$REPO_ROOT/.build"
 # 動態偵測可用 simulator：優先找 iPhone 17，找不到就取第一個 available iPhone
 if [ -z "${DESTINATION:-}" ]; then
   SIM_NAME=$(xcrun simctl list devices available 2>/dev/null \
-    | grep -E "^\s+iPhone" | sed 's/^\s*//' | sed 's/ (.*$//' | head -1)
+    | grep -E "^\s+iPhone" | sed 's/^[[:space:]]*//' | sed 's/ (.*$//' | head -1)
   DESTINATION="platform=iOS Simulator,name=${SIM_NAME:-iPhone 17}"
   echo "auto-detected simulator: $DESTINATION"
 fi
