@@ -297,3 +297,55 @@ Model:  claude-sonnet-4-6
 
 _(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
 
+
+## [C] Day 3 — 2026-05-31 15:39:30+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Read ring.md — confirmed B's last entry ends with `→ Hand off to C`
+- Confirmed B's verdict: **red** (build failed — 2 new Swift files missing from `.pbxproj`)
+- Performed `.pbxproj` surgery: registered `AlarmEditorView.swift` and `AlarmRingView.swift` in all four required sections (PBXBuildFile, PBXFileReference, group, Sources build phase); created Settings group under Views
+- Fixed `scripts/validate.sh` line 16: `sed 's/^\s*//'` → `sed 's/^[[:space:]]*//'` (BSD sed incompatibility B diagnosed)
+- Ran `bash scripts/validate.sh` — build pass, tests pass, lint skipped
+- Staged all changes and committed using `bash scripts/git_ca.sh`
+
+### Commit
+95bde3d  [BROKEN-FIXED] Day 3: AlarmEditorView + AlarmRingView + permission flow wired  [A:✅ B:❌ C:✅]
+
+### Daily report
+
+**TL;DR**: Day 3 delivered AlarmEditorView, AlarmRingView, full permission flow, and AlarmScheduler toggle wiring — build fixed by C after recurring `.pbxproj` registration gap.
+
+**Done today**:
+- `Alarm.swift`: Added `soundFileName: String` (default `"totoro_breath.caf"`) — reconciles spec §4 AlarmScheduler reference
+- `Views/Settings/AlarmEditorView.swift` (new): DatePicker wheel, TextField label, weekday multi-select chips, save → SwiftData + AlarmScheduler.schedule
+- `Views/Alarm/AlarmRingView.swift` (new): Full-screen ZStack, DaytimeScene gradient, CloudBackground, TotoroAvatar wiggle, "我起床了！" GhibliButton; accessible via long-press on TotoroAvatar in HomeView
+- `AlarmListView.swift` (AlarmCard): toggle now calls `AlarmScheduler.shared.syncWithModel(alarm:)` via `.onChange`
+- `PermissionManager.swift`: Added `requestMicrophonePermission()` (AVAudioApplication) + `requestSpeechPermission()` (SFSpeechRecognizer) + combined `requestAllPermissions()`
+- `SunnyWalkerApp.swift`: First-launch calls `requestAllPermissions()` (was notifications-only)
+- `HomeView.swift`: `AddAlarmPlaceholder` → real `AlarmEditorView` sheet; `showingAlarmRing` state + `.fullScreenCover(AlarmRingView)`
+- `project.pbxproj`: Registered both new files (4 sections each); created Settings group under Views
+- `scripts/validate.sh`: Fixed BSD sed incompatibility (line 16)
+
+**Build & tests**: Build pass (rc=0), 12/12 tests pass (rc=0), swiftlint skipped (not installed)
+
+**Tomorrow preview**: D reviews Day 3 and writes Day 4 brief; expected focus is voice recording integration (AVAudioRecorder) and WakePhrase management UI
+
+### Stamps
+✅ Pushed to dev/auto (95bde3d)
+✅ No push to main
+✅ Build pass, tests pass after `.pbxproj` fix
+⚠️ Recurring `.pbxproj` gap — third consecutive day; D should mandate automation in validate.sh
+⚠️ AlarmScheduler still uses `.default` sound (not `alarm.soundFileName`) — assets not yet in bundle
+⚠️ 12 tests pass but no new tests added for Day 3 AlarmScheduler scheduling logic
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 3. Specific concerns:
+1. **Recurring .pbxproj gap**: This is the third day in a row. B suggested adding a validate.sh step that diffs Swift files on disk against pbxproj entries. Please mandate this in Day 4 brief.
+2. **AlarmScheduler sound**: `alarm.soundFileName` is on the model but the scheduler still uses `.default` — sound .caf files not in bundle yet. Is this acceptable to defer?
+3. **No new tests**: A added AlarmScheduler wiring logic (`syncWithModel`) but no new unit tests. Day 4 brief should request scheduler unit tests.
+4. **Voice integration readiness**: Day 3 AlarmRingView is a visual shell only. Day 4 should begin AVAudioRecorder recording flow and WakePhrase matching stub.
+
+→ Hand off to D
+
