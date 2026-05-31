@@ -56,6 +56,35 @@ final class VoiceClipTests: XCTestCase {
     }
 }
 
+@MainActor
+final class AudioPlayerTests: XCTestCase {
+
+    func testInitialIsPlayingIsFalse() {
+        let player = AudioPlayer()
+        XCTAssertFalse(player.isPlaying)
+    }
+
+    func testStopWhenIdleKeepsIsPlayingFalse() {
+        let player = AudioPlayer()
+        player.stop()
+        XCTAssertFalse(player.isPlaying)
+    }
+}
+
+final class AlarmSoundTests: XCTestCase {
+
+    func testSoundFileNameDefault() {
+        let alarm = Alarm(label: "Morning", hour: 7, minute: 0)
+        XCTAssertEqual(alarm.soundFileName, "totoro_breath.caf")
+    }
+
+    func testSoundFileNameIsMutable() {
+        let alarm = Alarm(label: "Morning", hour: 7, minute: 0)
+        alarm.soundFileName = "leaf_rustle.caf"
+        XCTAssertEqual(alarm.soundFileName, "leaf_rustle.caf")
+    }
+}
+
 final class WakePhraseTests: XCTestCase {
 
     func testDefaultKeywordsNotEmpty() {

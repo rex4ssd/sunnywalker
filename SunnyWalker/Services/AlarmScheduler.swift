@@ -21,7 +21,9 @@ final class AlarmScheduler {
         content.body = alarm.recordingName.isEmpty
             ? "早安！☀️ 快來聽鬧鐘"
             : "點開來聽：\(alarm.recordingName)"
-        content.sound = .default
+        content.sound = UNNotificationSound(
+            named: UNNotificationSoundName(rawValue: alarm.soundFileName)
+        )
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
         content.userInfo = ["alarmID": alarm.id.uuidString]
 

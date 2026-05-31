@@ -24,8 +24,30 @@ echo "scheme:      $SCHEME"
 echo "destination: $DESTINATION"
 echo ""
 
+# ---------- 0. .pbxproj registration check ----------
+echo "--- [0/4] .pbxproj registration check ---"
+PBXPROJ="$REPO_ROOT/SunnyWalker.xcodeproj/project.pbxproj"
+PBXPROJ_RC=0
+if [ ! -f "$PBXPROJ" ]; then
+  echo "!! project.pbxproj not found at expected path, skipping check."
+  PBXPROJ_RC=99
+else
+  while IFS= read -r -d '' swiftfile; do
+    filename="$(basename "$swiftfile")"
+    if ! grep -q "$filename" "$PBXPROJ"; then
+      echo "ERROR: $filename not registered in .pbxproj (full path: $swiftfile)"
+      PBXPROJ_RC=1
+    fi
+  done < <(find "$REPO_ROOT/SunnyWalker" -name "*.swift" -print0)
+  if [ $PBXPROJ_RC -eq 0 ]; then
+    echo "All Swift files are registered in .pbxproj ✓"
+  fi
+fi
+echo "pbxproj rc=$PBXPROJ_RC"
+echo ""
+
 # ---------- 1. xcodebuild build ----------
-echo "--- [1/3] xcodebuild build ---"
+echo "--- [1/4] xcodebuild build ---"
 if [ ! -d "$REPO_ROOT/SunnyWalker.xcodeproj" ] && [ ! -d "$REPO_ROOT/SunnyWalker.xcworkspace" ]; then
   echo "!! No Xcode project found. Skipping build."
   BUILD_RC=99
@@ -42,7 +64,7 @@ echo "build rc=$BUILD_RC"
 echo ""
 
 # ---------- 2. xcodebuild test ----------
-echo "--- [2/3] xcodebuild test ---"
+echo "--- [2/4] xcodebuild test ---"
 if [ $BUILD_RC -ne 0 ]; then
   echo "!! Build failed, skipping tests."
   TEST_RC=99
@@ -59,7 +81,7 @@ echo "test rc=$TEST_RC"
 echo ""
 
 # ---------- 3. SwiftLint ----------
-echo "--- [3/3] swiftlint ---"
+echo "--- [3/4] swiftlint ---"
 if command -v swiftlint >/dev/null 2>&1; then
   swiftlint --quiet 2>&1 | tee "$REPO_ROOT/orchestrator/logs/$(date +%F)/_lint.log"
   LINT_RC=${PIPESTATUS[0]}
@@ -71,11 +93,11 @@ echo "lint rc=$LINT_RC"
 echo ""
 
 echo "=== validate.sh done at $(date -Iseconds) ==="
-echo "summary: build=$BUILD_RC test=$TEST_RC lint=$LINT_RC"
+echo "summary: pbxproj=$PBXPROJ_RC build=$BUILD_RC test=$TEST_RC lint=$LINT_RC"
 
-# exit with worst of the three (but 99=skipped doesn't fail)
+# exit with worst of the four (but 99=skipped doesn't fail)
 WORST=0
-for rc in $BUILD_RC $TEST_RC $LINT_RC; do
+for rc in $PBXPROJ_RC $BUILD_RC $TEST_RC $LINT_RC; do
   if [ "$rc" -ne 0 ] && [ "$rc" -ne 99 ]; then
     WORST=$rc
   fi

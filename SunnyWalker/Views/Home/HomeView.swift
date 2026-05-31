@@ -35,7 +35,7 @@ struct HomeView: View {
         }
         .ignoresSafeArea(edges: .top)
         .onReceive(clockTick) { currentTime = $0 }
-        .fullScreenCover(isPresented: $showingAlarmRing) { AlarmRingView() }
+        .fullScreenCover(isPresented: $showingAlarmRing) { AlarmRingView(alarm: alarms.first) }
     }
 
     // MARK: - Background
