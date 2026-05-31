@@ -1,4 +1,4 @@
-// SunnyWalker — AudioPlayer.swift  |  Day 4  |  AVAudioPlayer wrapper
+// SunnyWalker — AudioPlayer.swift  |  Day 9  |  AVAudioPlayer wrapper + delegate auto-reset
 
 import AVFoundation
 import Foundation
@@ -15,6 +15,7 @@ final class AudioPlayer: NSObject, ObservableObject {
             try session.setActive(true)
             player = try AVAudioPlayer(contentsOf: url)
             player?.numberOfLoops = loop ? -1 : 0
+            player?.delegate = self
             player?.prepareToPlay()
             player?.play()
             isPlaying = true
@@ -27,5 +28,13 @@ final class AudioPlayer: NSObject, ObservableObject {
         player?.stop()
         player = nil
         isPlaying = false
+    }
+}
+
+extension AudioPlayer: AVAudioPlayerDelegate {
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            self.isPlaying = false
+        }
     }
 }

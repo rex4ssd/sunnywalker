@@ -1,6 +1,6 @@
-# Live Progress — last update 2026-06-01T01:04:37+08:00
+# Live Progress — last update 2026-06-01T01:47:10+08:00
 
-Current day: **8**
+Current day: **9**
 
 ## Milestones
 - [x] **Day 1**: Project skeleton, Models, Theme

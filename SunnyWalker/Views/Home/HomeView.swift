@@ -1,4 +1,4 @@
-// SunnyWalker — HomeView.swift  |  Day 8  |  killed-state alarm wakeup + item: cover + remove long-press shortcut
+// SunnyWalker — HomeView.swift  |  Day 9  |  iPad two-column layout + checkPendingAlarm injection
 
 import SwiftUI
 import SwiftData
@@ -6,6 +6,7 @@ import UIKit
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Query(sort: [SortDescriptor(\Alarm.hour), SortDescriptor(\Alarm.minute)])
     private var alarms: [Alarm]
 
@@ -34,13 +35,30 @@ struct HomeView: View {
         ZStack(alignment: .bottomTrailing) {
             background
             CloudBackground()
-            VStack(spacing: 0) {
-                clockHeader
-                    .padding(.top, 56)
-                    .padding(.bottom, 12)
-                TotoroAvatar()
-                    .padding(.bottom, 8)
-                AlarmListView(alarms: alarms)
+            if sizeClass == .regular {
+                // iPad: side-by-side clock/avatar | alarm list
+                HStack(spacing: 0) {
+                    VStack(spacing: 0) {
+                        clockHeader
+                            .padding(.top, 56)
+                            .padding(.bottom, 16)
+                        TotoroAvatar()
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    AlarmListView(alarms: alarms)
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
+                // iPhone: stacked layout
+                VStack(spacing: 0) {
+                    clockHeader
+                        .padding(.top, 56)
+                        .padding(.bottom, 12)
+                    TotoroAvatar()
+                        .padding(.bottom, 8)
+                    AlarmListView(alarms: alarms)
+                }
             }
             addButton
         }
@@ -59,9 +77,9 @@ struct HomeView: View {
     }
 
     // Handles the killed-state case: AppDelegate stored the alarm ID before HomeView was ready.
-    private func checkPendingAlarm() {
-        guard let delegate = UIApplication.shared.delegate as? AppDelegate,
-              let id = delegate.pendingAlarmID else { return }
+    // Accepts an injected delegate to allow unit testing without UIApplicationMain.
+    func checkPendingAlarm(delegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate) {
+        guard let delegate, let id = delegate.pendingAlarmID else { return }
         delegate.pendingAlarmID = nil
         guard let uuid = UUID(uuidString: id),
               let alarm = alarms.first(where: { $0.id == uuid }) else { return }
