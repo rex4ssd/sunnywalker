@@ -17,6 +17,7 @@ struct HomeView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             background
+            CloudBackground()
             VStack(spacing: 0) {
                 clockHeader
                     .padding(.top, 56)

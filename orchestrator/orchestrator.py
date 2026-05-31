@@ -30,8 +30,10 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import subprocess
+import threading
 import sys
 import time
 from dataclasses import dataclass
@@ -41,7 +43,7 @@ import yaml
 
 # Local imports
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lib import archive, failure_summary, heartbeat, main_entry, notify, paths, reports, ring, schedule  # noqa
+from lib import archive, failure_summary, heartbeat, main_entry, notify, paths, progress_view, reports, ring, schedule  # noqa
 
 
 # ---------- token-limit detection ----------
@@ -59,6 +61,52 @@ def looks_like_token_limit(log_file: Path) -> bool:
     except OSError:
         return False
     return any(p in tail for p in TOKEN_LIMIT_PATTERNS)
+
+
+# ---------- live status thread ----------
+def _last_agent_text(log_file: Path) -> str:
+    """Extract the most recent agent text message from a JSONL log."""
+    try:
+        lines = log_file.read_text(errors="replace").splitlines()
+    except OSError:
+        return ""
+    for line in reversed(lines):
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+            if obj.get("type") == "assistant":
+                for block in obj.get("message", {}).get("content", []):
+                    if block.get("type") == "text":
+                        txt = block.get("text", "").strip()
+                        if txt:
+                            return txt
+        except Exception:
+            continue
+    return ""
+
+
+def _live_status(log_file: Path, agent: str, day: int,
+                 stop_event: threading.Event, timeout_s: int) -> None:
+    """Background thread: print a one-line rolling status while agent runs."""
+    t0 = time.time()
+    last_msg = "starting..."
+    poll = 3  # seconds between polls
+
+    while not stop_event.wait(timeout=poll):
+        txt = _last_agent_text(log_file)
+        if txt:
+            last_msg = txt[:70]
+        elapsed = int(time.time() - t0)
+        pct = min(99, int(elapsed / timeout_s * 100))
+        m, s = divmod(elapsed, 60)
+        t_str = f"{m}m{s:02d}s" if m else f"{s}s"
+        line = f"  ⟳  [{agent}] Day {day} — {pct:2d}% | {t_str} | {last_msg}"
+        print(f"\r{line:<120}", end="", flush=True)
+
+    # Clear the status line
+    print(f"\r{' ' * 122}\r", end="", flush=True)
 
 
 # ---------- agent ----------
@@ -124,6 +172,14 @@ class Agent:
             logf.write("=" * 60 + "\n\n")
             logf.flush()
 
+            stop_event = threading.Event()
+            status_thread = threading.Thread(
+                target=_live_status,
+                args=(log_file, self.name, day, stop_event, self.timeout_s),
+                daemon=True,
+            )
+            status_thread.start()
+
             try:
                 proc = subprocess.Popen(
                     cmd, cwd=paths.ROOT,
@@ -139,6 +195,10 @@ class Agent:
                         raise TimeoutError(f"exceeded {self.timeout_s}s")
                 rc = proc.wait()
             except TimeoutError as e:
+                stop_event.set(); status_thread.join(timeout=3)
+                elapsed_s = int(time.time() - t0)
+                pct = min(99, int(elapsed_s / self.timeout_s * 100))
+                print(f"  ❌ [{self.name}] Day {day} — {pct}% fail (timeout {elapsed_s}s)")
                 logf.write(f"\n!!! TIMEOUT: {e}\n")
                 ring.append_failed(self.name, day, f"Timeout: {e}", log_file)
                 self._emit_failure_summary(day, log_file, log_dir,
@@ -146,14 +206,22 @@ class Agent:
                 heartbeat.clear()
                 return False
             except Exception as e:
+                stop_event.set(); status_thread.join(timeout=3)
+                elapsed_s = int(time.time() - t0)
+                pct = min(99, int(elapsed_s / self.timeout_s * 100))
+                print(f"  ❌ [{self.name}] Day {day} — {pct}% fail ({e})")
                 logf.write(f"\n!!! EXCEPTION: {e}\n")
                 ring.append_failed(self.name, day, f"Exception: {e}", log_file)
                 self._emit_failure_summary(day, log_file, log_dir,
                                           f"Exception: {e}")
                 heartbeat.clear()
                 return False
+            finally:
+                stop_event.set()
+                status_thread.join(timeout=3)
 
         # Subprocess returned. Diagnose outcome.
+        elapsed_s = int(time.time() - t0)
         if rc != 0:
             if looks_like_token_limit(log_file):
                 until = schedule.mark_token_paused("token_limit")
@@ -167,6 +235,8 @@ class Agent:
                     schedule.cooldown_hours())
                 heartbeat.clear()
                 return False
+            pct = min(99, int(elapsed_s / self.timeout_s * 100))
+            print(f"  ❌ [{self.name}] Day {day} — {pct}% fail (rc={rc}, {elapsed_s}s)")
             ring.append_failed(self.name, day, f"Subprocess rc={rc}", log_file)
             self._emit_failure_summary(day, log_file, log_dir,
                                       f"Subprocess rc={rc}")
@@ -177,10 +247,12 @@ class Agent:
         # Sanity: did the agent actually append a DONE entry?
         last = ring.last()
         if last and last.agent == self.name and last.status == "DONE":
-            print(f"[{self.name}] DONE  ({int(time.time() - t0)}s)")
+            print(f"  ✅ [{self.name}] Day {day} — 100% pass  ({elapsed_s}s)")
             heartbeat.clear()
             return True
 
+        pct = min(99, int(elapsed_s / self.timeout_s * 100))
+        print(f"  ❌ [{self.name}] Day {day} — {pct}% fail (no DONE entry, {elapsed_s}s)")
         ring.append_failed(self.name, day,
                            f"Subprocess rc={rc} but no DONE entry appended by agent",
                            log_file)
@@ -343,28 +415,43 @@ def cmd_next(agents: dict[str, Agent], cfg: dict) -> None:
 def cmd_today(agents: dict[str, Agent], cfg: dict) -> None:
     if not _check_schedule_gate():
         sys.exit(0)
+
+    # Determine which day this invocation should drive to completion.
+    # If last entry is `End of Day N`, the day we run is N+1.
+    # If we're mid-day, we finish that day.
+    last = ring.last()
+    if last is None:
+        target_day = 1
+    elif last.end_of_day is not None:
+        target_day = last.end_of_day + 1
+    else:
+        target_day = last.day
+    print(f"Today's target: Day {target_day} (run until D closes it)")
+
     while True:
-        # Re-check gate each iteration: token limit may trigger mid-day
         if not _check_schedule_gate():
             sys.exit(0)
-        last = ring.last()
-        if last and last.agent == "D" and last.end_of_day is not None \
-                and last.end_of_day == ring.current_day() - 1:
-            print(f"Day {last.end_of_day} already complete.")
-            return
         try:
             role, day = ring.next_agent()
         except RuntimeError as e:
             print(f"!! {e}")
             sys.exit(1)
+
+        # If next agent's day has advanced past target, we're done for today.
+        if day > target_day:
+            print(f"Day {target_day} complete (next up: Day {day}). Stopping.")
+            return
+
         ok = agents[role].run(day)
         post_agent(cfg, role)
         if not ok and cfg.get("stop_on_failure", True):
             print("!! Stopping pipeline.")
             sys.exit(1)
+
+        # If D just closed the target day, we're done
         last = ring.last()
-        if last and last.agent == "D" and last.status == "DONE" \
-                and last.end_of_day is not None:
+        if (last and last.agent == "D" and last.status == "DONE"
+                and last.end_of_day == target_day):
             return
 
 
@@ -395,6 +482,11 @@ def cmd_schedule(_cfg: dict) -> None:
 def cmd_clear_cooldown(_cfg: dict) -> None:
     schedule.clear_cooldown()
     print("Cooldown cleared.")
+
+
+def cmd_progress(_cfg: dict) -> None:
+    """Print one-page progress snapshot."""
+    print(progress_view.render())
 
 
 def cmd_fail(_cfg: dict) -> None:
@@ -512,6 +604,7 @@ def main():
         "next", "today", "status", "ring", "resume", "recover",
         "archive", "weekly", "daily", "resolve", "refresh",
         "schedule", "clear-cooldown", "approve", "clear-approval", "fail",
+        "progress",
         "coder", "validator", "reporter", "reviewer",
     ])
     parser.add_argument("--dry-run", action="store_true",
@@ -550,6 +643,7 @@ def main():
         "approve":          lambda: cmd_approve(cfg),
         "clear-approval":   lambda: cmd_approve(cfg),  # alias
         "fail":             lambda: cmd_fail(cfg),
+        "progress":         lambda: cmd_progress(cfg),
     }
     if args.command in dispatch:
         dispatch[args.command]()

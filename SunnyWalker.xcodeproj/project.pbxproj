@@ -17,6 +17,14 @@
 		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
 		E409258EA2C6052DDE696951 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB6388EF249B7365D9B3B48 /* HomeView.swift */; };
 		EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */; };
+		517FFF4CB31F472BA4BCCEC4 /* GhibliFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */; };
+		58F211BACAAD454887C03533 /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0721562310FD4FD889EE77C0 /* Animations.swift */; };
+		DE19B91E7EBC4F488AC8FF27 /* VoiceClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */; };
+		B9294C37B2B74E39A72BAD0F /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */; };
+		37414878589A4940A186D2D1 /* CloudBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */; };
+		75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395FEB57BFB047F0B4263EBA /* GhibliButton.swift */; };
+		D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */; };
+		D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +51,14 @@
 		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
+		A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliFonts.swift; sourceTree = "<group>"; };
+		0721562310FD4FD889EE77C0 /* Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animations.swift; sourceTree = "<group>"; };
+		FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceClip.swift; sourceTree = "<group>"; };
+		22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakePhrase.swift; sourceTree = "<group>"; };
+		88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
+		395FEB57BFB047F0B4263EBA /* GhibliButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliButton.swift; sourceTree = "<group>"; };
+		0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
+		C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotoroAvatar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -59,6 +75,8 @@
 			isa = PBXGroup;
 			children = (
 				770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */,
+				A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */,
+				0721562310FD4FD889EE77C0 /* Animations.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -98,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				6218564575F4EA0F85D3DEC8 /* Alarm */,
+				55669AC9E92F4AC8AAE45274 /* Components */,
 				77D06D74C8F83D818905D2F4 /* Home */,
 			);
 			path = Views;
@@ -107,6 +126,8 @@
 			isa = PBXGroup;
 			children = (
 				60114EB5C3B3CEE759BABCDF /* Alarm.swift */,
+				FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */,
+				22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -115,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				1EB6388EF249B7365D9B3B48 /* HomeView.swift */,
+				88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -135,6 +157,16 @@
 				8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		55669AC9E92F4AC8AAE45274 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				395FEB57BFB047F0B4263EBA /* GhibliButton.swift */,
+				0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */,
+				C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -230,6 +262,14 @@
 				6038E36000101404AEC7372B /* GhibliColors.swift in Sources */,
 				E409258EA2C6052DDE696951 /* HomeView.swift in Sources */,
 				EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */,
+				517FFF4CB31F472BA4BCCEC4 /* GhibliFonts.swift in Sources */,
+				58F211BACAAD454887C03533 /* Animations.swift in Sources */,
+				DE19B91E7EBC4F488AC8FF27 /* VoiceClip.swift in Sources */,
+				B9294C37B2B74E39A72BAD0F /* WakePhrase.swift in Sources */,
+				37414878589A4940A186D2D1 /* CloudBackground.swift in Sources */,
+				75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */,
+				D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */,
+				D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */,
 				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -36,3 +36,37 @@ final class AlarmModelTests: XCTestCase {
         XCTAssertEqual(alarm.weekdaySymbols, ["一", "二", "三", "四", "五"])
     }
 }
+
+final class VoiceClipTests: XCTestCase {
+
+    func testFormattedDurationZero() {
+        let clip = VoiceClip(name: "Test", fileName: "test.m4a", duration: 0)
+        XCTAssertEqual(clip.formattedDuration, "--:--")
+    }
+
+    func testFormattedDurationMinutesSeconds() {
+        let clip = VoiceClip(name: "Test", fileName: "test.m4a", duration: 90)
+        XCTAssertEqual(clip.formattedDuration, "1:30")
+    }
+
+    func testUniqueIDs() {
+        let a = VoiceClip(name: "A", fileName: "a.m4a")
+        let b = VoiceClip(name: "B", fileName: "b.m4a")
+        XCTAssertNotEqual(a.id, b.id)
+    }
+}
+
+final class WakePhraseTests: XCTestCase {
+
+    func testDefaultKeywordsNotEmpty() {
+        XCTAssertFalse(WakePhrase.defaultKeywords.isEmpty)
+    }
+
+    func testPrimaryKeywordPresent() {
+        XCTAssertTrue(WakePhrase.texts.contains("我起床了"))
+    }
+
+    func testAllKeywordsZhTW() {
+        XCTAssertTrue(WakePhrase.defaultKeywords.allSatisfy { $0.locale == "zh-TW" })
+    }
+}
