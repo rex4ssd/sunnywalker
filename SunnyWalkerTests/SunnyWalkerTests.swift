@@ -140,30 +140,54 @@ final class SpeechRecognizerTests: XCTestCase {
     }
 }
 
-final class AlarmFiredNotificationTests: XCTestCase {
+final class AppDelegateNotificationTests: XCTestCase {
 
-    func testAlarmFiredNotificationNameValue() {
+    func testNotificationNameValue() {
         XCTAssertEqual(Notification.Name.alarmFired.rawValue, "SunnyWalkerAlarmFired")
     }
 
-    func testAlarmFiredNotificationIsPosted() {
-        let expectation = expectation(description: "alarmFired notification received")
+    /// Verifies that handleAlarmPayload posts .alarmFired with the UUID string.
+    /// If the NotificationCenter.default.post line is removed from handleAlarmPayload, this test fails.
+    func testHandleAlarmPayloadPostsNotification() {
+        let delegate = AppDelegate()
+        let testUUID = "12345678-1234-1234-1234-123456789012"
+        let expectation = expectation(description: "alarmFired posted")
+
         let token = NotificationCenter.default.addObserver(
             forName: .alarmFired,
             object: nil,
-            queue: .main
+            queue: nil  // synchronous on posting thread
         ) { note in
-            XCTAssertEqual(note.object as? String, "CAFEBABE-0000-0000-0000-000000000000")
+            XCTAssertEqual(note.object as? String, testUUID)
             expectation.fulfill()
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        NotificationCenter.default.post(
-            name: .alarmFired,
-            object: "CAFEBABE-0000-0000-0000-000000000000"
-        )
-
+        delegate.handleAlarmPayload(["alarmID": testUUID])
         waitForExpectations(timeout: 1)
+    }
+
+    /// Verifies that handleAlarmPayload stores the ID in pendingAlarmID for killed-state wakeup.
+    func testHandleAlarmPayloadSetsPendingID() {
+        let delegate = AppDelegate()
+        let testUUID = "ABCDEF12-0000-0000-0000-000000000001"
+        delegate.handleAlarmPayload(["alarmID": testUUID])
+        XCTAssertEqual(delegate.pendingAlarmID, testUUID)
+    }
+
+    /// Verifies that a payload without the expected key leaves pendingAlarmID nil.
+    func testHandleAlarmPayloadIgnoresMissingKey() {
+        let delegate = AppDelegate()
+        delegate.handleAlarmPayload([:])
+        XCTAssertNil(delegate.pendingAlarmID)
+    }
+
+    /// Verifies that a second notification overwrites the first pending ID (last-write-wins).
+    func testHandleAlarmPayloadOverwritesPendingID() {
+        let delegate = AppDelegate()
+        delegate.handleAlarmPayload(["alarmID": "first-uuid"])
+        delegate.handleAlarmPayload(["alarmID": "second-uuid"])
+        XCTAssertEqual(delegate.pendingAlarmID, "second-uuid")
     }
 }
 

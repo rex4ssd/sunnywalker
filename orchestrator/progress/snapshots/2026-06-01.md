@@ -1,6 +1,6 @@
-# Live Progress — last update 2026-06-01T00:22:49+08:00
+# Live Progress — last update 2026-06-01T01:04:37+08:00
 
-Current day: **7**
+Current day: **8**
 
 ## Milestones
 - [x] **Day 1**: Project skeleton, Models, Theme
@@ -9,4 +9,4 @@ Current day: **7**
 - [x] **Day 4**: AudioRecorder + RecordingView
 - [x] **Day 5**: SpeechRecognizer + AlarmRingView
 - [x] **Day 6**: ParentalGate + Settings + SwiftData
-- [ ] **Day 7**: Polish + App Store assets + TestFlight
+- [x] **Day 7**: Polish + App Store assets + TestFlight

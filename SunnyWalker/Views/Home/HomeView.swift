@@ -1,7 +1,8 @@
-// SunnyWalker — HomeView.swift  |  Day 7  |  notification-driven AlarmRingView + IO parental gate
+// SunnyWalker — HomeView.swift  |  Day 8  |  killed-state alarm wakeup + item: cover + remove long-press shortcut
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
@@ -39,12 +40,12 @@ struct HomeView: View {
                     .padding(.bottom, 12)
                 TotoroAvatar()
                     .padding(.bottom, 8)
-                    .onLongPressGesture { firingAlarm = alarms.first }
                 AlarmListView(alarms: alarms)
             }
             addButton
         }
         .ignoresSafeArea(edges: .top)
+        .onAppear { checkPendingAlarm() }
         .onReceive(clockTick) { currentTime = $0 }
         .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in
             guard let uuidString = note.object as? String,
@@ -52,14 +53,19 @@ struct HomeView: View {
                   let alarm = alarms.first(where: { $0.id == uuid }) else { return }
             firingAlarm = alarm
         }
-        .fullScreenCover(
-            isPresented: Binding(
-                get: { firingAlarm != nil },
-                set: { if !$0 { firingAlarm = nil } }
-            )
-        ) {
-            AlarmRingView(alarm: firingAlarm)
+        .fullScreenCover(item: $firingAlarm) { alarm in
+            AlarmRingView(alarm: alarm)
         }
+    }
+
+    // Handles the killed-state case: AppDelegate stored the alarm ID before HomeView was ready.
+    private func checkPendingAlarm() {
+        guard let delegate = UIApplication.shared.delegate as? AppDelegate,
+              let id = delegate.pendingAlarmID else { return }
+        delegate.pendingAlarmID = nil
+        guard let uuid = UUID(uuidString: id),
+              let alarm = alarms.first(where: { $0.id == uuid }) else { return }
+        firingAlarm = alarm
     }
 
     // MARK: - Background

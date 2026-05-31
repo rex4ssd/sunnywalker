@@ -1,4 +1,4 @@
-// SunnyWalker — SunnyWalkerApp.swift  |  Day 7  |  AppDelegate + UNUserNotificationCenterDelegate
+// SunnyWalker — SunnyWalkerApp.swift  |  Day 8  |  AppDelegate + pendingAlarmID for killed-state wakeup
 
 import SwiftUI
 import SwiftData
@@ -14,6 +14,10 @@ extension Notification.Name {
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
+    /// Holds the alarm UUID from a notification that arrived before HomeView was ready.
+    /// HomeView reads and clears this on `.onAppear` to handle the fully-killed-state case.
+    var pendingAlarmID: String?
+
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
@@ -28,9 +32,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if let alarmID = response.notification.request.content.userInfo["alarmID"] as? String {
-            NotificationCenter.default.post(name: .alarmFired, object: alarmID)
-        }
+        handleAlarmPayload(response.notification.request.content.userInfo)
         completionHandler()
     }
 
@@ -41,6 +43,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound])
+    }
+
+    // Extracted so tests can call this directly without a real UNNotificationResponse.
+    func handleAlarmPayload(_ userInfo: [AnyHashable: Any]) {
+        guard let alarmID = userInfo["alarmID"] as? String else { return }
+        pendingAlarmID = alarmID
+        NotificationCenter.default.post(name: .alarmFired, object: alarmID)
     }
 }
 
