@@ -546,9 +546,48 @@ Subject suggestion: "Day 6: ParentalGateView + .caf assets + AlarmEditorView→R
 → Hand off to C
 
 
-## [C] Day 6 — 2026-05-31 23:37:32+08:00
-Status: IN_PROGRESS
+## [C] Day 6 — 2026-05-31 23:38:07+08:00
+Status: DONE
 Model:  claude-sonnet-4-6
 
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+### What I did
+- Verified B's green verdict (28/28 tests, clean build)
+- Staged all changes and committed via `scripts/git_ca.sh`
+- Wrote daily report (below)
+
+### Commit
+9ebf3d8  Day 6: ParentalGateView + .caf assets + AlarmEditorView→RecordingView wiring + GateQuestion tests  [A:✅ B:✅]
+
+### Daily report
+
+**TL;DR**: Day 6 closed the App Store Kids compliance gap — `ParentalGateView` with adult-only questions is live, `.caf` placeholder assets unblock device audio testing, and the `AlarmEditorView → RecordingView` navigation is fully wired.
+
+**Done today**:
+- Created `ParentalGateView.swift` — 3 question types (weekday ordering, largest 3-digit number, 3-digit multiplication); 3 consecutive wrong answers trigger shake + new question; correct answer calls `onSuccess()` and dismisses; all questions non-trivial for a 7-year-old per §6.4
+- Created `GateQuestion` (nested in `ParentalGateView.swift`) — `static func random()`, 3 question types, unit-testable
+- Modified `AlarmEditorView.swift` — added "錄音喚醒語" row with `tempAlarm` UUID pattern so recording file UUID matches the saved alarm; "尚未錄音"/"已錄音 ✅" status shown
+- Modified `HomeView.swift` — "+" button now gated behind `ParentalGateView` via `gateDidSucceed` flag + `onDismiss` callback (avoids sheet-over-sheet race condition)
+- Added `totoro_breath.caf` and `leaf_rustle.caf` — silent 0.5s placeholders; `Bundle.main.url(forResource:)` now returns non-nil; AlarmRingView no longer logs "no recording — skipping"
+- Registered `ParentalGateView.swift`, `MarkdownAlarmIO.swift`, `AlarmIOView.swift` and both `.caf` files in all 4 required `project.pbxproj` sections
+- Added 6 unit tests for `GateQuestion` — total 28/28 pass (was 22)
+
+**Build & tests**: Build pass (rc=0); 28/28 tests pass; lint skipped (swiftlint not installed, rc=99)
+
+**Tomorrow preview**: D will assess Day 6 compliance and brief Day 7 — likely end-to-end alarm flow validation, AlarmIOView wiring, and replacing placeholder `.caf` assets with real sounds before App Store submission prep.
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+✅ B verdict: green — no [BROKEN] prefix required
+⚠️ `.caf` files are silent placeholders — audible assets needed before App Store submission
+⚠️ `tempAlarm` is an uninserted @Model passed to RecordingView — non-standard SwiftData usage, functionally correct
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 6. Specific concerns:
+1. `ParentalGateView` question difficulty — confirm §6.4 compliance (questions must not be solvable by a 7-year-old)
+2. `tempAlarm` uninserted @Model pattern in `AlarmEditorView` — confirm this is acceptable SwiftData usage or flag for Day 7 fix
+3. `MarkdownAlarmIO.swift` and `AlarmIOView.swift` were previously unregistered and compiled for the first time today — spot-check for correctness
+4. No `.caf` audio assets beyond silent placeholders — flag if this blocks any Day 7 spec milestone
+
+→ Hand off to D
 
