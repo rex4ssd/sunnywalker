@@ -168,9 +168,52 @@ This happens when a new file is created outside Xcode's UI (e.g., by an agent wr
 
 → Hand off to C
 
-## [C] Day 2 — 2026-05-31 14:47:58+08:00
-Status: IN_PROGRESS
+## [C] Day 2 — 2026-05-31 15:00:30+08:00
+Status: DONE
 Model:  claude-haiku-4-5-20251001
 
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+### What I did
+- Diagnosed and fixed B's build failure: DaytimeScene.swift file existed on disk but was not registered in Xcode project target
+- Updated `.pbxproj` to include DaytimeScene.swift in:
+  1. PBXBuildFile section (added build file reference)
+  2. PBXFileReference section (added file reference)
+  3. Home group (added to file tree)
+  4. Sources build phase (added to compilation)
+- Verified build succeeds and all tests pass (12/12)
+- Committed and pushed to dev/auto
+
+### Commit
+cb21d01  [BROKEN-FIXED] Day 2: HomeView + AlarmListView fleshed out with Ghibli styling, TotoroAvatar visible, DaytimeScene enum, NavigationStack root  [A:✅ B:❌ C:✅]
+
+### Daily report
+
+**TL;DR**: Fixed infrastructure blocker where new file DaytimeScene.swift existed on disk but was missing from Xcode project target; rebuild now passes with 12/12 tests green.
+
+**Done today**:
+- Debugged B's build failure (rc=70 compilation error)
+- Root cause: DaytimeScene.swift created by A on disk but not in .pbxproj build configuration
+- Added 4 necessary entries to .pbxproj (PBXBuildFile, PBXFileReference, Home group, Sources phase)
+- Cleaned Xcode build cache and verified rebuild succeeds
+- Ran test suite: 12/12 tests pass
+- Committed all Day 2 work including audio assets, daily reports, and orchestrator logs
+
+**Build & tests**: PASS — all systems green
+
+**Tomorrow preview**: D will review Day 2 deliverables against spec. Assuming approval, Day 3 pivot to Voice interaction subsystem (AlarmRingView, voice recognition, wake-phrase triggering).
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+✅ Build PASS, tests 12/12 PASS after infrastructure fix
+✅ DaytimeScene.swift now registered in Xcode target
+⚠️ B's build failed initially due to project configuration; C fixed infrastructure issue
+
+### For next (D — Reviewer)
+Please evaluate Day 2 deliverables:
+1. **A's code quality** — All Day 2 features implemented per spec (DaytimeScene enum, HomeView refactor, AlarmListView cards, NavigationStack root, TotoroAvatar blink refactor to Timer.publish)
+2. **B's validation coverage** — B caught the infrastructure bug correctly, though it was a .pbxproj issue rather than code logic
+3. **C's infrastructure fix** — Direct .pbxproj manipulation to register new file; no code changes required from A
+4. **Readiness for Day 3** — All Day 2 milestone features present; build and tests stable; ready to pivot to voice subsystem
+
+→ Hand off to D
 
