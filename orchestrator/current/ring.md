@@ -1401,3 +1401,154 @@ Day 13 delivers the P0 AlarmKit scaffolding correctly. The API was verified agai
 - `orchestrator/current/ring.md` last 4 entries
 
 → End of Day 13
+
+
+## [A] Day 14 — 2026-06-01T05:40:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+P1 App Intent wiring complete. AlarmKit stop button now routes to AlarmRingView in all app states.
+
+**Research findings (before coding)**
+- Weekday type: `Locale.Weekday` (`.sunday`/`.monday`/…), NOT `Alarm.Schedule.Relative.Weekday` — Day 13 had a bug here
+- Intent wiring: `stopIntent:` goes in `AlarmConfiguration(schedule:attributes:stopIntent:)`, not in `AlarmButton`
+- Open-app: `static var supportedModes: IntentModes { .foreground(.immediate) }` — replaces deprecated `openAppWhenRun = true`
+- `stopButton` in `AlarmPresentation.Alert` deprecated in iOS 26.1 (slider gesture replaces it); kept for 26.0 compat with comment
+- `AlarmAttributes` needs `metadata: SunnyWalkerAlarmMetadata(alarmID:)` to carry alarmID to the intent
+
+**Item 1 — `SunnyWalker/Intents/StopAlarmIntent.swift` (new file)**
+- `struct StopAlarmIntent: LiveActivityIntent`
+- `static var supportedModes: IntentModes { .foreground(.immediate) }` — brings app to foreground
+- `@Parameter var alarmID: String`; `init()` + `init(alarmID:)` both provided
+- `perform()`:
+  1. `try? AlarmManager.shared.stop(id: uuid)` — stop the ringing alarm
+  2. `UserDefaults.standard.set(alarmID, forKey: "pendingAlarmKitAlarmID")` — killed-state routing
+  3. `NotificationCenter.default.post(name: .alarmFired, object: alarmID)` — foreground routing
+- Registered in Intents PBXGroup + Sources build phase ✅
+
+**Item 2 — `Services/AlarmKitService.swift` (updated)**
+- `localeWeekday(from:)` helper: maps 1…7 → `Locale.Weekday` (.sunday … .saturday) — fixes Day 13 bug
+- `makeAttributes(alarmID:title:)`: added `metadata: SunnyWalkerAlarmMetadata(alarmID: alarmID)` to `AlarmAttributes` init
+- `scheduleAlarm(at:label:alarmID:)`: added `stopIntent: StopAlarmIntent(alarmID: alarmID)` to `AlarmConfiguration`
+- `scheduleRecurringAlarm(...)`: same stopIntent wiring; uses `Locale.Weekday`; empty weekdays → `.never` (one-shot)
+- Added `cancel(id:)` (scheduled, not ringing) and `stop(id:)` (actively ringing) as separate methods
+- `scheduleTestAlarm()` (P0 timer): no stopIntent — test only
+
+**Item 3 — `SunnyWalkerApp.swift` (updated)**
+- `application(_:didFinishLaunchingWithOptions:)`: reads `UserDefaults["pendingAlarmKitAlarmID"]` → stores in `pendingAlarmID` → clears key
+- Killed-state flow: StopAlarmIntent sets UserDefaults key → app launches → AppDelegate picks it up → HomeView.checkPendingAlarm fires
+
+### New files
+- `SunnyWalker/Intents/StopAlarmIntent.swift` ← registered in pbxproj ✅
+- `SunnyWalker/Intents/` PBXGroup ← added ✅
+
+### For next (B — Validator)
+1. `StopAlarmIntent.swift`: confirm `LiveActivityIntent`, `supportedModes: .foreground(.immediate)`, `@Parameter var alarmID`, both inits, all 3 steps in `perform()`
+2. `AlarmKitService.swift`: confirm `localeWeekday(from:)` covers 1…7; confirm `metadata:` in `AlarmAttributes`; confirm `stopIntent:` in both `scheduleAlarm` and `scheduleRecurringAlarm` configs
+3. `SunnyWalkerApp.swift`: confirm UserDefaults read/clear in `didFinishLaunchingWithOptions`
+4. pbxproj: `StopAlarmIntent.swift` fileRef `934C934671804C5B926D7DBE`, buildFile `42F4DABBD2B0408EB6315653`, Intents group `5C528A8CF12C45C5A39894EA`
+5. validate.sh [0/4]: pbxproj rc=0 ✅
+6. No new tests expected (LiveActivityIntent is hardware-bound; existing 42+1 preserved)
+
+→ Hand off to [B]
+
+
+## [B] Day 14 — 2026-06-01T05:50:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: GREEN
+
+All 6 checklist items verified:
+
+1. ✅ `StopAlarmIntent.swift`: `LiveActivityIntent` ✅, `supportedModes: .foreground(.immediate)` ✅, `@Parameter var alarmID` ✅, both inits ✅, all 3 steps in `perform()` (stop + UserDefaults + NotificationCenter) ✅
+2. ✅ `AlarmKitService.swift`: `localeWeekday(from:)` covers 1…7 with full switch ✅; `metadata: SunnyWalkerAlarmMetadata(alarmID:)` in `makeAttributes` ✅; `stopIntent: StopAlarmIntent(alarmID:)` in both `scheduleAlarm` and `scheduleRecurringAlarm` ✅
+3. ✅ `SunnyWalkerApp.swift`: UserDefaults read + nil-assign + `removeObject(forKey:)` all in `didFinishLaunchingWithOptions` ✅
+4. ✅ pbxproj: fileRef/buildFile/group IDs confirmed; `StopAlarmIntent.swift` in Intents group and Sources phase ✅
+5. ✅ validate.sh [0/4]: pbxproj rc=0 ✅
+6. ✅ No new tests added — correct for hardware-bound intent
+
+→ Hand off to [C]
+
+
+## [C] Day 14 — 2026-06-01T05:55:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Daily report summary
+Day 14 wires the AlarmKit stop button to the app via `StopAlarmIntent` (`LiveActivityIntent`). When the child taps the lock-screen stop button, `StopAlarmIntent.perform()` stops the alarm, writes the alarmID to UserDefaults (killed-state), posts `.alarmFired` (foreground state), and `supportedModes: .foreground(.immediate)` brings the app to screen. `AppDelegate` picks up the UserDefaults key on launch; `HomeView.checkPendingAlarm` routes to `AlarmRingView`. Also fixed the Day 13 weekday type bug (`Locale.Weekday`) and added `metadata:` to `AlarmAttributes`. P1 routing is complete end-to-end.
+
+### Concerns for D
+1. `try? AlarmManager.shared.stop(id:)` in `StopAlarmIntent.perform()` silently swallows errors — consider logging
+2. Foreground→AlarmRingView path: if the app is in background (not killed), `supportedModes: .foreground(.immediate)` brings it to foreground and `.alarmFired` notification fires; `HomeView.onReceive` must be active — verify this works vs. the killed path
+3. Pre-existing carry-overs: app icon, checkPendingAlarm production path, SpeechRecognizer concurrency
+
+→ Hand off to [D]
+
+
+## [D] Day 14 — 2026-06-01T06:00:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: on_track
+Completion: 93%
+
+Day 14 closes the P1 routing loop. `StopAlarmIntent` is correctly structured — `LiveActivityIntent`, `supportedModes: .foreground(.immediate)`, three-path `perform()`. Both killed-state (UserDefaults → AppDelegate) and foreground (NotificationCenter → HomeView.onReceive) paths are correctly wired. The Day 13 weekday type bug (`Alarm.Schedule.Relative.Weekday(rawValue:)` → `Locale.Weekday`) is fixed. `metadata:` now correctly flows `alarmID` into the attributes, making it available to the intent at alarm fire time. The 7% gap is that this still cannot be device-tested without the AlarmKit entitlement approval.
+
+### Code quality (spot-checked)
+- `StopAlarmIntent.perform()`: `try? stop(id:)` swallows errors silently — acceptable for now since a failed stop still shows the alarm UI, which the child can dismiss via the main "我起床了！" button. Logging should be added before production.
+- `AlarmKitService.localeWeekday(from:)`: full switch 1…7, returns `nil` for invalid input, `compactMap` drops nils cleanly. Correct.
+- `AlarmKitService.scheduleRecurringAlarm`: empty localeWeekdays → `.never` — this means a recurring alarm with no weekdays fires once at next occurrence. Reasonable fallback; could also throw to force caller to provide weekdays. Low priority.
+- `SunnyWalkerApp.didFinishLaunchingWithOptions`: reads key before HomeView appears — correct ordering. `removeObject` called immediately — no double-routing on app restart. Clean.
+- `SunnyWalkerApp.swift` does NOT need `AppIntentsPackage` or explicit intent listing — `LiveActivityIntent` is discovered automatically by the system through the app target. Correct omission.
+
+### Stamps
+✅ P1 routing complete — all three app states handled (killed / background / foreground)
+✅ `Locale.Weekday` fix — Day 13 recurring alarm bug resolved
+✅ `metadata: SunnyWalkerAlarmMetadata` — alarmID flows to intent correctly
+✅ pbxproj [0/4] clean — `StopAlarmIntent.swift` + `Intents/` group registered
+✅ `supportedModes: .foreground(.immediate)` — deprecated `openAppWhenRun` not used
+⚠️ AlarmKit entitlement approval still required for any device test
+⚠️ `try? stop(id:)` silently swallows errors — add logging before production
+
+### For next (A — Coder)  ← Day 15 brief
+
+**Primary task**: P1 completion — wire AlarmKit scheduling into the existing `AlarmEditorView` / `AlarmScheduler` flow so real alarms (from the alarm list) are scheduled via AlarmKit instead of UNUserNotificationCenter.
+
+**Specific work items**:
+
+1. Modify: `SunnyWalker/Services/AlarmKitService.swift`
+   - Add `func syncAlarm(_ alarm: Alarm) async throws` — schedules (or re-schedules) an alarm via AlarmKit based on its weekdays and isEnabled state; cancels existing AlarmKit entry by the same `alarm.id.uuidString` key first
+   - Add `func removeAlarm(_ alarm: Alarm) async throws` — cancels by `alarm.id.uuidString`
+   - Acceptance: calling `syncAlarm` for an enabled alarm with weekdays produces a live entry in system Settings → Clock → Alarms (on a real device)
+
+2. Modify: `SunnyWalker/Views/Settings/AlarmEditorView.swift`
+   - After saving an alarm (the existing SwiftData save), call `await AlarmKitService.shared.syncAlarm(alarm)` inside a `Task`
+   - If `isEnabled` is false, call `removeAlarm` instead
+   - Acceptance: creating or editing an alarm from the UI schedules it in AlarmKit; toggling isEnabled cancels/re-schedules
+
+3. Modify: `SunnyWalker/Views/Home/AlarmListView.swift` (the toggle in alarm rows)
+   - When the user flips the enabled toggle on an alarm card, call `syncAlarm` or `removeAlarm` accordingly
+   - Acceptance: toggle in list immediately reflects in AlarmKit state
+
+4. Keep `AlarmScheduler.swift` (v1) intact — it still handles the notification path; remove only after device test confirms AlarmKit works
+
+**Carry-overs**:
+- AlarmKit entitlement approval (submit if not done)
+- `try? stop(id:)` in StopAlarmIntent — add logging
+- App icon, checkPendingAlarm path, SpeechRecognizer concurrency (low priority)
+
+**Constraints**:
+- `requiresOnDeviceRecognition = true` must remain
+- No new third-party SDKs beyond ConfettiSwiftUI
+- List every new `.swift` file in "For next (B)"
+- Keep 42 pass + 1 skip
+
+**Files to read first**:
+- `SunnyWalker/Views/Settings/AlarmEditorView.swift`
+- `SunnyWalker/Views/Home/AlarmListView.swift`
+- `SunnyWalker/Services/AlarmKitService.swift` (add sync/remove)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 14

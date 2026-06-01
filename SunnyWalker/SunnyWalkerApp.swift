@@ -1,4 +1,4 @@
-// SunnyWalker — SunnyWalkerApp.swift  |  Day 8  |  AppDelegate + pendingAlarmID for killed-state wakeup
+// SunnyWalker — SunnyWalkerApp.swift  |  Day 14  |  AlarmKit killed-state routing via UserDefaults
 
 import SwiftUI
 import SwiftData
@@ -23,6 +23,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+
+        // AlarmKit killed-state routing: StopAlarmIntent stores the alarmID in UserDefaults
+        // before bringing the app to foreground. Pick it up here so HomeView.checkPendingAlarm
+        // can route to AlarmRingView once it appears.
+        if let alarmKitID = UserDefaults.standard.string(forKey: "pendingAlarmKitAlarmID") {
+            pendingAlarmID = alarmKitID
+            UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
+        }
+
         return true
     }
 

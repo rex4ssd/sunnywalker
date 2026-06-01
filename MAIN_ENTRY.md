@@ -9,9 +9,9 @@ Last updated: **2026-06-01T05:10:00+08:00**
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **14**
-- Last entry: `[D] Day 13` — `DONE`
-- Next up: `[A] coder` (Day 14) — **P1 App Intent (StopAlarmIntent)**
+- Current day: **15**
+- Last entry: `[D] Day 14` — `DONE`
+- Next up: `[A] coder` (Day 15) — **P1 completion: AlarmKit 接管 AlarmEditorView / list toggle**
 - Recovery command: `sw next`
 - ⚠️ Pending manual git commit (see below)
 

@@ -12,6 +12,7 @@
 		6038E36000101404AEC7372B /* GhibliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
 		CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */; };
+		42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934C934671804C5B926D7DBE /* StopAlarmIntent.swift */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
 		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
 		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
@@ -99,6 +100,7 @@
 		CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
 		EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
 		7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitService.swift; sourceTree = "<group>"; };
+		934C934671804C5B926D7DBE /* StopAlarmIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAlarmIntent.swift; sourceTree = "<group>"; };
 		33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
 		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
 		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
@@ -169,6 +171,7 @@
 			children = (
 				734DAF79700E2E80CC76C73B /* Models */,
 				EFBEA798C78CDDC40F5F236A /* Services */,
+				5C528A8CF12C45C5A39894EA /* Intents */,
 				2819B31AAA627270102010BD /* Theme */,
 				6E2FDA7104A9144C4D64DBF5 /* Views */,
 				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
@@ -218,6 +221,14 @@
 				A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5C528A8CF12C45C5A39894EA /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				934C934671804C5B926D7DBE /* StopAlarmIntent.swift */,
+			);
+			path = Intents;
 			sourceTree = "<group>";
 		};
 		EFBEA798C78CDDC40F5F236A /* Services */ = {
@@ -365,6 +376,7 @@
 				FF44AA55BB66CC11DD22EE33 /* MarkdownAlarmIO.swift in Sources */,
 				11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */,
 				CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */,
+				42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
