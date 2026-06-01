@@ -38,7 +38,22 @@
 		11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */; };
 		44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */ = {isa = PBXBuildFile; fileRef = 33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */; };
 		660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */; };
+		FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */ = {
+			isa = PBXBuildFile;
+			productRef = EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */;
+		};
 /* End PBXBuildFile section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CC3344DDEE5566FF7788AA99 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXContainerItemProxy section */
 		67D4C7C450593D2F0A999EAC /* PBXContainerItemProxy */ = {
@@ -250,6 +265,7 @@
 			buildConfigurationList = 8850D1A92F66DBAEC416A06A /* Build configuration list for PBXNativeTarget "SunnyWalker" */;
 			buildPhases = (
 				4FB60F10CA141CB3050F07D2 /* Sources */,
+				CC3344DDEE5566FF7788AA99 /* Frameworks */,
 				523852C83B0CD689ACE0DB05 /* Resources */,
 			);
 			buildRules = (
@@ -258,6 +274,7 @@
 			);
 			name = SunnyWalker;
 			packageProductDependencies = (
+				EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -283,6 +300,9 @@
 			);
 			mainGroup = 095C19C14024F6CD35129004;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C638D6224AA4077166EFFC67 /* Products */;
 			projectDirPath = "";
@@ -359,6 +379,25 @@
 			targetProxy = 67D4C7C450593D2F0A999EAC /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EE99FF0011AA22BB33CC44DD /* XCSwiftPackageProductDependency */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		22D186CCB9AB9DA8171AF873 /* Release */ = {

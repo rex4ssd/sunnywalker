@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmRingView.swift  |  Day 5  |  alarm ring with real speech + task-cancellation fix
+// SunnyWalker — AlarmRingView.swift  |  Day 10  |  voice fallback button after 3 failed recognition cycles
 
 import SwiftUI
 
@@ -10,7 +10,9 @@ struct AlarmRingView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @State private var wiggle = false
     @State private var showingReward = false
-    @State private var speechTask: Task<Void, Never>?  // stored so handleWakeUp can cancel it
+    @State private var speechTask: Task<Void, Never>?
+    @State private var recognitionFailureCount = 0
+    @State private var showFallbackButton = false
 
     private var scene: DaytimeScene {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: Date()))
@@ -45,12 +47,22 @@ struct AlarmRingView: View {
 
                 Spacer()
 
+                if showFallbackButton {
+                    GhibliButton("按這裡起床 🌟", color: GhibliColors.leafFresh) {
+                        handleWakeUp()
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 16)
+                    .transition(.opacity.combined(with: .scale))
+                }
+
                 GhibliButton("我起床了！", color: GhibliColors.lanternOrange) {
                     handleWakeUp()
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 56)
             }
+            .animation(.easeInOut(duration: 0.4), value: showFallbackButton)
         }
         .onAppear {
             wiggle = true
@@ -58,14 +70,7 @@ struct AlarmRingView: View {
             speechTask = Task {
                 try? await Task.sleep(for: .seconds(5))
                 guard !Task.isCancelled else { return }
-                do {
-                    try speechRecognizer.startListening { keyword in
-                        print("SpeechRecognizer: matched '\(keyword)' — triggering wake-up")
-                        handleWakeUp()
-                    }
-                } catch {
-                    print("SpeechRecognizer: failed to start — \(error.localizedDescription)")
-                }
+                startSpeechCycle()
             }
         }
         .onDisappear {
@@ -75,6 +80,34 @@ struct AlarmRingView: View {
         }
         .fullScreenCover(isPresented: $showingReward, onDismiss: { dismiss() }) {
             RewardView()
+        }
+    }
+
+    private func startSpeechCycle() {
+        guard !showingReward, !showFallbackButton else { return }
+        do {
+            try speechRecognizer.startListening(onMatch: { keyword in
+                print("SpeechRecognizer: matched '\(keyword)' — triggering wake-up")
+                handleWakeUp()
+            }, onFailure: {
+                handleRecognitionFailure()
+            })
+        } catch {
+            print("SpeechRecognizer: failed to start — \(error.localizedDescription)")
+            handleRecognitionFailure()
+        }
+    }
+
+    private func handleRecognitionFailure() {
+        recognitionFailureCount += 1
+        if recognitionFailureCount >= 3 {
+            showFallbackButton = true
+        } else {
+            speechTask = Task {
+                try? await Task.sleep(for: .seconds(2))
+                guard !Task.isCancelled else { return }
+                startSpeechCycle()
+            }
         }
     }
 

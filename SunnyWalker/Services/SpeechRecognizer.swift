@@ -21,7 +21,7 @@ final class SpeechRecognizer: ObservableObject {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
     }
 
-    func startListening(onMatch: @escaping (String) -> Void) throws {
+    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil) throws {
         guard !isListening else { return }
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "SpeechRecognizer", code: -1,
@@ -54,6 +54,7 @@ final class SpeechRecognizer: ObservableObject {
             if let error {
                 print("SpeechRecognizer: recognition error — \(error.localizedDescription)")
                 self.stop()
+                onFailure?()
                 return
             }
             guard let text = result?.bestTranscription.formattedString else { return }

@@ -1,7 +1,25 @@
-// SunnyWalker — AlarmListView.swift  |  Day 2  |  WatercolorCard alarm list
+// SunnyWalker — AlarmListView.swift  |  Day 10  |  struct-based sample alarms (no @Model outside ModelContext)
 
 import SwiftUI
 import SwiftData
+
+// Lightweight value type for empty-state ghost cards — avoids constructing @Model without a ModelContext
+private struct SampleAlarmData: Identifiable {
+    let id: Int
+    let label: String
+    let hour: Int
+    let minute: Int
+    var isEnabled: Bool = true
+
+    var timeString: String { String(format: "%02d:%02d", hour, minute) }
+}
+
+private let sampleAlarmData: [SampleAlarmData] = [
+    SampleAlarmData(id: 0, label: "上學囉", hour: 7, minute: 30),
+    SampleAlarmData(id: 1, label: "午睡起床", hour: 13, minute: 0, isEnabled: false)
+]
+
+// MARK: - AlarmListView
 
 struct AlarmListView: View {
     let alarms: [Alarm]
@@ -40,8 +58,8 @@ struct AlarmListView: View {
                 .padding(.top, 24)
 
                 LazyVStack(spacing: 12) {
-                    ForEach(Self.sampleAlarms) { alarm in
-                        SampleAlarmCard(alarm: alarm)
+                    ForEach(sampleAlarmData) { data in
+                        SampleAlarmCard(data: data)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -49,14 +67,6 @@ struct AlarmListView: View {
             }
             .padding(.bottom, 100)
         }
-    }
-
-    // Display-only sample alarms — shown when list is empty
-    private static var sampleAlarms: [Alarm] {
-        let a = Alarm(label: "上學囉", hour: 7, minute: 30)
-        let b = Alarm(label: "午睡起床", hour: 13, minute: 0)
-        b.isEnabled = false
-        return [a, b]
     }
 }
 
@@ -118,24 +128,24 @@ private struct AlarmCard: View {
     }
 }
 
-// MARK: - SampleAlarmCard (display-only, no @Bindable, toggle disabled)
+// MARK: - SampleAlarmCard (display-only, struct-based, no @Model)
 
 private struct SampleAlarmCard: View {
-    let alarm: Alarm
+    let data: SampleAlarmData
 
     var body: some View {
         WatercolorCard {
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(alarm.timeString)
+                    Text(data.timeString)
                         .font(GhibliFonts.clock(40))
                         .foregroundStyle(GhibliColors.nightIndigo)
-                    Text(alarm.label)
+                    Text(data.label)
                         .font(GhibliFonts.caption())
                         .foregroundStyle(GhibliColors.totoroGray)
                 }
                 Spacer()
-                Toggle("", isOn: .constant(alarm.isEnabled))
+                Toggle("", isOn: .constant(data.isEnabled))
                     .tint(GhibliColors.leafFresh)
                     .labelsHidden()
                     .disabled(true)

@@ -1,4 +1,4 @@
-// SunnyWalker — HomeView.swift  |  Day 9  |  iPad two-column layout + checkPendingAlarm injection
+// SunnyWalker — HomeView.swift  |  Day 10  |  iPad landscape guard
 
 import SwiftUI
 import SwiftData
@@ -7,6 +7,7 @@ import UIKit
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.verticalSizeClass) private var vSizeClass
     @Query(sort: [SortDescriptor(\Alarm.hour), SortDescriptor(\Alarm.minute)])
     private var alarms: [Alarm]
 
@@ -35,11 +36,26 @@ struct HomeView: View {
         ZStack(alignment: .bottomTrailing) {
             background
             CloudBackground()
-            if sizeClass == .regular {
-                // iPad: side-by-side clock/avatar | alarm list
+            if sizeClass == .regular && vSizeClass == .compact {
+                // iPad landscape: compact two-column with smaller clock to avoid clipping
+                HStack(spacing: 0) {
+                    VStack(spacing: 8) {
+                        clockHeader(fontSize: 52)
+                            .padding(.top, 32)
+                            .padding(.bottom, 8)
+                        TotoroAvatar()
+                            .scaleEffect(0.75)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    AlarmListView(alarms: alarms)
+                        .frame(maxWidth: .infinity)
+                }
+            } else if sizeClass == .regular {
+                // iPad portrait: side-by-side clock/avatar | alarm list
                 HStack(spacing: 0) {
                     VStack(spacing: 0) {
-                        clockHeader
+                        clockHeader()
                             .padding(.top, 56)
                             .padding(.bottom, 16)
                         TotoroAvatar()
@@ -52,7 +68,7 @@ struct HomeView: View {
             } else {
                 // iPhone: stacked layout
                 VStack(spacing: 0) {
-                    clockHeader
+                    clockHeader()
                         .padding(.top, 56)
                         .padding(.bottom, 12)
                     TotoroAvatar()
@@ -99,10 +115,10 @@ struct HomeView: View {
 
     // MARK: - Clock header
 
-    private var clockHeader: some View {
+    private func clockHeader(fontSize: CGFloat = 76) -> some View {
         VStack(spacing: 6) {
             Text(currentTime, format: .dateTime.hour().minute())
-                .font(GhibliFonts.clock())
+                .font(GhibliFonts.clock(fontSize))
                 .foregroundStyle(scene.clockTextColor)
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.3), value: currentTime)

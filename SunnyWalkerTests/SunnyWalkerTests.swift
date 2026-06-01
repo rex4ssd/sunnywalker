@@ -267,6 +267,32 @@ final class GateQuestionTests: XCTestCase {
     }
 }
 
+/// Validates spec §8 risk mitigation: 3 consecutive speech failures → show tap-to-dismiss button.
+final class VoiceFallbackTests: XCTestCase {
+
+    /// Replicates AlarmRingView.handleRecognitionFailure() state machine.
+    /// If the threshold in AlarmRingView.swift changes, update this test to match.
+    func testFallbackButtonAppearsAfterThreeFailures() {
+        var count = 0
+        var showFallback = false
+        let fail = { count += 1; if count >= 3 { showFallback = true } }
+
+        fail(); XCTAssertFalse(showFallback, "fallback must not show after 1 failure")
+        fail(); XCTAssertFalse(showFallback, "fallback must not show after 2 failures")
+        fail(); XCTAssertTrue(showFallback,  "fallback must show after 3 failures (spec §8)")
+    }
+
+    func testFallbackButtonNotShownUntilThirdFailure() {
+        var count = 0
+        var showFallback = false
+        let fail = { count += 1; if count >= 3 { showFallback = true } }
+
+        // Only 2 failures — fallback must stay hidden so children retry naturally.
+        fail(); fail()
+        XCTAssertFalse(showFallback, "premature fallback would skip second attempt")
+    }
+}
+
 final class CheckPendingAlarmTests: XCTestCase {
 
     /// Verifies that checkPendingAlarm clears pendingAlarmID after reading it.

@@ -1,5 +1,5 @@
-2026-06-01 01:01:28.637 xcodebuild[46803:20829004] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
-2026-06-01 01:01:51.603 xcodebuild[46803:20829004] [MT] IDETestOperationsObserverDebug: 19.685 elapsed -- Testing started completed.
-2026-06-01 01:01:51.603 xcodebuild[46803:20829004] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
-2026-06-01 01:01:51.603 xcodebuild[46803:20829004] [MT] IDETestOperationsObserverDebug: 19.685 sec, +19.685 sec -- end
+2026-06-01 01:47:37.540 xcodebuild[57886:20920463] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2026-06-01 01:47:57.456 xcodebuild[57886:20920463] [MT] IDETestOperationsObserverDebug: 17.720 elapsed -- Testing started completed.
+2026-06-01 01:47:57.456 xcodebuild[57886:20920463] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-06-01 01:47:57.456 xcodebuild[57886:20920463] [MT] IDETestOperationsObserverDebug: 17.720 sec, +17.720 sec -- end
 Testing started
