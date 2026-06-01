@@ -1,4 +1,7 @@
 // SunnyWalker — AlarmScheduler.swift  |  Day 2  |  UNUserNotificationCenter wrapper
+//
+// ⚠️ DEPRECATED — v1 path kept alongside AlarmKitService (v2) until device validation.
+// Remove after confirming AlarmKit breaks silent/Focus mode and weekly repeats on real hardware.
 
 import UserNotifications
 import Foundation

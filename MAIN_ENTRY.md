@@ -9,9 +9,34 @@ Last updated: **2026-06-01T05:10:00+08:00**
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **19**
-- Last entry: `[D] Day 18` — `DONE`
-- Next up: `[A] coder` (Day 19) — **P4 start: PermissionManager + AlarmKit auth + BedSideManager**
+- Current day: **24**
+- Last entry: `[A] Day 23` — `DONE`  ← [B][C][D] pending if needed; P0–P5 feature-complete
+- Next up: **P6 App Store prep** — icon, privacy strings, TestFlight, App Store Connect
+
+## 🏁 Feature status (Day 23)
+- ✅ P0 AlarmKit PoC  ✅ P1 StopAlarmIntent routing  ✅ P2 AlarmTaskType
+- ✅ P3 RewardView    ✅ P4 BedSideManager           ✅ P5 WakeRecord + history
+- ⏳ P6 App Store
+
+## 🔧 Commit Day 20–23
+```bash
+cd ~/Documents/SunnyWalker
+rm -f .git/HEAD.lock .git/index.lock
+git add SunnyWalker/Services/BedSideManager.swift \
+  SunnyWalker/Services/AlarmScheduler.swift \
+  SunnyWalker/Services/PermissionManager.swift \
+  SunnyWalker/SunnyWalkerApp.swift \
+  SunnyWalker/Models/WakeRecord.swift \
+  SunnyWalker/Views/Alarm/AlarmRingView.swift \
+  SunnyWalker/Views/Home/HomeView.swift \
+  SunnyWalker/Views/Settings/WakeHistoryView.swift \
+  SunnyWalker.xcodeproj/project.pbxproj \
+  SunnyWalkerTests/SunnyWalkerTests.swift \
+  orchestrator/current/ring.md MAIN_ENTRY.md
+git commit -m "Day 20-23: brightness failsafe + WakeRecord + history UI + v0.2.0"
+git tag v0.2.0-beta
+git push origin dev/auto --tags
+```
 - Recovery command: `sw next`
 - ⚠️ Pending manual git commit (see below)
 

@@ -1,4 +1,4 @@
-// SunnyWalker — PermissionManager.swift  |  Day 3  |  centralized permission requests
+// SunnyWalker — PermissionManager.swift  |  Day 19  |  AlarmKit auth added to first-launch flow
 
 import UserNotifications
 import AVFoundation
@@ -18,6 +18,8 @@ final class PermissionManager: ObservableObject {
         await requestNotificationPermission()
         await requestMicrophonePermission()
         await requestSpeechPermission()
+        // AlarmKit — request after other permissions so the system dialog order is predictable
+        _ = await AlarmKitService.shared.requestAuthorization()
     }
 
     // MARK: - Individual requests

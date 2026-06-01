@@ -1,11 +1,13 @@
-// SunnyWalker — AlarmRingView.swift  |  Day 17  |  effectiveTaskType; .button mode polish
+// SunnyWalker — AlarmRingView.swift  |  Day 21  |  WakeRecord logging on dismiss
 
 import SwiftUI
+import SwiftData
 
 struct AlarmRingView: View {
     var alarm: Alarm? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @StateObject private var audioPlayer = AudioPlayer()
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @State private var wiggle = false
@@ -13,6 +15,9 @@ struct AlarmRingView: View {
     @State private var speechTask: Task<Void, Never>?
     @State private var recognitionFailureCount = 0
     @State private var showFallbackButton = false
+
+    // Wake timestamp — set when view appears, used for WakeRecord response time
+    @State private var firedAt = Date()
 
     // Day 12: listening feedback state
     @State private var isListening = false
@@ -107,7 +112,7 @@ struct AlarmRingView: View {
                         isButtonMode ? "我起床了！" : "按這裡起床 🌟",
                         color: isButtonMode ? GhibliColors.lanternOrange : GhibliColors.leafFresh
                     ) {
-                        handleWakeUp()
+                        handleWakeUp(dismissMethod: isButtonMode ? "button" : "fallback")
                     }
                     .padding(.horizontal, 40)
                     .padding(.bottom, 16)
@@ -116,7 +121,7 @@ struct AlarmRingView: View {
                 }
 
                 GhibliButton("我起床了！", color: GhibliColors.lanternOrange) {
-                    handleWakeUp()
+                    handleWakeUp(dismissMethod: "voice")
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 56)
@@ -124,6 +129,7 @@ struct AlarmRingView: View {
             .animation(.easeInOut(duration: 0.4), value: showFallbackButton)
         }
         .onAppear {
+            firedAt = Date()   // record alarm fire time for WakeRecord
             wiggle = true
             startAudio()
             // .button taskType: skip speech — child taps to dismiss immediately
@@ -160,7 +166,7 @@ struct AlarmRingView: View {
                 print("SpeechRecognizer: matched '\(keyword)' — triggering wake-up")
                 isListening = false
                 micPulse = false
-                handleWakeUp()
+                handleWakeUp(dismissMethod: "voice")
             }, onFailure: {
                 isListening = false
                 micPulse = false
@@ -200,10 +206,21 @@ struct AlarmRingView: View {
         }
     }
 
-    private func handleWakeUp() {
+    private func handleWakeUp(dismissMethod: String = "voice") {
         speechTask?.cancel()
         audioPlayer.stop()
         speechRecognizer.stop()
+        // Log wake record for parent history
+        if let alarm {
+            let record = WakeRecord(
+                alarmID: alarm.id,
+                alarmLabel: alarm.label,
+                firedAt: firedAt,
+                wokeAt: Date(),
+                dismissMethod: dismissMethod
+            )
+            modelContext.insert(record)
+        }
         showingReward = true
     }
 

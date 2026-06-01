@@ -13,9 +13,12 @@
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
 		CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */; };
 		42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934C934671804C5B926D7DBE /* StopAlarmIntent.swift */; };
+		E9D2B038759A4164AB1EFFC2 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
 		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
 		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
+		B2C05224080444FFB81F6DB6 /* WakeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A33375D159471D87BDC522 /* WakeRecord.swift */; };
+		145CCD43707947468712511C /* WakeHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */; };
 		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
 		E409258EA2C6052DDE696951 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB6388EF249B7365D9B3B48 /* HomeView.swift */; };
 		EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */; };
@@ -72,6 +75,7 @@
 		14909DF5F592C0045CF04728 /* AlarmListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmListView.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
+		50A33375D159471D87BDC522 /* WakeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeRecord.swift; sourceTree = "<group>"; };
 		770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliColors.swift; sourceTree = "<group>"; };
 		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
@@ -100,9 +104,11 @@
 		CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
 		EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
 		7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitService.swift; sourceTree = "<group>"; };
+		35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedSideManager.swift; sourceTree = "<group>"; };
 		934C934671804C5B926D7DBE /* StopAlarmIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAlarmIntent.swift; sourceTree = "<group>"; };
 		33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
 		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
+		EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeHistoryView.swift; sourceTree = "<group>"; };
 		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
 		55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = leaf_rustle.caf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -162,6 +168,7 @@
 				00BB11CC22DD33EE44FF55AA /* RecordingView.swift */,
 				CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */,
 				00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */,
+				EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -198,6 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				60114EB5C3B3CEE759BABCDF /* Alarm.swift */,
+				50A33375D159471D87BDC522 /* WakeRecord.swift */,
 				FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */,
 				22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */,
 			);
@@ -241,6 +249,7 @@
 				99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */,
 				EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */,
 				7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */,
+				35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -349,6 +358,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */,
+				B2C05224080444FFB81F6DB6 /* WakeRecord.swift in Sources */,
 				8672D8B3917813013073515A /* AlarmListView.swift in Sources */,
 				6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
@@ -375,7 +385,9 @@
 				DD22EE33FF44AA55BB66CC11 /* ParentalGateView.swift in Sources */,
 				FF44AA55BB66CC11DD22EE33 /* MarkdownAlarmIO.swift in Sources */,
 				11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */,
+				145CCD43707947468712511C /* WakeHistoryView.swift in Sources */,
 				CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */,
+				E9D2B038759A4164AB1EFFC2 /* BedSideManager.swift in Sources */,
 				42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -483,7 +495,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -584,7 +596,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

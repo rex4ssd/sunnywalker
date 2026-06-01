@@ -1,4 +1,4 @@
-// SunnyWalker — HomeView.swift  |  Day 13  |  AlarmKit DEBUG test button
+// SunnyWalker — HomeView.swift  |  Day 20  |  DEBUG overlay removed; bed-side mode
 
 import SwiftUI
 import SwiftData
@@ -20,15 +20,19 @@ struct HomeView: View {
     // Notification-driven / long-press alarm ring
     @State private var firingAlarm: Alarm?
 
-    // Day 13: AlarmKit PoC test state (DEBUG only)
-    #if DEBUG
-    @State private var alarmKitStatusMessage: String = ""
-    #endif
+    // Day 19: bed-side mode
+    @StateObject private var bedSide = BedSideManager.shared
+
 
     // IO button gate states
     @State private var showingParentalGateForIO = false
     @State private var gateDidSucceedIO = false
     @State private var showingIO = false
+
+    // Wake history (parental-gated)
+    @State private var showingParentalGateForHistory = false
+    @State private var gateDidSucceedHistory = false
+    @State private var showingHistory = false
 
     private let clockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -88,10 +92,6 @@ struct HomeView: View {
                 }
             }
             addButton
-
-            #if DEBUG
-            alarmKitDebugOverlay
-            #endif
         }
         .ignoresSafeArea(edges: .top)
         .onAppear {
@@ -105,6 +105,8 @@ struct HomeView: View {
             guard let uuidString = note.object as? String,
                   let uuid = UUID(uuidString: uuidString),
                   let alarm = alarms.first(where: { $0.id == uuid }) else { return }
+            // Restore brightness before showing AlarmRingView (bed-side may have dimmed screen)
+            bedSide.disable()
             firingAlarm = alarm
         }
         .fullScreenCover(item: $firingAlarm) { alarm in
@@ -123,49 +125,6 @@ struct HomeView: View {
     }
 
     // MARK: - AlarmKit PoC DEBUG overlay (stripped from Release builds)
-
-    #if DEBUG
-    private var alarmKitDebugOverlay: some View {
-        VStack(spacing: 8) {
-            Button {
-                Task {
-                    let granted = await AlarmKitService.shared.requestAuthorization()
-                    guard granted else {
-                        alarmKitStatusMessage = "❌ 未授權 — 到設定開啟"
-                        return
-                    }
-                    do {
-                        let id = try await AlarmKitService.shared.scheduleTestAlarm()
-                        alarmKitStatusMessage = "✅ 60秒後響 (id=\(id.uuidString.prefix(8))…)\n鎖屏測試靜音是否突破"
-                    } catch {
-                        alarmKitStatusMessage = "❌ 排程失敗：\(error.localizedDescription)"
-                    }
-                }
-            } label: {
-                Label("Test AlarmKit (60s)", systemImage: "alarm.fill")
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(GhibliColors.nightIndigo.opacity(0.85))
-                    .clipShape(Capsule())
-            }
-
-            if !alarmKitStatusMessage.isEmpty {
-                Text(alarmKitStatusMessage)
-                    .font(.caption2)
-                    .foregroundStyle(GhibliColors.cloudWhite)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.65))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-        }
-        .padding(.bottom, 120)   // sit above the FAB buttons
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-    }
-    #endif
 
     // MARK: - Background
 
@@ -198,6 +157,42 @@ struct HomeView: View {
 
     private var addButton: some View {
         VStack(spacing: 16) {
+            // Bed-side mode toggle — no parental gate (parent uses this themselves)
+            Button {
+                if bedSide.isBedSideActive {
+                    bedSide.disable()
+                } else {
+                    bedSide.enable()
+                }
+            } label: {
+                Image(systemName: bedSide.isBedSideActive ? "moon.fill" : "moon")
+                    .font(.title3.bold())
+                    .foregroundStyle(bedSide.isBedSideActive ? GhibliColors.starGold : .white)
+                    .frame(width: 48, height: 48)
+                    .background(
+                        bedSide.isBedSideActive
+                            ? GhibliColors.nightDeep
+                            : GhibliColors.nightIndigo.opacity(0.75)
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: GhibliColors.nightDeep.opacity(0.45), radius: 8, y: 4)
+            }
+            .accessibilityLabel(bedSide.isBedSideActive ? "關閉床邊模式" : "開啟床邊模式")
+
+            // Wake history button — gated behind parental gate
+            Button {
+                showingParentalGateForHistory = true
+            } label: {
+                Image(systemName: "chart.bar.fill")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(GhibliColors.forestDeep)
+                    .clipShape(Circle())
+                    .shadow(color: GhibliColors.forestDeep.opacity(0.45), radius: 8, y: 4)
+            }
+            .accessibilityLabel("起床紀錄")
+
             // IO / export button — gated behind parental gate
             Button {
                 showingParentalGateForIO = true
@@ -247,6 +242,18 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingIO) {
             AlarmIOView()
+        }
+        // Parental gate for wake history
+        .sheet(isPresented: $showingParentalGateForHistory, onDismiss: {
+            if gateDidSucceedHistory {
+                gateDidSucceedHistory = false
+                showingHistory = true
+            }
+        }) {
+            ParentalGateView(onSuccess: { gateDidSucceedHistory = true })
+        }
+        .sheet(isPresented: $showingHistory) {
+            WakeHistoryView()
         }
     }
 }

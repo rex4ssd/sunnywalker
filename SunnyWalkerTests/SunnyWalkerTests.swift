@@ -429,3 +429,41 @@ final class EffectiveTaskTypeTests: XCTestCase {
         XCTAssertEqual(alarm.effectiveTaskType, .math)
     }
 }
+
+/// Day 23: WakeRecord model tests.
+final class WakeRecordTests: XCTestCase {
+
+    func testWakeRecordResponseSeconds() {
+        let fired = Date()
+        let woke  = fired.addingTimeInterval(47)
+        let record = WakeRecord(alarmID: UUID(), alarmLabel: "早起", firedAt: fired, wokeAt: woke)
+        XCTAssertEqual(record.responseSeconds, 47)
+    }
+
+    func testWakeRecordResponseFormattedSeconds() {
+        let fired = Date()
+        let record = WakeRecord(alarmID: UUID(), alarmLabel: "A", firedAt: fired,
+                                wokeAt: fired.addingTimeInterval(30))
+        XCTAssertEqual(record.responseFormatted, "30 秒")
+    }
+
+    func testWakeRecordResponseFormattedMinutes() {
+        let fired = Date()
+        let record = WakeRecord(alarmID: UUID(), alarmLabel: "B", firedAt: fired,
+                                wokeAt: fired.addingTimeInterval(90))
+        XCTAssertEqual(record.responseFormatted, "1 分 30 秒")
+    }
+
+    func testWakeRecordDefaultDismissMethod() {
+        let record = WakeRecord(alarmID: UUID(), alarmLabel: "C", firedAt: Date())
+        XCTAssertEqual(record.dismissMethod, "voice")
+    }
+
+    func testWakeRecordNegativeResponseClampsToZero() {
+        // wokeAt before firedAt should not produce a negative response time
+        let now = Date()
+        let record = WakeRecord(alarmID: UUID(), alarmLabel: "D",
+                                firedAt: now, wokeAt: now.addingTimeInterval(-5))
+        XCTAssertEqual(record.responseSeconds, 0)
+    }
+}

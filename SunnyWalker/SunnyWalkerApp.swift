@@ -22,6 +22,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // Restore screen brightness if app was force-quit during bed-side mode
+        BedSideManager.shared.restoreOnLaunch()
+
         UNUserNotificationCenter.current().delegate = self
 
         // AlarmKit killed-state routing: StopAlarmIntent stores the alarmID in UserDefaults
@@ -79,6 +82,6 @@ struct SunnyWalkerApp: App {
                     _ = await AlarmKitService.shared.requestAuthorization()
                 }
         }
-        .modelContainer(for: Alarm.self)
+        .modelContainer(for: [Alarm.self, WakeRecord.self])
     }
 }
