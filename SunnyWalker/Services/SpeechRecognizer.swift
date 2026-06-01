@@ -14,6 +14,7 @@ final class SpeechRecognizer: ObservableObject {
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
     private var isListening = false
+    private var timeoutTask: Task<Void, Never>?
 
     private let keywords = ["我起床了", "好的", "知道了", "起床囉"]
 
@@ -21,7 +22,7 @@ final class SpeechRecognizer: ObservableObject {
         recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
     }
 
-    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil) throws {
+    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil, listeningTimeout: TimeInterval = 8.0) throws {
         guard !isListening else { return }
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "SpeechRecognizer", code: -1,
@@ -49,6 +50,15 @@ final class SpeechRecognizer: ObservableObject {
         try audioEngine.start()
         isListening = true
 
+        // Fires onFailure after listeningTimeout seconds if the child says random words
+        // and no keyword match occurs (the primary spec §8 failure scenario, not just system errors).
+        timeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(listeningTimeout))
+            guard let self, !Task.isCancelled, self.isListening else { return }
+            self.stop()
+            onFailure?()
+        }
+
         task = recognizer.recognitionTask(with: request!) { [weak self] result, error in
             guard let self else { return }
             if let error {
@@ -71,6 +81,8 @@ final class SpeechRecognizer: ObservableObject {
     func stop() {
         guard isListening else { return }
         isListening = false
+        timeoutTask?.cancel()
+        timeoutTask = nil
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         request?.endAudio()

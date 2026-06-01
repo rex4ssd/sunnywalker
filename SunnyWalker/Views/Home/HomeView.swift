@@ -7,7 +7,6 @@ import UIKit
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @Environment(\.verticalSizeClass) private var vSizeClass
     @Query(sort: [SortDescriptor(\Alarm.hour), SortDescriptor(\Alarm.minute)])
     private var alarms: [Alarm]
 
@@ -36,34 +35,41 @@ struct HomeView: View {
         ZStack(alignment: .bottomTrailing) {
             background
             CloudBackground()
-            if sizeClass == .regular && vSizeClass == .compact {
-                // iPad landscape: compact two-column with smaller clock to avoid clipping
-                HStack(spacing: 0) {
-                    VStack(spacing: 8) {
-                        clockHeader(fontSize: 52)
-                            .padding(.top, 32)
-                            .padding(.bottom, 8)
-                        TotoroAvatar()
-                            .scaleEffect(0.75)
-                        Spacer()
+            if sizeClass == .regular {
+                // iPad: GeometryReader distinguishes landscape (width > height) from portrait.
+                // The prior sizeClass == .regular && vSizeClass == .compact condition was dead code
+                // because iPad landscape gives verticalSizeClass = .regular, not .compact.
+                GeometryReader { geo in
+                    if geo.size.width > geo.size.height {
+                        // iPad landscape: compact two-column with smaller clock to avoid clipping
+                        HStack(spacing: 0) {
+                            VStack(spacing: 8) {
+                                clockHeader(fontSize: 52)
+                                    .padding(.top, 32)
+                                    .padding(.bottom, 8)
+                                TotoroAvatar()
+                                    .scaleEffect(0.75)
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity)
+                            AlarmListView(alarms: alarms)
+                                .frame(maxWidth: .infinity)
+                        }
+                    } else {
+                        // iPad portrait: side-by-side clock/avatar | alarm list
+                        HStack(spacing: 0) {
+                            VStack(spacing: 0) {
+                                clockHeader()
+                                    .padding(.top, 56)
+                                    .padding(.bottom, 16)
+                                TotoroAvatar()
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity)
+                            AlarmListView(alarms: alarms)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    AlarmListView(alarms: alarms)
-                        .frame(maxWidth: .infinity)
-                }
-            } else if sizeClass == .regular {
-                // iPad portrait: side-by-side clock/avatar | alarm list
-                HStack(spacing: 0) {
-                    VStack(spacing: 0) {
-                        clockHeader()
-                            .padding(.top, 56)
-                            .padding(.bottom, 16)
-                        TotoroAvatar()
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity)
-                    AlarmListView(alarms: alarms)
-                        .frame(maxWidth: .infinity)
                 }
             } else {
                 // iPhone: stacked layout

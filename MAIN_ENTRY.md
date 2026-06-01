@@ -4,14 +4,14 @@ _A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-06-01T10:44:09+08:00**
+Last updated: **2026-06-01T11:30:35+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **10**
-- Last entry: `[B] Day 10` — `DONE`
-- Next up: `[C] reporter` (Day 10)
+- Current day: **11**
+- Last entry: `[B] Day 11` — `DONE`
+- Next up: `[C] reporter` (Day 11)
 - Recovery command: `sw next`
 
 ## ⏰  Schedule, cooldown & approval
@@ -22,14 +22,14 @@ Last updated: **2026-06-01T10:44:09+08:00**
 - No active heartbeat — system is idle / not running
 
 ## 🔁  Recent ring entries (last 8)
+- ✅ `[D]` Day  6  2026-05-31 23:47:00+08:00  End Day 6
+- ✅ `[D]` Day  7  2026-06-01 00:35:00+08:00  End Day 7
+- ✅ `[D]` Day  8  2026-06-01 02:08:00+08:00  End Day 8
 - ✅ `[D]` Day  9  2026-06-01 03:15:00+08:00  End Day 9
-- 🟡 `[A]` Day 10  2026-06-01 02:23:56+08:00  
-- ⏸️ `[A]` Day 10  2026-06-01 02:31:32+08:00 (orchestrator-injected)  
-- 🟡 `[A]` Day 10  2026-06-01 06:32:31+08:00  
-- ⏸️ `[A]` Day 10  2026-06-01 06:32:33+08:00 (orchestrator-injected)  
-- 🟡 `[A]` Day 10  2026-06-01 10:33:23+08:00  
-- ✅ `[A]` Day 10  2026-06-01 10:38:35+08:00  → B
-- ✅ `[B]` Day 10  2026-06-01 10:41:30+08:00  → C
+- ✅ `[D]` Day 10  2026-06-01 11:15:00+08:00  End Day 10
+- ✅ `[A]` Day 11  2026-06-01 11:25:59+08:00  → B
+- 🟡 `[B]` Day 11  2026-06-01 11:26:58+08:00  
+- ✅ `[B]` Day 11  2026-06-01 11:30:15+08:00  → C
 
 Full ring: `orchestrator/current/ring.md`
 
@@ -44,10 +44,6 @@ Full ring: `orchestrator/current/ring.md`
 
 ## 📝  Live progress
 - `orchestrator/progress/progress.md`
-
-## 🚨  Open blockers / human attention
-- **[A] Day 10 PAUSED_TOKEN_LIMIT** — logs: `/Users/lion/Documents/SunnyWalker/orchestrator/logs/2026-06-01`
-- **[A] Day 10 PAUSED_TOKEN_LIMIT** — logs: `/Users/lion/Documents/SunnyWalker/orchestrator/logs/2026-06-01`
 
 ## 🗂️  Active verbose logs (not yet archived)
 - `orchestrator/logs/2026-05-29`

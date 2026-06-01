@@ -2,6 +2,7 @@
 
 import XCTest
 import AVFoundation
+import Speech
 @testable import SunnyWalker
 
 final class SunnyWalkerSmokeTests: XCTestCase {
@@ -268,6 +269,7 @@ final class GateQuestionTests: XCTestCase {
 }
 
 /// Validates spec §8 risk mitigation: 3 consecutive speech failures → show tap-to-dismiss button.
+@MainActor
 final class VoiceFallbackTests: XCTestCase {
 
     /// Replicates AlarmRingView.handleRecognitionFailure() state machine.
@@ -290,6 +292,29 @@ final class VoiceFallbackTests: XCTestCase {
         // Only 2 failures — fallback must stay hidden so children retry naturally.
         fail(); fail()
         XCTAssertFalse(showFallback, "premature fallback would skip second attempt")
+    }
+
+    /// Integration test: verifies that SpeechRecognizer.onFailure fires after listeningTimeout
+    /// seconds even when no system error occurs (child says random words, no keyword match).
+    /// Skipped when on-device zh-TW recognition is unavailable (simulator / unsupported device).
+    /// Acceptance: removing onFailure?() from the timeout task causes this test to time out and fail.
+    func testSpeechRecognizerTimeoutCallsOnFailure() throws {
+        let sfRec = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
+        try XCTSkipUnless(sfRec?.supportsOnDeviceRecognition == true,
+                          "On-device zh-TW recognition unavailable; timeout integration test requires a real device")
+
+        let recognizer = SpeechRecognizer()
+        let exp = expectation(description: "onFailure fires after listeningTimeout")
+
+        try recognizer.startListening(onMatch: { _ in
+            XCTFail("onMatch should not fire — no audio input in test environment")
+        }, onFailure: {
+            exp.fulfill()
+        }, listeningTimeout: 0.3)
+
+        wait(for: [exp], timeout: 2.0)
+        // stop() was already called internally by the timeout task; this is a no-op guard.
+        recognizer.stop()
     }
 }
 
