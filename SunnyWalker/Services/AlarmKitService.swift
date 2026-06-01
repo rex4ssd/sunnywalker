@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmKitService.swift  |  Day 14  |  P1 intent wiring + Locale.Weekday fix
+// SunnyWalker — AlarmKitService.swift  |  Day 15  |  syncAlarm / removeAlarm for P1 completion
 
 import AlarmKit
 import AppIntents
@@ -173,18 +173,80 @@ final class AlarmKitService {
         return id
     }
 
-    // MARK: - Cancel / Stop
+    // MARK: - Bulk sync (called from HomeView.onAppear after auth is granted)
 
-    /// Cancel a scheduled (not yet ringing) alarm.
-    func cancel(id: UUID) async throws {
-        try await manager.cancel(id: id)
-        print("AlarmKitService: cancelled alarm id=\(id)")
+    /// Sync all enabled alarms to AlarmKit in one pass.
+    /// Called once on launch so pre-existing SwiftData alarms appear in the system alarm list.
+    /// Errors per-alarm are swallowed — a single bad alarm should not block the rest.
+    func syncAllEnabled(_ alarms: [Alarm]) async {
+        guard isAuthorized else { return }
+        for alarm in alarms where alarm.isEnabled {
+            try? await syncAlarm(alarm)
+        }
+        print("AlarmKitService: bulk sync complete — \(alarms.filter(\.isEnabled).count) alarms")
     }
 
-    /// Stop an actively ringing alarm.
+    // MARK: - Sync (primary P1 API)
+
+    /// Upsert an alarm into AlarmKit using `alarm.id` as the AlarmKit alarm UUID.
+    /// Using the same UUID means calling this again replaces the existing entry — no cleanup needed.
+    ///
+    /// - If `alarm.isEnabled == false`: removes any existing AlarmKit entry.
+    /// - If weekdays is non-empty: schedules a weekly recurring alarm.
+    /// - If weekdays is empty: schedules a one-shot alarm at the next occurrence of the alarm's time.
+    func syncAlarm(_ alarm: Alarm) async throws {
+        guard alarm.isEnabled else {
+            try await removeAlarm(alarm)
+            return
+        }
+
+        let title = alarm.label.isEmpty ? "該起床囉！☀️" : alarm.label
+        let attrs = makeAttributes(alarmID: alarm.id.uuidString, title: title)
+        let time = Alarm.Schedule.Relative.Time(hour: alarm.hour, minute: alarm.minute)
+        let localeWeekdays = alarm.weekdays.compactMap { localeWeekday(from: $0) }
+
+        let schedule: Alarm.Schedule
+        if localeWeekdays.isEmpty {
+            // No weekdays: one-shot at next occurrence of this hour:minute (today or tomorrow)
+            var comps = DateComponents()
+            comps.hour = alarm.hour
+            comps.minute = alarm.minute
+            comps.second = 0
+            var fireDate = Calendar.current.nextDate(
+                after: Date(),
+                matching: comps,
+                matchingPolicy: .nextTime
+            ) ?? Date().addingTimeInterval(3600)
+            schedule = .fixed(fireDate)
+        } else {
+            let recurrence = Alarm.Schedule.Relative.Recurrence.weekly(localeWeekdays)
+            schedule = .relative(Alarm.Schedule.Relative(time: time, repeats: recurrence))
+        }
+
+        let config = AlarmConfiguration(
+            schedule: schedule,
+            attributes: attrs,
+            stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
+        )
+        // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
+        try await manager.schedule(id: alarm.id, configuration: config)
+        print("AlarmKitService: synced \(alarm.id) — \(alarm.hour):\(String(format: "%02d", alarm.minute)), weekdays=\(alarm.weekdays)")
+    }
+
+    /// Remove an alarm from AlarmKit. Safe to call if the alarm was never scheduled.
+    func removeAlarm(_ alarm: Alarm) async throws {
+        try? await manager.cancel(id: alarm.id)
+        print("AlarmKitService: removed \(alarm.id)")
+    }
+
+    // MARK: - Cancel / Stop (low-level, used internally and by StopAlarmIntent)
+
+    func cancel(id: UUID) async throws {
+        try await manager.cancel(id: id)
+    }
+
     func stop(id: UUID) async throws {
         try await manager.stop(id: id)
-        print("AlarmKitService: stopped alarm id=\(id)")
     }
 
     // MARK: - List

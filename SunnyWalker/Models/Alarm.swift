@@ -1,7 +1,22 @@
-// SunnyWalker — Alarm.swift  |  Day 1  |  SwiftData alarm model
+// SunnyWalker — Alarm.swift  |  Day 17  |  taskType optional (SwiftData migration safe)
 
 import SwiftData
 import Foundation
+
+// MARK: - Task type
+
+/// How the child dismisses the alarm after the AlarmKit alert fires.
+/// Stored as a raw String in SwiftData — adding new cases is non-breaking.
+enum AlarmTaskType: String, Codable {
+    /// Child must say the wake phrase (voice recognition + fallback button). Default.
+    case voice
+    /// Child taps the button only — no speech recognition. Good for young toddlers.
+    case button
+    /// (Future P5) Child solves a simple math problem.
+    case math
+}
+
+// MARK: - Alarm model
 
 @Model
 final class Alarm {
@@ -9,13 +24,18 @@ final class Alarm {
     var label: String
     var hour: Int
     var minute: Int
-    var weekdays: [Int]       // 1 = Sunday … 7 = Saturday
+    var weekdays: [Int]           // 1 = Sunday … 7 = Saturday
     var isEnabled: Bool
     var recordingName: String
     var soundFileName: String
     var createdAt: Date
 
-    init(label: String, hour: Int, minute: Int, recordingName: String = "") {
+    /// Optional so SwiftData lightweight migration works on existing rows.
+    /// Use `effectiveTaskType` everywhere in the UI — never access this directly.
+    var taskType: AlarmTaskType?
+
+    init(label: String, hour: Int, minute: Int, recordingName: String = "",
+         taskType: AlarmTaskType = .voice) {
         self.id = UUID()
         self.label = label
         self.hour = hour
@@ -25,7 +45,11 @@ final class Alarm {
         self.recordingName = recordingName
         self.soundFileName = "totoro_breath.caf"
         self.createdAt = .now
+        self.taskType = taskType
     }
+
+    /// Always resolves to a concrete value — nil (pre-Day-16 rows) → `.voice`.
+    var effectiveTaskType: AlarmTaskType { taskType ?? .voice }
 
     var timeString: String {
         String(format: "%02d:%02d", hour, minute)

@@ -1,4 +1,4 @@
-// SunnyWalker — SunnyWalkerApp.swift  |  Day 14  |  AlarmKit killed-state routing via UserDefaults
+// SunnyWalker — SunnyWalkerApp.swift  |  Day 16  |  AlarmKit auth on launch
 
 import SwiftUI
 import SwiftData
@@ -72,7 +72,11 @@ struct SunnyWalkerApp: App {
         WindowGroup {
             ContentView()
                 .task {
+                    // Request mic + speech permissions (v1 path)
                     await PermissionManager.shared.requestAllPermissions()
+                    // Request AlarmKit authorization — HomeView.onAppear will then
+                    // sync all existing enabled alarms to AlarmKit (it has @Query alarms)
+                    _ = await AlarmKitService.shared.requestAuthorization()
                 }
         }
         .modelContainer(for: Alarm.self)

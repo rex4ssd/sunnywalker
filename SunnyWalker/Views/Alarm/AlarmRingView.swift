@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmRingView.swift  |  Day 12  |  listening feedback UI + fallback button polish
+// SunnyWalker — AlarmRingView.swift  |  Day 17  |  effectiveTaskType; .button mode polish
 
 import SwiftUI
 
@@ -92,19 +92,26 @@ struct AlarmRingView: View {
                 Spacer()
 
                 if showFallbackButton {
-                    // Explanation caption above fallback button
-                    Text("說不出來嗎？")
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(scene.clockTextColor.opacity(0.75))
-                        .padding(.bottom, 8)
-                        .transition(.opacity)
+                    // .voice failure: show "說不出來嗎？" hint + secondary color
+                    // .button mode: show primary "我起床了！" directly (no hint needed)
+                    if alarm?.effectiveTaskType != .button {
+                        Text("說不出來嗎？")
+                            .font(GhibliFonts.caption())
+                            .foregroundStyle(scene.clockTextColor.opacity(0.75))
+                            .padding(.bottom, 8)
+                            .transition(.opacity)
+                    }
 
-                    GhibliButton("按這裡起床 🌟", color: GhibliColors.leafFresh) {
+                    let isButtonMode = alarm?.effectiveTaskType == .button
+                    GhibliButton(
+                        isButtonMode ? "我起床了！" : "按這裡起床 🌟",
+                        color: isButtonMode ? GhibliColors.lanternOrange : GhibliColors.leafFresh
+                    ) {
                         handleWakeUp()
                     }
                     .padding(.horizontal, 40)
                     .padding(.bottom, 16)
-                    .disabled(!fallbackButtonEnabled)   // 0.5s tap-through guard
+                    .disabled(!fallbackButtonEnabled)
                     .transition(.scale.combined(with: .opacity))
                 }
 
@@ -119,10 +126,17 @@ struct AlarmRingView: View {
         .onAppear {
             wiggle = true
             startAudio()
-            speechTask = Task {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { return }
-                startSpeechCycle()
+            // .button taskType: skip speech — child taps to dismiss immediately
+            if alarm?.effectiveTaskType == .button {
+                showFallbackButton = true
+                fallbackButtonEnabled = true
+            } else {
+                // .voice (default) + future .math: start speech after 5s warm-up
+                speechTask = Task {
+                    try? await Task.sleep(for: .seconds(5))
+                    guard !Task.isCancelled else { return }
+                    startSpeechCycle()
+                }
             }
         }
         .onDisappear {

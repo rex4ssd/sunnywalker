@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmEditorView.swift  |  Day 3  |  add alarm editor
+// SunnyWalker — AlarmEditorView.swift  |  Day 17  |  AlarmTaskType picker
 
 import SwiftUI
 import SwiftData
@@ -12,6 +12,7 @@ struct AlarmEditorView: View {
     @State private var selectedTime = Date()
     @State private var label = "起床囉"
     @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]  // Mon–Fri default
+    @State private var selectedTaskType: AlarmTaskType = .voice
     @State private var isSaving = false
     @State private var showingRecording = false
 
@@ -28,6 +29,7 @@ struct AlarmEditorView: View {
                         timePicker
                         labelField
                         weekdayPicker
+                        taskTypePicker
                         recordingRow
                         saveButton
                     }
@@ -97,6 +99,28 @@ struct AlarmEditorView: View {
         }
     }
 
+    private var taskTypePicker: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("關鬧鐘方式")
+                    .font(GhibliFonts.caption())
+                    .foregroundStyle(GhibliColors.totoroGray)
+                Picker("", selection: $selectedTaskType) {
+                    Label("說話關 🎤", systemImage: "mic.fill").tag(AlarmTaskType.voice)
+                    Label("按鈕關 👆", systemImage: "hand.tap.fill").tag(AlarmTaskType.button)
+                }
+                .pickerStyle(.segmented)
+                Text(selectedTaskType == .voice
+                     ? "小朋友說出喚醒語才能關掉鬧鐘"
+                     : "小朋友按按鈕就能關掉鬧鐘，適合年幼寶寶")
+                    .font(GhibliFonts.caption(13))
+                    .foregroundStyle(GhibliColors.totoroGray.opacity(0.8))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+    }
+
     private var recordingRow: some View {
         WatercolorCard {
             Button { showingRecording = true } label: {
@@ -154,9 +178,13 @@ struct AlarmEditorView: View {
         tempAlarm.hour = comps.hour ?? 7
         tempAlarm.minute = comps.minute ?? 0
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
+        tempAlarm.taskType = selectedTaskType
         modelContext.insert(tempAlarm)
         Task {
+            // v1 path (UNUserNotificationCenter) — kept until AlarmKit device test confirms parity
             try? await AlarmScheduler.shared.schedule(alarm: tempAlarm)
+            // v2 path (AlarmKit) — upserts; no-ops silently if entitlement not yet approved
+            try? await AlarmKitService.shared.syncAlarm(tempAlarm)
             await MainActor.run {
                 isSaving = false
                 dismiss()

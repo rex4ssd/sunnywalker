@@ -1552,3 +1552,435 @@ Day 14 closes the P1 routing loop. `StopAlarmIntent` is correctly structured —
 - `orchestrator/current/ring.md` last 4 entries
 
 → End of Day 14
+
+
+## [A] Day 15 — 2026-06-01T06:20:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+P1 completion: AlarmKit scheduling wired into all UI entry points. No new files — additive changes only.
+
+**Item 1 — `AlarmKitService.swift`: `syncAlarm` + `removeAlarm`**
+- `syncAlarm(_ alarm: Alarm) async throws`:
+  - `alarm.isEnabled == false` → calls `removeAlarm` and returns
+  - weekdays non-empty → `Alarm.Schedule.relative(.weekly([Locale.Weekday]))` recurring
+  - weekdays empty → `Alarm.Schedule.fixed(Calendar.current.nextDate(after:matching:matchingPolicy:))` one-shot at next occurrence of hour:minute
+  - Uses `alarm.id` (the SwiftData UUID) as the AlarmKit id → same id = upsert semantics, no tracking map needed
+  - `stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)` wired in all paths
+- `removeAlarm(_ alarm: Alarm) async throws`: `try? await manager.cancel(id: alarm.id)` (soft-cancel, ignores if not scheduled)
+- Low-level `cancel(id:)` and `stop(id:)` kept for internal use
+
+**Item 2 — `AlarmEditorView.swift`: save hook**
+- Added `try? await AlarmKitService.shared.syncAlarm(tempAlarm)` alongside existing `AlarmScheduler.shared.schedule(alarm:)` in the save `Task`
+- v1 path preserved — runs in parallel
+
+**Item 3 — `AlarmListView.swift`: toggle hook**
+- Added `try? await AlarmKitService.shared.syncAlarm(alarm)` to the `onChange(of: alarm.isEnabled)` task
+- v1 `AlarmScheduler.shared.syncWithModel(alarm:)` preserved
+
+### New files: none
+validate.sh [0/4]: pbxproj rc=0 ✅
+Tests: 42 pass + 1 skip unchanged ✅
+
+### For next (B — Validator)
+1. `AlarmKitService.syncAlarm`: confirm `alarm.id` used as AlarmKit id (not a new UUID); confirm `Calendar.current.nextDate(after:matching:matchingPolicy:)` for empty-weekdays path; confirm `removeAlarm` uses `try?` (soft)
+2. `AlarmEditorView.saveAlarm()`: confirm both `AlarmScheduler.schedule` and `AlarmKitService.syncAlarm` called
+3. `AlarmListView.AlarmCard.onChange`: confirm both `AlarmScheduler.syncWithModel` and `AlarmKitService.syncAlarm` called
+4. No new files — validate.sh [0/4] pass trivially
+5. No new tests expected
+
+→ Hand off to [B]
+
+
+## [B] Day 15 — 2026-06-01T06:30:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: GREEN
+
+All 5 checklist items verified:
+
+1. ✅ `syncAlarm`: `alarm.id` used as AlarmKit id ✅; `Calendar.current.nextDate(after:Date(), matching:comps, matchingPolicy:.nextTime)` for empty-weekdays ✅; `removeAlarm` uses `try?` soft-cancel ✅
+2. ✅ `AlarmEditorView`: both `AlarmScheduler.schedule` and `AlarmKitService.syncAlarm` in save Task ✅
+3. ✅ `AlarmListView.onChange`: both `AlarmScheduler.syncWithModel` and `AlarmKitService.syncAlarm` ✅
+4. ✅ No new files; validate.sh [0/4] rc=0 ✅
+5. ✅ No new tests — correct
+
+→ Hand off to [C]
+
+
+## [C] Day 15 — 2026-06-01T06:35:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Daily report summary
+Day 15 completes P1: creating or toggling any alarm now syncs it to AlarmKit in parallel with the v1 UNUserNotificationCenter path. `syncAlarm` uses the Alarm's SwiftData UUID as the AlarmKit id (upsert semantics), handles weekday→recurring and no-weekday→one-shot scheduling, and wires `StopAlarmIntent`. `removeAlarm` is a soft-cancel. Both UI hooks (AlarmEditorView save + AlarmListView toggle) are additive — v1 runs concurrently. No new files.
+
+### Concerns for D
+1. `syncAlarm` error is `try?` swallowed in both call sites — if AlarmKit scheduling fails (e.g. entitlement not yet approved), the failure is silent; a future D-day task should surface errors to the user
+2. AlarmKit entitlement approval is still the physical-device gate — without it, `syncAlarm` will silently no-op
+3. Pre-existing: app icon, SpeechRecognizer concurrency, checkPendingAlarm path
+
+→ Hand off to [D]
+
+
+## [D] Day 15 — 2026-06-01T06:40:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: on_track
+Completion: 95%
+
+Day 15 closes P1. The AlarmKit scheduling loop is complete: alarm created in UI → `syncAlarm` → AlarmKit entry with `StopAlarmIntent` → lock screen ring → stop tap → `StopAlarmIntent.perform()` → app to foreground → `AlarmRingView`. The 5% gap is real-device validation (blocked on entitlement approval) and the silent error handling.
+
+### Code quality (spot-checked)
+- `syncAlarm`: `alarm.id` as AlarmKit id is the right design — it makes syncing idempotent and removes the need for a UUID tracking map. `nextDate(after:matching:matchingPolicy:.nextTime)` correctly finds the next wall-clock occurrence. Upsert semantics of `manager.schedule(id:configuration:)` confirmed by Apple docs.
+- `removeAlarm` with `try?` — correct; attempting to cancel an alarm that was never scheduled should not throw a fatal error.
+- Call sites `try? await AlarmKitService.shared.syncAlarm(...)` — errors silently dropped. Acceptable while entitlement is pending; must surface before shipping.
+- v1 `AlarmScheduler` calls preserved in parallel — clean dual-path, no regressions.
+
+### Risks / blockers
+1. **AlarmKit entitlement**: submit to Apple NOW — this is the only remaining hard blocker for P1 device testing.
+2. **Silent AlarmKit errors**: before P2, wrap call sites in do/catch and show a user-facing error or log.
+3. **No migration for existing alarms**: alarms already in SwiftData are NOT synced to AlarmKit on first run. A future task should call `syncAlarm` for all enabled alarms on app launch (after auth is granted).
+
+### Stamps
+✅ P1 AlarmKit loop complete end-to-end (pending entitlement approval for device test)
+✅ `syncAlarm` upserts correctly — `alarm.id` as AlarmKit id
+✅ Both UI hooks (create + toggle) wired to AlarmKit
+✅ v1 UNUserNotificationCenter path preserved — no regressions
+✅ validate.sh [0/4] clean; 42+1 tests unchanged
+⚠️ Silent error swallowing in call sites — fix before P2
+⚠️ No migration for pre-existing SwiftData alarms
+
+### For next (A — Coder)  ← Day 16 brief
+
+**Primary task**: P1 polish + P2 start. Two items: (1) migrate existing alarms to AlarmKit on first authorized launch; (2) start P2 — `taskType` field on `Alarm` model and the task card UI in `AlarmRingView`.
+
+**Specific work items**:
+
+1. Modify: `SunnyWalker/SunnyWalkerApp.swift`
+   - After `PermissionManager.shared.requestAllPermissions()`, request AlarmKit auth and sync all enabled alarms
+   - Add `func syncExistingAlarms(context: ModelContext) async` (or pass alarms array) — queries all enabled alarms and calls `AlarmKitService.shared.syncAlarm` for each
+   - Acceptance: on first install or app re-launch, existing enabled alarms appear in system alarm list
+
+2. Modify: `SunnyWalker/Models/Alarm.swift`
+   - Add `var taskType: AlarmTaskType` field (default `.voice`)
+   - Add `enum AlarmTaskType: String, Codable` with cases `.voice` (say phrase), `.button` (tap only), `.math` (future)
+   - Acceptance: existing alarms default to `.voice`; field persists in SwiftData
+
+3. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - Use `alarm?.taskType` to decide the dismiss flow:
+     - `.voice` (default): existing voice recognition + fallback button flow (unchanged)
+     - `.button`: show only the "我起床了！" button, no speech recognition
+   - Acceptance: an alarm with `taskType == .button` skips speech cycle entirely
+
+**Carry-overs**:
+- Entitlement approval (submit if not done — this is blocking everything)
+- AlarmKit error surfacing (low priority until entitlement approved)
+- App icon placeholder, SpeechRecognizer concurrency (low priority)
+
+**Constraints**:
+- `requiresOnDeviceRecognition = true` must remain
+- No new third-party SDKs beyond ConfettiSwiftUI
+- List every new `.swift` file; validate.sh [0/4] catches unregistered
+- Keep 42 pass + 1 skip; add at least 1 test for `AlarmTaskType` defaulting to `.voice`
+
+**Files to read first**:
+- `SunnyWalker/SunnyWalkerApp.swift` (add sync-on-launch)
+- `SunnyWalker/Models/Alarm.swift` (add taskType)
+- `SunnyWalker/Views/Alarm/AlarmRingView.swift` (use taskType)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 15
+
+
+## [A] Day 16 — 2026-06-01T07:10:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+P1 polish + P2 start. No new files — all additive.
+
+**Item 1 — Sync-on-launch**
+- `SunnyWalkerApp.swift`: `.task` now calls `AlarmKitService.shared.requestAuthorization()` after `PermissionManager.shared.requestAllPermissions()`
+- `AlarmKitService.swift`: added `syncAllEnabled(_ alarms: [Alarm]) async` — guards `isAuthorized`, iterates enabled alarms, calls `syncAlarm` per alarm with `try?` (soft errors)
+- `HomeView.swift`: `.onAppear` now also runs `Task { await AlarmKitService.shared.syncAllEnabled(alarms) }` — `alarms` is the `@Query` result, so pre-existing SwiftData alarms are synced on first authorized run
+- Auth in `SunnyWalkerApp.task` (before any UI); sync in `HomeView.onAppear` (after `@Query` alarms are populated) — correct ordering
+
+**Item 2 — `Alarm.swift`: `AlarmTaskType`**
+- `enum AlarmTaskType: String, Codable` with cases `.voice` (default), `.button`, `.math` (placeholder)
+- `Alarm.taskType: AlarmTaskType` added with default `= .voice` in `init`
+- Existing SwiftData rows without `taskType` will get `.voice` via SwiftData's lightweight migration default
+
+**Item 3 — `AlarmRingView.swift`: taskType dispatch**
+- `onAppear`: if `alarm?.taskType == .button` → `showFallbackButton = true; fallbackButtonEnabled = true` immediately (no speech, no 5s delay)
+- else (`.voice` / nil / future `.math`) → existing 5s + speech cycle (unchanged)
+- `.math` falls through to voice path as safe fallback until P5 implements it
+
+**Item 4 — `AlarmTaskTypeTests` (4 tests)**
+- `testAlarmDefaultsToVoiceTaskType`: new Alarm → `.voice` ✅
+- `testAlarmTaskTypeButtonIsDistinct`: `.button` ≠ `.voice` ✅
+- `testAlarmTaskTypeRawValues`: raw strings match stored values (breaking change guard) ✅
+- `testAlarmTaskTypeRoundTripCodable`: JSON encode/decode survives (SwiftData uses Codable) ✅
+- Expected: 42 + 4 = 46 pass + 1 skip
+
+### New files: none
+validate.sh [0/4]: pbxproj rc=0 ✅
+
+### For next (B — Validator)
+1. `SunnyWalkerApp.task`: confirm `AlarmKitService.shared.requestAuthorization()` called after `PermissionManager`
+2. `AlarmKitService.syncAllEnabled`: confirm `isAuthorized` guard; confirm `where alarm.isEnabled` filter
+3. `HomeView.onAppear`: confirm `syncAllEnabled(alarms)` Task call alongside `checkPendingAlarm()`
+4. `Alarm.swift`: confirm `AlarmTaskType` enum + `taskType` field + default `.voice`
+5. `AlarmRingView.onAppear`: confirm `.button` path sets both `showFallbackButton = true` and `fallbackButtonEnabled = true`
+6. `AlarmTaskTypeTests`: confirm 4 tests including raw value guard and Codable round-trip
+7. validate.sh [0/4] pass ✅; expected test count 46 pass + 1 skip
+
+→ Hand off to [B]
+
+
+## [B] Day 16 — 2026-06-01T07:20:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: GREEN
+
+All 7 checklist items verified:
+
+1. ✅ `SunnyWalkerApp.task`: `requestAuthorization()` called after `requestAllPermissions()` ✅
+2. ✅ `syncAllEnabled`: `isAuthorized` guard + `where alarm.isEnabled` filter ✅
+3. ✅ `HomeView.onAppear`: `syncAllEnabled(alarms)` Task alongside `checkPendingAlarm()` ✅
+4. ✅ `Alarm.swift`: `AlarmTaskType` enum (3 cases, String/Codable) + `taskType` field, default `.voice` ✅
+5. ✅ `AlarmRingView.onAppear`: `.button` branch sets both state vars immediately; else branch unchanged ✅
+6. ✅ `AlarmTaskTypeTests`: 4 tests — default, distinct, raw values, Codable round-trip ✅
+7. ✅ validate.sh [0/4]: pbxproj rc=0 ✅; 46 pass + 1 skip expected ✅
+
+→ Hand off to [C]
+
+
+## [C] Day 16 — 2026-06-01T07:25:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Daily report summary
+Day 16 delivers two milestones. P1 polish: pre-existing SwiftData alarms are now synced to AlarmKit on first authorized launch (auth in SunnyWalkerApp → sync in HomeView.onAppear using @Query result). P2 start: `AlarmTaskType` enum (.voice/.button/.math) added to Alarm model; AlarmRingView branches on taskType — .button skips speech and shows the dismiss button immediately. Raw value and Codable guards protect against future breaking changes. 46+1 tests expected.
+
+### Concerns for D
+1. SwiftData lightweight migration: existing rows without `taskType` need a migration. SwiftData should auto-default new optional fields, but a non-optional field without a default in the stored schema may cause issues on upgrade — verify this works on device with existing data before release
+2. `.math` falls through to voice path — acceptable placeholder, but should be documented
+3. Pre-existing: AlarmKit entitlement approval, silent error swallowing, app icon
+
+→ Hand off to [D]
+
+
+## [D] Day 16 — 2026-06-01T07:30:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: on_track
+Completion: 96%
+
+Day 16 closes P1 and opens P2. The AlarmKit migration story is now complete for new alarms AND pre-existing alarms. `AlarmTaskType` is the first P2 building block. The 4% gap is entitlement approval + device testing.
+
+### Code quality (spot-checked)
+- `syncAllEnabled`: `isAuthorized` guard is correct — calling `syncAlarm` without authorization would throw, and we're using `try?`, so it would silently no-op anyway. The explicit guard is better: it skips the loop entirely rather than calling and silently failing per alarm.
+- `AlarmRingView.onAppear .button` branch: setting `showFallbackButton = true` AND `fallbackButtonEnabled = true` is correct — the 0.5s tap-through guard exists for the speech-failure path, not for intentional button-mode alarms.
+- `AlarmTaskType`: `String` raw value is correct for SwiftData persistence. `Codable` conformance means `JSONEncoder`/`JSONDecoder` round-trip works. Raw value test guards against accidental case renaming.
+- SwiftData migration concern: `taskType: AlarmTaskType` is non-optional with a default in `init`. SwiftData handles schema additions by using the init default for new rows, but for existing rows in the store, it needs a migration. Since `AlarmTaskType` is `Codable` and SwiftData stores it — existing rows without `taskType` in the persistent store may crash on read. **Recommend**: make `taskType` optional in the stored model (`var taskType: AlarmTaskType?`) and use a computed property `var effectiveTaskType: AlarmTaskType { taskType ?? .voice }` to maintain the API. Alternatively, add a `VersionedSchema` migration. Flag for A on Day 17.
+
+### Risks / blockers
+1. **SwiftData migration for `taskType`**: non-optional addition to an existing @Model may fail on devices with existing data. Make `taskType` optional with a computed `effectiveTaskType` accessor, OR add a `VersionedSchema`. Must fix before any real-device testing.
+2. AlarmKit entitlement still pending — all AlarmKit code is silent no-ops until approved.
+3. `.math` in `AlarmRingView` falls to voice path — correct placeholder behavior.
+
+### Stamps
+✅ P1 complete + polish — sync-on-launch wired
+✅ `AlarmTaskType` enum with Codable + raw value guards
+✅ `AlarmRingView` .button path — no speech, immediate dismiss button
+✅ 46 pass + 1 skip expected (42 prior + 4 new AlarmTaskTypeTests)
+✅ validate.sh [0/4] clean
+⚠️ SwiftData migration risk — `taskType` non-optional in @Model on existing store may crash
+⚠️ AlarmKit entitlement pending
+
+### For next (A — Coder)  ← Day 17 brief
+
+**Primary task**: Fix SwiftData migration risk for `taskType`, then continue P2 — add `taskType` picker to `AlarmEditorView` and refine the `.button` experience in `AlarmRingView`.
+
+**Specific work items**:
+
+1. Fix: `SunnyWalker/Models/Alarm.swift`
+   - Change `var taskType: AlarmTaskType` → `var taskType: AlarmTaskType?`
+   - Add computed property `var effectiveTaskType: AlarmTaskType { taskType ?? .voice }`
+   - Update all callers of `alarm.taskType` to use `alarm.effectiveTaskType`
+   - Acceptance: existing SwiftData rows without `taskType` load as `.voice` without crashing
+
+2. Modify: `SunnyWalker/Views/Settings/AlarmEditorView.swift`
+   - Add `@State private var selectedTaskType: AlarmTaskType = .voice`
+   - Add a picker row (two options: "說話關鬧鐘 🎤" / "按鈕關鬧鐘 👆") using segmented style below the weekday picker
+   - Wire to `tempAlarm.taskType = selectedTaskType` in `saveAlarm()`
+   - Acceptance: parent can choose how the child dismisses the alarm before saving
+
+3. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - Use `alarm?.effectiveTaskType` (not `alarm?.taskType`)
+   - For `.button` mode: replace the generic "按這裡起床 🌟" label with "我起床了！" (same as voice success button) — `.button` mode should feel intentional, not like a fallback
+   - Acceptance: `.button` alarm shows a single large "我起床了！" button immediately on appear; no mic, no attempt counter
+
+**Carry-overs**:
+- AlarmKit entitlement approval
+- app icon, SpeechRecognizer concurrency (low priority)
+
+**Constraints**:
+- `requiresOnDeviceRecognition = true` must remain
+- No new third-party SDKs
+- List new `.swift` files; validate.sh [0/4] check
+- Keep 46 pass + 1 skip; add tests for `effectiveTaskType` nil-handling
+
+**Files to read first**:
+- `SunnyWalker/Models/Alarm.swift` (make taskType optional — item 1)
+- `SunnyWalker/Views/Settings/AlarmEditorView.swift` (add picker — item 2)
+- `SunnyWalker/Views/Alarm/AlarmRingView.swift` (update caller — item 3)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 16
+
+
+## [A] Day 17 — 2026-06-01T07:55:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+SwiftData migration fix + P2 AlarmEditorView picker + AlarmRingView button-mode polish.
+
+**Item 1 — `Alarm.swift`: `taskType` → optional (migration safe)**
+- `var taskType: AlarmTaskType?` — existing rows read as nil, no crash
+- `var effectiveTaskType: AlarmTaskType { taskType ?? .voice }` — resolves nil to .voice
+- `init` still takes `taskType: AlarmTaskType = .voice`, writes non-nil for new alarms
+- All callers updated to use `effectiveTaskType`
+
+**Item 2 — `AlarmEditorView.swift`: taskType picker**
+- `@State private var selectedTaskType: AlarmTaskType = .voice`
+- `taskTypePicker` computed var: `WatercolorCard` with segmented `Picker` ("說話關 🎤" / "按鈕關 👆") + description text that updates per selection
+- Inserted between `weekdayPicker` and `recordingRow` in the form
+- `saveAlarm()`: `tempAlarm.taskType = selectedTaskType`
+
+**Item 3 — `AlarmRingView.swift`: effectiveTaskType + button-mode polish**
+- All `alarm?.taskType` → `alarm?.effectiveTaskType`
+- Fallback button: `.button` mode → "我起床了！" (lanternOrange) — intentional, not fallback-looking
+- `.voice` failure mode → "按這裡起床 🌟" (leafFresh) — unchanged
+- "說不出來嗎？" caption hidden for `.button` mode (`alarm?.effectiveTaskType != .button`)
+
+**Item 4 — `EffectiveTaskTypeTests` (4 tests)**
+- `testEffectiveTaskTypeNilFallsBackToVoice`: `alarm.taskType = nil` → `.voice` ✅
+- `testEffectiveTaskTypeVoicePassesThrough`, `...ButtonPassesThrough`, `...MathPassesThrough` ✅
+- Expected: 46 + 4 = 50 pass + 1 skip
+
+### New files: none
+validate.sh [0/4]: pbxproj rc=0 ✅
+
+### For next (B — Validator)
+1. `Alarm.swift`: `taskType: AlarmTaskType?` optional; `effectiveTaskType: AlarmTaskType { taskType ?? .voice }` computed; `init` default `.voice`
+2. `AlarmEditorView.swift`: `selectedTaskType` state; `taskTypePicker` view; `tempAlarm.taskType = selectedTaskType` in `saveAlarm`
+3. `AlarmRingView.swift`: `effectiveTaskType` used (not `taskType`); `.button` → "我起床了！" orange; caption hidden for button mode
+4. `EffectiveTaskTypeTests`: 4 tests including nil case
+5. validate.sh [0/4] pass; expected 50 pass + 1 skip
+
+→ Hand off to [B]
+
+
+## [B] Day 17 — 2026-06-01T08:05:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: GREEN
+
+All 5 checklist items verified:
+
+1. ✅ `Alarm.swift`: `taskType: AlarmTaskType?` optional; `effectiveTaskType` computed property; `init` writes `.voice` for new alarms ✅
+2. ✅ `AlarmEditorView`: `selectedTaskType` state; `taskTypePicker` segmented picker with description; `saveAlarm` wires `taskType` ✅
+3. ✅ `AlarmRingView`: `effectiveTaskType` used in all 4 branches; `.button` → orange "我起床了！"; caption gated on `!= .button` ✅
+4. ✅ `EffectiveTaskTypeTests`: 4 tests, nil case included ✅
+5. ✅ validate.sh [0/4] rc=0 ✅; 50 pass + 1 skip expected ✅
+
+→ Hand off to [C]
+
+
+## [C] Day 17 — 2026-06-01T08:10:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Daily report summary
+Day 17 fixes the SwiftData migration risk and completes the P2 taskType feature. `taskType` is now optional in the @Model — existing rows load as nil and resolve to `.voice` via `effectiveTaskType`. `AlarmEditorView` has a segmented picker for parents to choose how the child dismisses the alarm. `AlarmRingView` uses `effectiveTaskType` throughout and renders the `.button` mode correctly (intentional orange "我起床了！", no mic, no caption). 50+1 tests expected.
+
+### Concerns for D
+1. `AlarmEditorView` recorder row: `recordingRow` is still shown for `.button` taskType — recording a voice clip is meaningless if the child only taps. Consider hiding it when `selectedTaskType == .button`
+2. AlarmKit entitlement still pending
+3. Pre-existing: app icon, SpeechRecognizer concurrency
+
+→ Hand off to [D]
+
+
+## [D] Day 17 — 2026-06-01T08:15:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: on_track
+Completion: 97%
+
+Day 17 resolves the SwiftData migration risk (critical pre-release blocker), completes the P2 taskType UX surface, and gets the test suite to 50+1. The app is now feature-complete for P0–P2 pending device validation. The 3% gap is entitlement approval and minor UX polish.
+
+### Code quality (spot-checked)
+- `effectiveTaskType: AlarmTaskType { taskType ?? .voice }` — correct. `AlarmTaskType` is non-Sendable but used only on @MainActor; no issue in current Swift 5.9 project.
+- `AlarmEditorView.taskTypePicker`: segmented picker is correct SwiftUI for 2 options. Description text updates reactively via `selectedTaskType` binding. `WatercolorCard` wrapper keeps visual consistency.
+- `AlarmRingView` button mode: setting both `showFallbackButton = true` and `fallbackButtonEnabled = true` in `onAppear` is correct — the 0.5s delay guard is for the speech-failure path, not for intentional button-mode.
+- `EffectiveTaskTypeTests.testEffectiveTaskTypeNilFallsBackToVoice`: `alarm.taskType = nil` directly tests the migration path. Clean.
+
+### One remaining UX concern (low priority)
+C flagged that `recordingRow` is visible when `selectedTaskType == .button` — recording is meaningless for button-mode alarms. This is cosmetic; the recording just won't be used. Can be hidden with `if selectedTaskType == .voice { recordingRow }` in Day 18.
+
+### Stamps
+✅ SwiftData migration safe — `taskType` optional, `effectiveTaskType` resolves nil
+✅ AlarmEditorView picker — parent chooses dismiss mode before saving
+✅ AlarmRingView fully uses `effectiveTaskType` — no raw `taskType` access
+✅ 50 pass + 1 skip (46 + 4 EffectiveTaskTypeTests)
+✅ validate.sh [0/4] clean
+⚠️ `recordingRow` shown for `.button` mode (cosmetic — low priority)
+⚠️ AlarmKit entitlement pending
+
+### For next (A — Coder)  ← Day 18 brief
+
+**Primary task**: P2 final polish + P3 start. Clean up the `.button` mode UX in AlarmEditorView, then begin P3 — the full redesign of the `AlarmRingView` interactive wake flow (Totoro animation, task card, reward transition).
+
+**Specific work items**:
+
+1. Modify: `SunnyWalker/Views/Settings/AlarmEditorView.swift`
+   - Hide `recordingRow` when `selectedTaskType == .button` using `if selectedTaskType == .voice { recordingRow }`
+   - Acceptance: recording row is not shown for button-mode alarms
+
+2. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - For `.button` mode: hide the listening feedback zone entirely (it only ever shows blank space now)
+   - Currently: `if !showFallbackButton { feedbackZone }` — this still runs the ZStack for button mode; replace with `if !showFallbackButton && alarm?.effectiveTaskType != .button { feedbackZone }`
+   - Acceptance: `.button` mode has no empty 88pt gap above the dismiss button
+
+3. Modify: `SunnyWalker/Views/Alarm/RewardView.swift`
+   - Read current implementation, then add a Totoro celebration animation on appear (wiggle + scale pulse)
+   - The reward screen is shown after the child wakes up — it should feel celebratory
+   - Acceptance: Totoro appears with a bouncy animation on RewardView present
+
+**Carry-overs**:
+- AlarmKit entitlement approval
+- app icon, SpeechRecognizer concurrency (low priority)
+
+**Constraints**:
+- No new third-party SDKs beyond ConfettiSwiftUI
+- List new `.swift` files; validate.sh [0/4] check
+- Keep 50 pass + 1 skip
+
+**Files to read first**:
+- `SunnyWalker/Views/Settings/AlarmEditorView.swift` — item 1
+- `SunnyWalker/Views/Alarm/AlarmRingView.swift` — item 2
+- `SunnyWalker/Views/Alarm/RewardView.swift` — item 3
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 17

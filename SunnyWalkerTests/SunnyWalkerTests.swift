@@ -373,3 +373,59 @@ final class CheckPendingAlarmTests: XCTestCase {
         XCTAssertNil(delegate?.pendingAlarmID)
     }
 }
+
+/// Day 16: AlarmTaskType model tests — guard the enum values and Alarm default.
+final class AlarmTaskTypeTests: XCTestCase {
+
+    func testAlarmDefaultsToVoiceTaskType() {
+        let alarm = Alarm(label: "測試", hour: 7, minute: 0)
+        XCTAssertEqual(alarm.taskType, .voice,
+                       "New alarms must default to .voice — children expect speech interaction")
+    }
+
+    func testAlarmTaskTypeButtonIsDistinct() {
+        let alarm = Alarm(label: "小寶寶", hour: 8, minute: 0, taskType: .button)
+        XCTAssertEqual(alarm.taskType, .button)
+        XCTAssertNotEqual(alarm.taskType, .voice)
+    }
+
+    func testAlarmTaskTypeRawValues() {
+        // Raw values are persisted in SwiftData — changing them would corrupt stored data.
+        XCTAssertEqual(AlarmTaskType.voice.rawValue,  "voice")
+        XCTAssertEqual(AlarmTaskType.button.rawValue, "button")
+        XCTAssertEqual(AlarmTaskType.math.rawValue,   "math")
+    }
+
+    func testAlarmTaskTypeRoundTripCodable() throws {
+        let original = AlarmTaskType.voice
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(AlarmTaskType.self, from: data)
+        XCTAssertEqual(decoded, original, "AlarmTaskType must survive JSON round-trip (SwiftData uses Codable)")
+    }
+}
+
+/// Day 17: effectiveTaskType nil-handling — guards SwiftData migration safety.
+final class EffectiveTaskTypeTests: XCTestCase {
+
+    func testEffectiveTaskTypeNilFallsBackToVoice() {
+        let alarm = Alarm(label: "測試", hour: 7, minute: 0)
+        alarm.taskType = nil   // simulate pre-Day-16 row with no stored taskType
+        XCTAssertEqual(alarm.effectiveTaskType, .voice,
+                       "nil taskType must resolve to .voice — existing rows must not change behaviour")
+    }
+
+    func testEffectiveTaskTypeVoicePassesThrough() {
+        let alarm = Alarm(label: "A", hour: 7, minute: 0, taskType: .voice)
+        XCTAssertEqual(alarm.effectiveTaskType, .voice)
+    }
+
+    func testEffectiveTaskTypeButtonPassesThrough() {
+        let alarm = Alarm(label: "B", hour: 8, minute: 0, taskType: .button)
+        XCTAssertEqual(alarm.effectiveTaskType, .button)
+    }
+
+    func testEffectiveTaskTypeMathPassesThrough() {
+        let alarm = Alarm(label: "C", hour: 9, minute: 0, taskType: .math)
+        XCTAssertEqual(alarm.effectiveTaskType, .math)
+    }
+}

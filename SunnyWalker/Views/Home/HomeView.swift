@@ -94,7 +94,12 @@ struct HomeView: View {
             #endif
         }
         .ignoresSafeArea(edges: .top)
-        .onAppear { checkPendingAlarm() }
+        .onAppear {
+            checkPendingAlarm()
+            // Sync pre-existing enabled alarms to AlarmKit on first authorized launch.
+            // AlarmKitService.syncAllEnabled is a no-op if not authorized yet.
+            Task { await AlarmKitService.shared.syncAllEnabled(alarms) }
+        }
         .onReceive(clockTick) { currentTime = $0 }
         .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in
             guard let uuidString = note.object as? String,
