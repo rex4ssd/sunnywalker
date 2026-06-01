@@ -19,6 +19,13 @@ final class AlarmScheduler {
         let staleIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" } + [alarm.id.uuidString]
         center.removePendingNotificationRequests(withIdentifiers: staleIDs)
 
+        // AlarmKit is the single source of truth once authorized. Scheduling both an
+        // AlarmKit alarm AND a UNNotification makes the device fire twice (full-screen
+        // alert + 30s banner). When AlarmKit is active this legacy path stands down and
+        // only clears any leftover notifications. It still runs as a fallback on devices
+        // where AlarmKit authorization was denied/unavailable.
+        guard !AlarmKitService.shared.isAuthorized else { return }
+
         let content = UNMutableNotificationContent()
         content.title = L("起床囉！")
         content.body = alarm.recordingName.isEmpty
