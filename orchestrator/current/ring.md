@@ -1017,9 +1017,46 @@ Subject suggestion: "Day 11: SpeechRecognizer timeout fallback + GeometryReader 
 → Hand off to C
 
 
-## [C] Day 11 — 2026-06-01 11:30:35+08:00
-Status: IN_PROGRESS
+## [C] Day 11 — 2026-06-01 11:31:42+08:00
+Status: DONE
 Model:  claude-sonnet-4-6
 
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+### What I did
+- Read ring.md and confirmed B's Day 11 verdict: green → Hand off to C
+- Staged all changes with `git add -A`
+- Committed via `scripts/git_ca.sh` (dev/auto branch enforced)
+- Wrote daily report below
+
+### Commit
+9430a7a  Day 11: SpeechRecognizer timeout fallback + GeometryReader iPad landscape fix  [A:✅ B:✅]
+
+### Daily report
+
+**TL;DR**: Day 11 fixed the spec §8 voice-fallback's silent failure mode (timeout now fires `onFailure` after 8s of no keyword match) and replaced the dead iPad landscape size-class guard with a working `GeometryReader`-based check.
+
+**Done today**:
+- `SpeechRecognizer.swift`: Added `listeningTimeout: TimeInterval = 8.0` parameter to `startListening`; internal `timeoutTask` fires `onFailure?()` after timeout even when child says random words and no system error occurs; `stop()` cancels the timeout task so a successful keyword match doesn't trigger a ghost failure
+- `HomeView.swift`: Removed dead `@Environment(\.verticalSizeClass)` and the unreachable `sizeClass == .regular && vSizeClass == .compact` branch; replaced with `GeometryReader { geo in geo.size.width > geo.size.height }` inside the `sizeClass == .regular` block — iPad landscape now correctly renders the compact 52pt clock
+- `SunnyWalkerTests.swift`: Added `@MainActor` to `VoiceFallbackTests`; added `testSpeechRecognizerTimeoutCallsOnFailure` — integration test calling `startListening(listeningTimeout: 0.3)` with no audio and asserting `onFailure` fires via `XCTestExpectation`; skips cleanly in simulator with `XCTSkipUnless`; added `import Speech`
+
+**Build & tests**: Build rc=0; 38/38 pass, 1 skipped (`testSpeechRecognizerTimeoutCallsOnFailure` — on-device zh-TW not available in simulator; correct behavior)
+
+**Tomorrow preview**: D to evaluate Day 11 against spec §8 and any remaining open risks; A to continue toward spec §9+ (settings screen, export/import polish, remaining audio asset work)
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+✅ Spec §8 voice fallback now fires for "no keyword match" case — the primary child failure scenario
+✅ iPad landscape layout is now reachable on real hardware
+⚠️ `testSpeechRecognizerTimeoutCallsOnFailure` skipped in simulator — requires real device for full validation
+⚠️ `.caf` assets still synthetic arpeggios — audio aesthetic QA blocked (carry-over, not Day 11 scope)
+⚠️ App icon still a programmatic PIL placeholder (carry-over, not Day 11 scope)
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 11. Specific concerns:
+1. Confirm `SpeechRecognizer` timeout task is correctly cancelled when a keyword matches or a system error fires — the `stop()` call must nil `timeoutTask` before it fires `onFailure?()`.
+2. Confirm iPad `GeometryReader` landscape condition is correct (`geo.size.width > geo.size.height`) and doesn't break iPhone layout.
+3. Assess whether 38 pass + 1 skip is an acceptable test posture for the voice-fallback integration path, given the simulator limitation.
+
+→ Hand off to D
 
