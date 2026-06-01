@@ -4,15 +4,28 @@ _A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-06-01T11:30:35+08:00**
+Last updated: **2026-06-01T05:10:00+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **11**
-- Last entry: `[B] Day 11` — `DONE`
-- Next up: `[C] reporter` (Day 11)
+- Current day: **14**
+- Last entry: `[D] Day 13` — `DONE`
+- Next up: `[A] coder` (Day 14) — **P1 App Intent (StopAlarmIntent)**
 - Recovery command: `sw next`
+- ⚠️ Pending manual git commit (see below)
+
+## 🔧  Manual steps required
+```bash
+cd ~/Documents/SunnyWalker
+rm .git/index.lock
+git add SunnyWalker.xcodeproj/project.pbxproj SunnyWalker/Info.plist \
+  SunnyWalker/SunnyWalker.entitlements SunnyWalker/Services/AlarmKitService.swift \
+  SunnyWalker/Views/Home/HomeView.swift orchestrator/current/ring.md MAIN_ENTRY.md
+git commit -m "Day 13: P0 AlarmKit PoC — iOS 26 target, AlarmKitService, entitlements, DEBUG test button"
+rm SunnyWalker/Theme/Sounds/_totoro_breath.wav
+```
+- 🔑 Submit AlarmKit entitlement request: Xcode → Signing & Capabilities → "+" → "Alarms" → Apply
 
 ## ⏰  Schedule, cooldown & approval
 - ✅ No active cooldown (cooldown_hours = 4.0)
@@ -22,14 +35,14 @@ Last updated: **2026-06-01T11:30:35+08:00**
 - No active heartbeat — system is idle / not running
 
 ## 🔁  Recent ring entries (last 8)
+- ✅ `[D]` Day  4  2026-05-31 16:28:00+08:00  End Day 4
+- ✅ `[D]` Day  5  2026-05-31 22:42:00+08:00  End Day 5
 - ✅ `[D]` Day  6  2026-05-31 23:47:00+08:00  End Day 6
 - ✅ `[D]` Day  7  2026-06-01 00:35:00+08:00  End Day 7
 - ✅ `[D]` Day  8  2026-06-01 02:08:00+08:00  End Day 8
 - ✅ `[D]` Day  9  2026-06-01 03:15:00+08:00  End Day 9
 - ✅ `[D]` Day 10  2026-06-01 11:15:00+08:00  End Day 10
-- ✅ `[A]` Day 11  2026-06-01 11:25:59+08:00  → B
-- 🟡 `[B]` Day 11  2026-06-01 11:26:58+08:00  
-- ✅ `[B]` Day 11  2026-06-01 11:30:15+08:00  → C
+- ✅ `[D]` Day 11  2026-06-01 11:45:00+08:00  End Day 11
 
 Full ring: `orchestrator/current/ring.md`
 
@@ -48,6 +61,5 @@ Full ring: `orchestrator/current/ring.md`
 ## 🗂️  Active verbose logs (not yet archived)
 - `orchestrator/logs/2026-05-29`
 - `orchestrator/logs/2026-05-30`
-- `orchestrator/logs/2026-06-01`
 - `orchestrator/logs/supervisor`
 

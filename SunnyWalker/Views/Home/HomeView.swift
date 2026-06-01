@@ -1,4 +1,4 @@
-// SunnyWalker — HomeView.swift  |  Day 10  |  iPad landscape guard
+// SunnyWalker — HomeView.swift  |  Day 13  |  AlarmKit DEBUG test button
 
 import SwiftUI
 import SwiftData
@@ -19,6 +19,11 @@ struct HomeView: View {
 
     // Notification-driven / long-press alarm ring
     @State private var firingAlarm: Alarm?
+
+    // Day 13: AlarmKit PoC test state (DEBUG only)
+    #if DEBUG
+    @State private var alarmKitStatusMessage: String = ""
+    #endif
 
     // IO button gate states
     @State private var showingParentalGateForIO = false
@@ -83,6 +88,10 @@ struct HomeView: View {
                 }
             }
             addButton
+
+            #if DEBUG
+            alarmKitDebugOverlay
+            #endif
         }
         .ignoresSafeArea(edges: .top)
         .onAppear { checkPendingAlarm() }
@@ -107,6 +116,51 @@ struct HomeView: View {
               let alarm = alarms.first(where: { $0.id == uuid }) else { return }
         firingAlarm = alarm
     }
+
+    // MARK: - AlarmKit PoC DEBUG overlay (stripped from Release builds)
+
+    #if DEBUG
+    private var alarmKitDebugOverlay: some View {
+        VStack(spacing: 8) {
+            Button {
+                Task {
+                    let granted = await AlarmKitService.shared.requestAuthorization()
+                    guard granted else {
+                        alarmKitStatusMessage = "❌ 未授權 — 到設定開啟"
+                        return
+                    }
+                    do {
+                        let id = try await AlarmKitService.shared.scheduleTestAlarm()
+                        alarmKitStatusMessage = "✅ 60秒後響 (id=\(id.uuidString.prefix(8))…)\n鎖屏測試靜音是否突破"
+                    } catch {
+                        alarmKitStatusMessage = "❌ 排程失敗：\(error.localizedDescription)"
+                    }
+                }
+            } label: {
+                Label("Test AlarmKit (60s)", systemImage: "alarm.fill")
+                    .font(GhibliFonts.caption())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(GhibliColors.nightIndigo.opacity(0.85))
+                    .clipShape(Capsule())
+            }
+
+            if !alarmKitStatusMessage.isEmpty {
+                Text(alarmKitStatusMessage)
+                    .font(.caption2)
+                    .foregroundStyle(GhibliColors.cloudWhite)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.65))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding(.bottom, 120)   // sit above the FAB buttons
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+    }
+    #endif
 
     // MARK: - Background
 

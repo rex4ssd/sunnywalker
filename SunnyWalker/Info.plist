@@ -20,6 +20,8 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>鬧鐘需要聽你說「我起床了」才能關掉喔！聲音只留在這台 iPhone 裡，不會傳出去。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
