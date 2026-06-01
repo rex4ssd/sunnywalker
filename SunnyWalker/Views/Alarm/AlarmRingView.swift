@@ -56,8 +56,8 @@ struct AlarmRingView: View {
                     .foregroundStyle(scene.clockTextColor)
                     .padding(.bottom, 24)
 
-                // Listening feedback zone — hidden once fallback button appears
-                if !showFallbackButton {
+                // Listening feedback zone — only for .voice mode, hidden once fallback appears
+                if !showFallbackButton && alarm?.effectiveTaskType != .button {
                     ZStack {
                         if isListening {
                             VStack(spacing: 10) {

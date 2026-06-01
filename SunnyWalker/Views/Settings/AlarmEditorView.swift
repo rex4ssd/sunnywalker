@@ -30,7 +30,10 @@ struct AlarmEditorView: View {
                         labelField
                         weekdayPicker
                         taskTypePicker
-                        recordingRow
+                        // Recording is only meaningful for .voice mode
+                        if selectedTaskType == .voice {
+                            recordingRow
+                        }
                         saveButton
                     }
                     .padding(24)

@@ -9,9 +9,9 @@ Last updated: **2026-06-01T05:10:00+08:00**
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **18**
-- Last entry: `[D] Day 17` — `DONE`
-- Next up: `[A] coder` (Day 18) — **P2 polish (recordingRow hide, button-mode gap) + P3 RewardView 慶祝動畫**
+- Current day: **19**
+- Last entry: `[D] Day 18` — `DONE`
+- Next up: `[A] coder` (Day 19) — **P4 start: PermissionManager + AlarmKit auth + BedSideManager**
 - Recovery command: `sw next`
 - ⚠️ Pending manual git commit (see below)
 

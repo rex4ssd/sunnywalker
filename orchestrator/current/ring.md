@@ -1984,3 +1984,141 @@ C flagged that `recordingRow` is visible when `selectedTaskType == .button` — 
 - `orchestrator/current/ring.md` last 4 entries
 
 → End of Day 17
+
+
+## [A] Day 18 — 2026-06-01T08:50:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+P2 polish + P3 RewardView celebration. No new files.
+
+**Item 1 — `AlarmEditorView.swift`: hide recordingRow for .button mode**
+- `if selectedTaskType == .voice { recordingRow }` wraps the recording row
+- Button-mode alarms show: time picker → label → weekday → task type picker → save
+- Voice-mode alarms show all rows including recording (unchanged)
+
+**Item 2 — `AlarmRingView.swift`: no empty gap for .button mode**
+- Condition changed from `if !showFallbackButton` → `if !showFallbackButton && alarm?.effectiveTaskType != .button`
+- `.button` mode: the 88pt feedback zone is never rendered; layout goes directly from title/Totoro to Spacer to dismiss button
+- `.voice` mode: unchanged — feedback zone shows mic/counter/retry as before
+
+**Item 3 — `RewardView.swift`: Totoro celebration animation**
+- 5 new `@State` vars: `wiggle`, `totoroScale`, `textScale`, `textOpacity`, `starsVisible`
+- Entrance sequence (staggered via `.delay` and `DispatchQueue.asyncAfter`):
+  1. Totoro bounces in from 0.3→1.0 with `.spring(response:0.5, dampingFraction:0.55)` — overshoot bounce
+  2. `wiggle = true` at +0.3s — perpetual ±12° rotation repeating (happy wiggle)
+  3. Title + subtitle text fade + scale in at +0.15s
+  4. 8-point star burst appears at +0.25s
+  5. Confetti cannon fires on `.onAppear` (moved from `.task`)
+- Star burst: 8 `star.fill` symbols at 130pt radius, staggered angles, random sizes/opacity
+- Dismiss: 3.5s (extended from 3s to let animation fully play)
+- No new dependencies — ConfettiSwiftUI already in project
+
+### New files: none
+validate.sh [0/4]: pbxproj rc=0 ✅; 50 pass + 1 skip unchanged ✅
+
+### For next (B — Validator)
+1. `AlarmEditorView`: `if selectedTaskType == .voice { recordingRow }` present; `.button` form has no recording row
+2. `AlarmRingView`: feedback zone condition is `!showFallbackButton && alarm?.effectiveTaskType != .button`
+3. `RewardView`: 5 new state vars; staggered onAppear animation; star burst; confetti on onAppear; dismiss at 3.5s
+4. No new files; pbxproj [0/4] pass; test count unchanged 50+1
+
+→ Hand off to [B]
+
+
+## [B] Day 18 — 2026-06-01T09:00:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: GREEN
+
+All 4 checklist items verified:
+
+1. ✅ `AlarmEditorView`: `if selectedTaskType == .voice { recordingRow }` at line 34 ✅
+2. ✅ `AlarmRingView` line 60: `!showFallbackButton && alarm?.effectiveTaskType != .button` ✅; caption guard at line 97 also present ✅
+3. ✅ `RewardView`: 5 state vars; staggered onAppear with spring + delay; wiggle perpetual; star burst (8 symbols, ZStack); confetti on onAppear; 3.5s dismiss ✅
+4. ✅ pbxproj [0/4] rc=0 ✅; 50+1 unchanged ✅
+
+One observation: `CGFloat.random(in:)` and `Double.random(in:)` in `starBurst` are called in a `ForEach` body — values re-randomise on every view re-render. This is cosmetically fine (stars stay visible once `starsVisible = true`; transitions hide/show the whole ZStack) but is a known SwiftUI pattern gotcha. No action needed for now.
+
+→ Hand off to [C]
+
+
+## [C] Day 18 — 2026-06-01T09:05:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Daily report summary
+Day 18 polishes the P2 taskType UX and delivers the P3 RewardView celebration. AlarmEditorView now hides the recording row for button-mode alarms. AlarmRingView eliminates the 88pt empty gap in button mode. RewardView has a staggered spring entrance: Totoro bounces in, wiggles, stars appear, confetti fires — giving 7-year-olds a satisfying reward moment. 50+1 tests unchanged.
+
+### Concerns for D
+1. `CGFloat.random` / `Double.random` in `starBurst` — values re-randomise on re-render; cosmetic only, not a bug
+2. `DispatchQueue.main.asyncAfter` for wiggle start — not structured concurrency; works fine in practice for a simple UI trigger. Could use `.task` with `Task.sleep` but it's overkill here
+3. Pre-existing: AlarmKit entitlement, app icon, SpeechRecognizer concurrency
+
+→ Hand off to [D]
+
+
+## [D] Day 18 — 2026-06-01T09:10:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Verdict: on_track
+Completion: 98%
+
+Day 18 ships a polished end-to-end user experience for both taskTypes. P2 is complete. The RewardView celebration is child-appropriate — bouncy, colourful, and brief. The app is feature-complete for P0–P3 pending device validation with the AlarmKit entitlement.
+
+### Code quality (spot-checked)
+- `AlarmEditorView` if-in-body: using `if` inside a `VStack` body is correct SwiftUI — the compiler wraps it in `_ConditionalContent`; no `@ViewBuilder` needed here.
+- `RewardView.starBurst`: `ForEach(0..<8, id: \.self)` — fixed count, stable ids, correct. `CGFloat.random` re-evaluates per-render; since the ZStack only appears once and `starsVisible` is set once, re-renders are rare and cosmetically harmless.
+- `DispatchQueue.main.asyncAfter` for wiggle: synchronous to main actor, trivial use case — acceptable. No retain cycle risk (closure captures self implicitly; `wiggle = true` is a simple value mutation).
+- Spring animation params: `.spring(response: 0.5, dampingFraction: 0.55)` — underdamped (damping < 1.0), so it overshoots → bounce feel. Correct for a 7-year-old delight moment.
+
+### Stamps
+✅ P2 complete — taskType picker, migration-safe model, button-mode UX end-to-end clean
+✅ P3 RewardView — spring bounce + wiggle + stars + confetti
+✅ No new files, no test regressions
+✅ validate.sh [0/4] clean
+⚠️ AlarmKit entitlement still the sole hardware blocker
+⚠️ `CGFloat.random` in starBurst re-randomises on re-render (cosmetic)
+
+### For next (A — Coder)  ← Day 19 brief
+
+**Primary task**: P4 start — bed-side mode (screen stays dim until alarm fires, then lights up). Also: migrate `PermissionManager` to also request AlarmKit permission so the user is prompted at first launch without a separate DEBUG button flow.
+
+**Specific work items**:
+
+1. Modify: `SunnyWalker/Services/PermissionManager.swift`
+   - Add AlarmKit auth request to `requestAllPermissions()` — call `AlarmKitService.shared.requestAuthorization()` inside the existing method
+   - Acceptance: first-launch permission flow requests AlarmKit in one shot with mic + speech
+
+2. Create: `SunnyWalker/Services/BedSideManager.swift`
+   - `@MainActor final class BedSideManager: ObservableObject`
+   - `@Published var isBedSideActive: Bool = false`
+   - `func enable()`: sets `UIScreen.main.brightness = 0.02` (near-black), disables `UIApplication.shared.isIdleTimerDisabled = true` (screen stays on)
+   - `func disable()`: restores brightness (cache prior value), re-enables idle timer
+   - Acceptance: calling `enable()` dims the screen; `disable()` restores it
+
+3. Modify: `SunnyWalker/Views/Home/HomeView.swift`
+   - Add a "床邊模式" toggle button in the FAB stack or toolbar
+   - When toggled on: call `BedSideManager.shared.enable()`; show a moon icon or overlay
+   - When alarm fires (`firingAlarm` is set): `BedSideManager.shared.disable()` before presenting AlarmRingView
+   - Acceptance: parent taps bed-side toggle → screen dims; alarm fires → screen brightens + AlarmRingView appears
+
+**Carry-overs**:
+- AlarmKit entitlement approval (critical)
+- App icon placeholder (low priority)
+- SpeechRecognizer concurrency (low priority)
+
+**Constraints**:
+- List new `.swift` files for validate.sh
+- No new third-party SDKs
+- Keep 50 pass + 1 skip
+
+**Files to read first**:
+- `SunnyWalker/Services/PermissionManager.swift`
+- `SunnyWalker/Views/Home/HomeView.swift` (FAB stack)
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 18
