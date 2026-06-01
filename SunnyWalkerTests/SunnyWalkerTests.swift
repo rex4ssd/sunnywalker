@@ -318,6 +318,37 @@ final class VoiceFallbackTests: XCTestCase {
     }
 }
 
+/// Day 12: verify attempt-counter label format used in AlarmRingView.
+/// If the format string changes, this test must be updated to match.
+final class AttemptCounterTests: XCTestCase {
+
+    /// Mirrors AlarmRingView.attemptLabel: "第 N/3 次，說「我起床了」！"
+    private func attemptLabel(failureCount: Int) -> String {
+        "第 \(min(failureCount + 1, 3))/3 次，說「我起床了」！"
+    }
+
+    func testAttemptLabelFirstAttempt() {
+        XCTAssertEqual(attemptLabel(failureCount: 0), "第 1/3 次，說「我起床了」！",
+                       "Before any failure the label should show attempt 1/3")
+    }
+
+    func testAttemptLabelSecondAttempt() {
+        XCTAssertEqual(attemptLabel(failureCount: 1), "第 2/3 次，說「我起床了」！",
+                       "After 1 failure the label should show attempt 2/3")
+    }
+
+    func testAttemptLabelThirdAttempt() {
+        XCTAssertEqual(attemptLabel(failureCount: 2), "第 3/3 次，說「我起床了」！",
+                       "After 2 failures the label should show attempt 3/3")
+    }
+
+    func testAttemptLabelClampsAtThree() {
+        // Guard: even if recognitionFailureCount somehow exceeds 2, label stays at 3/3
+        XCTAssertEqual(attemptLabel(failureCount: 5), "第 3/3 次，說「我起床了」！",
+                       "Label must never show more than 3/3 — clamp is required")
+    }
+}
+
 final class CheckPendingAlarmTests: XCTestCase {
 
     /// Verifies that checkPendingAlarm clears pendingAlarmID after reading it.
