@@ -75,12 +75,12 @@ private struct WakeRecordCard: View {
         }
     }
 
-    private var methodLabel: String {
+    private var methodLabel: LocalizedStringKey {
         switch record.dismissMethod {
-        case "voice":    return "說話關"
-        case "button":   return "按鈕關"
-        case "fallback": return "輔助關"
-        default:         return "已關閉"
+        case "voice":    return "method_voice"
+        case "button":   return "method_button"
+        case "fallback": return "method_fallback"
+        default:         return "method_default"
         }
     }
 
@@ -97,7 +97,7 @@ private struct WakeRecordCard: View {
                     HStack(spacing: 6) {
                         Image(systemName: "timer")
                             .font(.caption)
-                        Text("反應時間：\(record.responseFormatted)")
+                        Text(L("response_label %@", record.responseFormatted))
                             .font(GhibliFonts.caption(14))
                     }
                     .foregroundStyle(GhibliColors.totoroGray)

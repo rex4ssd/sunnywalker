@@ -48,6 +48,8 @@
 			isa = PBXBuildFile;
 			productRef = EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */;
 		};
+		A1A2A3A4B1B2B3B4C1C2C3C4 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */; };
+		1A1B1C1D2A2B2C2D3A3B3C3D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +115,8 @@
 		EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeHistoryView.swift; sourceTree = "<group>"; };
 		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
 		55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = leaf_rustle.caf; sourceTree = "<group>"; };
+		D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -185,6 +189,7 @@
 				6E2FDA7104A9144C4D64DBF5 /* Views */,
 				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
 				B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */,
+				4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */,
 				7BD2360682B2434A47F2021F /* Info.plist */,
 				9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */,
 				33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */,
@@ -253,6 +258,7 @@
 				EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */,
 				7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */,
 				35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */,
+				D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -325,6 +331,7 @@
 			knownRegions = (
 				Base,
 				"zh-Hant",
+				en,
 			);
 			mainGroup = 095C19C14024F6CD35129004;
 			minimizedProjectReferenceProxies = 1;
@@ -351,6 +358,7 @@
 				C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */,
 				44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */,
 				660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */,
+				1A1B1C1D2A2B2C2D3A3B3C3D /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,6 +401,7 @@
 				CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */,
 				E9D2B038759A4164AB1EFFC2 /* BedSideManager.swift in Sources */,
 				42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */,
+				A1A2A3A4B1B2B3B4C1C2C3C4 /* Localization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

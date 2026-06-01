@@ -28,13 +28,14 @@ struct StopAlarmIntent: LiveActivityIntent {
     init() { alarmID = "" }
     init(alarmID: String) { self.alarmID = alarmID }
 
-    func perform() throws -> some IntentResult {
+    func perform() async throws -> some IntentResult {
         guard let uuid = UUID(uuidString: alarmID) else {
             return .result()
         }
 
-        // Stop the AlarmKit alarm — safe to call even if already stopped/timed-out
-        try? AlarmManager.shared.stop(id: uuid)
+        // Stop the AlarmKit alarm — safe to call even if already stopped/timed-out.
+        // AlarmManager.stop(id:) is async, so perform() must be async too.
+        try? await AlarmManager.shared.stop(id: uuid)
 
         // ── Routing ──────────────────────────────────────────────────────────
         // Killed-state: AppDelegate reads this key in application(_:didFinishLaunchingWithOptions:)

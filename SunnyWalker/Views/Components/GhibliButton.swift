@@ -3,11 +3,11 @@
 import SwiftUI
 
 struct GhibliButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let color: Color
     let action: () -> Void
 
-    init(_ title: String, color: Color = GhibliColors.lanternOrange, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringKey, color: Color = GhibliColors.lanternOrange, action: @escaping () -> Void) {
         self.title = title
         self.color = color
         self.action = action

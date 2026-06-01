@@ -34,7 +34,11 @@ struct HomeView: View {
     @State private var gateDidSucceedHistory = false
     @State private var showingHistory = false
 
-    private let clockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    // Drives only the time-of-day scene (background gradient + clock color), which can
+    // only change on an hour boundary — a 60s cadence is plenty. The per-second clock
+    // redraw lives in ClockHeaderView so it no longer invalidates the whole screen
+    // (animated background, cloud layer, Totoro, and the alarm list) every second.
+    private let sceneTick = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private var scene: DaytimeScene {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: currentTime))
@@ -53,7 +57,7 @@ struct HomeView: View {
                         // iPad landscape: compact two-column with smaller clock to avoid clipping
                         HStack(spacing: 0) {
                             VStack(spacing: 8) {
-                                clockHeader(fontSize: 52)
+                                ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
                                 TotoroAvatar()
@@ -68,7 +72,7 @@ struct HomeView: View {
                         // iPad portrait: side-by-side clock/avatar | alarm list
                         HStack(spacing: 0) {
                             VStack(spacing: 0) {
-                                clockHeader()
+                                ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
                                 TotoroAvatar()
@@ -83,7 +87,7 @@ struct HomeView: View {
             } else {
                 // iPhone: stacked layout
                 VStack(spacing: 0) {
-                    clockHeader()
+                    ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                         .padding(.top, 56)
                         .padding(.bottom, 12)
                     TotoroAvatar()
@@ -100,7 +104,7 @@ struct HomeView: View {
             // AlarmKitService.syncAllEnabled is a no-op if not authorized yet.
             Task { await AlarmKitService.shared.syncAllEnabled(alarms) }
         }
-        .onReceive(clockTick) { currentTime = $0 }
+        .onReceive(sceneTick) { currentTime = $0 }
         .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in
             guard let uuidString = note.object as? String,
                   let uuid = UUID(uuidString: uuidString),
@@ -135,22 +139,6 @@ struct HomeView: View {
             endPoint: .bottom
         )
         .ignoresSafeArea()
-    }
-
-    // MARK: - Clock header
-
-    private func clockHeader(fontSize: CGFloat = 76) -> some View {
-        VStack(spacing: 6) {
-            Text(currentTime, format: .dateTime.hour().minute())
-                .font(GhibliFonts.clock(fontSize))
-                .foregroundStyle(scene.clockTextColor)
-                .contentTransition(.numericText())
-                .animation(.easeInOut(duration: 0.3), value: currentTime)
-
-            Text(currentTime, format: .dateTime.weekday(.wide).month().day())
-                .font(GhibliFonts.subtitle())
-                .foregroundStyle(scene.clockTextColor.opacity(0.7))
-        }
     }
 
     // MARK: - FAB buttons (add alarm + IO)
@@ -258,6 +246,33 @@ struct HomeView: View {
     }
 }
 
+
+// MARK: - Clock header (self-contained per-second redraw)
+
+/// Owns its own 1-second timer so only this small view re-renders each tick —
+/// the surrounding screen (background, clouds, Totoro, alarm list) is untouched.
+private struct ClockHeaderView: View {
+    let fontSize: CGFloat
+    let textColor: Color
+
+    @State private var now = Date()
+    private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(now, format: .dateTime.hour().minute())
+                .font(GhibliFonts.clock(fontSize))
+                .foregroundStyle(textColor)
+                .contentTransition(.numericText())
+                .animation(.easeInOut(duration: 0.3), value: now)
+
+            Text(now, format: .dateTime.weekday(.wide).month().day())
+                .font(GhibliFonts.subtitle())
+                .foregroundStyle(textColor.opacity(0.7))
+        }
+        .onReceive(tick) { now = $0 }
+    }
+}
 
 #Preview {
     HomeView()

@@ -15,8 +15,17 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 SCHEME="SunnyWalker"
-DESTINATION="platform=iOS Simulator,name=iPhone 15,OS=latest"
 DERIVED="$REPO_ROOT/.build"
+
+# Auto-detect an available iPhone simulator (mirrors validate.sh).
+# Override by exporting DESTINATION before running, e.g.
+#   DESTINATION="platform=iOS Simulator,name=iPhone 17" bash scripts/dev.sh build
+if [ -z "${DESTINATION:-}" ]; then
+  SIM_NAME=$(xcrun simctl list devices available 2>/dev/null \
+    | grep -E "^\s+iPhone" | sed 's/^[[:space:]]*//' | sed 's/ (.*$//' | head -1)
+  DESTINATION="platform=iOS Simulator,name=${SIM_NAME:-iPhone 17}"
+  echo "auto-detected simulator: $DESTINATION"
+fi
 
 CMD="${1:-help}"
 shift || true

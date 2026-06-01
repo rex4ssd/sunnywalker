@@ -142,8 +142,8 @@ struct AlarmEditorView: View {
                 }
                 .pickerStyle(.segmented)
                 Text(selectedTaskType == .voice
-                     ? "小朋友說出喚醒語才能關掉鬧鐘"
-                     : "小朋友按按鈕就能關掉鬧鐘，適合年幼寶寶")
+                     ? LocalizedStringKey("小朋友說出喚醒語才能關掉鬧鐘")
+                     : LocalizedStringKey("小朋友按按鈕就能關掉鬧鐘，適合年幼寶寶"))
                     .font(GhibliFonts.caption(13))
                     .foregroundStyle(GhibliColors.totoroGray.opacity(0.8))
             }
@@ -168,7 +168,7 @@ struct AlarmEditorView: View {
                         Text("錄音喚醒語")
                             .font(GhibliFonts.caption())
                             .foregroundStyle(GhibliColors.nightIndigo)
-                        Text(tempAlarm.recordingName.isEmpty ? "尚未錄音" : "已錄音 ✅")
+                        Text(tempAlarm.recordingName.isEmpty ? LocalizedStringKey("尚未錄音") : LocalizedStringKey("已錄音 ✅"))
                             .font(GhibliFonts.caption(14))
                             .foregroundStyle(
                                 tempAlarm.recordingName.isEmpty
@@ -237,7 +237,7 @@ private struct WeekdayChip: View {
 
     var body: some View {
         Button(action: onTap) {
-            Text(symbol)
+            Text(LocalizedStringKey(symbol))
                 .font(GhibliFonts.caption(14))
                 .foregroundStyle(isSelected ? .white : GhibliColors.totoroGray)
                 .frame(width: 36, height: 36)

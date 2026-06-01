@@ -123,7 +123,7 @@ struct ParentalGateView: View {
 
     private var questionCard: some View {
         WatercolorCard {
-            Text(question.prompt)
+            Text(LocalizedStringKey(question.prompt))
                 .font(GhibliFonts.title(20))
                 .foregroundStyle(GhibliColors.nightIndigo)
                 .multilineTextAlignment(.center)
@@ -136,7 +136,7 @@ struct ParentalGateView: View {
     private var optionButtons: some View {
         VStack(spacing: 12) {
             ForEach(question.options, id: \.self) { opt in
-                GhibliButton(opt, color: GhibliColors.leafFresh) {
+                GhibliButton(LocalizedStringKey(opt), color: GhibliColors.leafFresh) {
                     check(opt)
                 }
             }

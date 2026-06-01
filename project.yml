@@ -2,7 +2,7 @@ name: SunnyWalker
 options:
   bundleIdPrefix: com.m2k
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"   # AlarmKit requires iOS 26 (pbxproj already targets 26.0; keep xcodegen in sync)
   developmentLanguage: zh-Hant
   groupSortPosition: top
 settings:

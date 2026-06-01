@@ -98,7 +98,7 @@ struct RecordingView: View {
         do {
             try audioRecorder.start(named: alarm.id.uuidString)
         } catch {
-            recordingError = "無法開始錄音：\(error.localizedDescription)"
+            recordingError = L("recording_failed %@", error.localizedDescription)
         }
     }
 

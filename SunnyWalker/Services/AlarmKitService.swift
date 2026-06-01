@@ -64,12 +64,12 @@ final class AlarmKitService {
         // stopButton is deprecated in iOS 26.1 (system uses slider gesture instead).
         // Keep for iOS 26.0 compatibility; system ignores it on 26.1+.
         let stopButton = AlarmButton(
-            text: "我起床了",
+            text: "我起床了",   // LocalizedStringResource literal — auto-localizes via Localizable.xcstrings (device language)
             textColor: .white,
             systemImageName: "sun.max.fill"
         )
         let alert = AlarmPresentation.Alert(
-            title: title,
+            title: LocalizedStringResource(stringLiteral: title),   // Alert.title is LocalizedStringResource, not String
             stopButton: stopButton
         )
         return AlarmPresentation(alert: alert)
@@ -109,13 +109,17 @@ final class AlarmKitService {
     func scheduleTestAlarm() async throws -> UUID {
         let id = UUID()
         let attrs = makeAttributes(alarmID: id.uuidString, title: "SunnyWalker PoC 測試！")
-        // AlarmKit supports .caf and .mp3; .aiff does NOT work (verified WWDC25)
-        let config = AlarmConfiguration.timer(
-            duration: 60,
-            attributes: attrs,
-            sound: .named("totoro_breath.caf")
+        // NOTE: custom AlarmKit sounds (.named) crash the Simulator's ToneLibrary (SpringBoard
+        // aborts in -[TLAlertQueuePlayerController _prepareAudioEnvironmentForStateDescriptor:]).
+        // Using the system default alarm tone here; the parent's recording still plays in-app.
+        // To re-enable branded sound on a REAL device, add: sound: .named("totoro_breath.caf")
+        try await manager.schedule(
+            id: id,
+            configuration: .timer(
+                duration: 60,
+                attributes: attrs
+            )
         )
-        try await manager.schedule(id: id, configuration: config)
         print("AlarmKitService: test timer scheduled — id=\(id), fires in 60s")
         return id
     }
@@ -125,15 +129,18 @@ final class AlarmKitService {
     @discardableResult
     func scheduleAlarm(at date: Date, label: String, alarmID: String) async throws -> UUID {
         let id = UUID()
-        let title = label.isEmpty ? "該起床囉！☀️" : label
+        let title = label.isEmpty ? L("該起床囉！☀️") : label
         let attrs = makeAttributes(alarmID: alarmID, title: title)
-        let config = AlarmConfiguration(
-            schedule: .fixed(date),
-            attributes: attrs,
-            sound: .named("totoro_breath.caf"),
-            stopIntent: StopAlarmIntent(alarmID: alarmID)
+        // Real API: AlarmManager.AlarmConfiguration.alarm(schedule:attributes:stopIntent:secondaryIntent:sound:)
+        try await manager.schedule(
+            id: id,
+            configuration: .alarm(
+                schedule: .fixed(date),
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarmID)
+                // sound: .named("totoro_breath.caf")  // re-enable on a real device (crashes Simulator ToneLibrary)
+            )
         )
-        try await manager.schedule(id: id, configuration: config)
         print("AlarmKitService: fixed alarm scheduled — id=\(id), fires at \(date)")
         return id
     }
@@ -151,30 +158,29 @@ final class AlarmKitService {
         alarmID: String
     ) async throws -> UUID {
         let id = UUID()
-        let title = label.isEmpty ? "該起床囉！☀️" : label
+        let title = label.isEmpty ? L("該起床囉！☀️") : label
         let attrs = makeAttributes(alarmID: alarmID, title: title)
 
-        let time = Alarm.Schedule.Relative.Time(hour: hour, minute: minute)
+        // Qualify as AlarmKit.Alarm — the SwiftData model `Alarm` shadows the unqualified name.
+        let time = AlarmKit.Alarm.Schedule.Relative.Time(hour: hour, minute: minute)
 
         let localeWeekdays = weekdays.compactMap { localeWeekday(from: $0) }
-        let recurrence: Alarm.Schedule.Relative.Recurrence
-        if localeWeekdays.isEmpty {
-            // No weekdays — fire once at next occurrence of this time (not repeating)
-            recurrence = .never
-        } else {
-            recurrence = .weekly(localeWeekdays)
-        }
+        let recurrence: AlarmKit.Alarm.Schedule.Relative.Recurrence =
+            localeWeekdays.isEmpty ? .never : .weekly(localeWeekdays)
 
-        let schedule = Alarm.Schedule.relative(
-            Alarm.Schedule.Relative(time: time, repeats: recurrence)
+        let schedule = AlarmKit.Alarm.Schedule.relative(
+            AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence)
         )
 
-        let config = AlarmConfiguration(
-            schedule: schedule,
-            attributes: attrs,
-            stopIntent: StopAlarmIntent(alarmID: alarmID)
+        try await manager.schedule(
+            id: id,
+            configuration: .alarm(
+                schedule: schedule,
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarmID)
+                // sound: .named("totoro_breath.caf")  // re-enable on a real device (crashes Simulator ToneLibrary)
+            )
         )
-        try await manager.schedule(id: id, configuration: config)
         print("AlarmKitService: recurring alarm scheduled — id=\(id), \(hour):\(String(format: "%02d", minute)), weekdays=\(weekdays)")
         return id
     }
@@ -206,12 +212,12 @@ final class AlarmKitService {
             return
         }
 
-        let title = alarm.label.isEmpty ? "該起床囉！☀️" : alarm.label
+        let title = alarm.label.isEmpty ? L("該起床囉！☀️") : alarm.label
         let attrs = makeAttributes(alarmID: alarm.id.uuidString, title: title)
-        let time = Alarm.Schedule.Relative.Time(hour: alarm.hour, minute: alarm.minute)
+        let time = AlarmKit.Alarm.Schedule.Relative.Time(hour: alarm.hour, minute: alarm.minute)
         let localeWeekdays = alarm.weekdays.compactMap { localeWeekday(from: $0) }
 
-        let schedule: Alarm.Schedule
+        let schedule: AlarmKit.Alarm.Schedule
         if localeWeekdays.isEmpty {
             // No weekdays: one-shot at next occurrence of this hour:minute (today or tomorrow)
             var comps = DateComponents()
@@ -225,19 +231,21 @@ final class AlarmKitService {
             ) ?? Date().addingTimeInterval(3600)
             schedule = .fixed(fireDate)
         } else {
-            let recurrence = Alarm.Schedule.Relative.Recurrence.weekly(localeWeekdays)
-            schedule = .relative(Alarm.Schedule.Relative(time: time, repeats: recurrence))
+            let recurrence = AlarmKit.Alarm.Schedule.Relative.Recurrence.weekly(localeWeekdays)
+            schedule = .relative(AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence))
         }
 
-        let soundName = alarm.soundFileName.isEmpty ? "totoro_breath.caf" : alarm.soundFileName
-        let config = AlarmConfiguration(
-            schedule: schedule,
-            attributes: attrs,
-            sound: .named(soundName),
-            stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
-        )
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
-        try await manager.schedule(id: alarm.id, configuration: config)
+        // Custom sound omitted — crashes Simulator ToneLibrary; on a real device add:
+        //   sound: .named(alarm.soundFileName.isEmpty ? "totoro_breath.caf" : alarm.soundFileName)
+        try await manager.schedule(
+            id: alarm.id,
+            configuration: .alarm(
+                schedule: schedule,
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
+            )
+        )
         print("AlarmKitService: synced \(alarm.id) — \(alarm.hour):\(String(format: "%02d", alarm.minute)), weekdays=\(alarm.weekdays)")
     }
 
@@ -259,7 +267,7 @@ final class AlarmKitService {
 
     // MARK: - List
 
-    var scheduledAlarms: [Alarm] {
-        manager.alarms
+    var scheduledAlarms: [AlarmKit.Alarm] {   // AlarmKit's Alarm, not the SwiftData model
+        (try? manager.alarms) ?? []           // manager.alarms is a throwing property
     }
 }

@@ -103,7 +103,8 @@ private struct AlarmCard: View {
                             alarm.isEnabled ? GhibliColors.nightIndigo : GhibliColors.totoroGray
                         )
                     HStack(spacing: 4) {
-                        Text(alarm.label)
+                        // Known default/common names localize; custom parent names show as typed.
+                        Text(LocalizedStringKey(alarm.label))
                             .font(GhibliFonts.caption())
                             .foregroundStyle(GhibliColors.totoroGray)
                         if !alarm.weekdays.isEmpty {
@@ -115,6 +116,8 @@ private struct AlarmCard: View {
                         }
                     }
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { showingEditor = true }   // tap time/label → edit alarm
                 Spacer()
                 Button {
                     showingRecording = true
@@ -187,7 +190,7 @@ private struct SampleAlarmCard: View {
                     Text(data.timeString)
                         .font(GhibliFonts.clock(40))
                         .foregroundStyle(GhibliColors.nightIndigo)
-                    Text(data.label)
+                    Text(LocalizedStringKey(data.label))
                         .font(GhibliFonts.caption())
                         .foregroundStyle(GhibliColors.totoroGray)
                 }

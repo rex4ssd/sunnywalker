@@ -18,6 +18,10 @@ struct AlarmIOView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("language_section") {
+                    LanguagePickerSection()
+                }
+
                 Section("匯出") {
                     Text(exportText)
                         .font(.system(.footnote, design: .monospaced))
@@ -57,22 +61,29 @@ struct AlarmIOView: View {
         if replaceOnImport {
             for old in alarms {
                 AlarmScheduler.shared.cancel(old.id)
+                // Also drop the AlarmKit entry — otherwise the deleted alarm keeps
+                // firing from the system alarm list (orphaned alarm).
+                Task { [old] in try? await AlarmKitService.shared.removeAlarm(old) }
                 modelContext.delete(old)
             }
         }
 
         for p in parsed {
-            let alarm = Alarm(label: p.label.isEmpty ? "鬧鐘" : p.label,
+            let alarm = Alarm(label: p.label.isEmpty ? L("鬧鐘") : p.label,
                               hour: p.hour, minute: p.minute)
             alarm.weekdays = p.weekdays
             alarm.isEnabled = p.isEnabled
             modelContext.insert(alarm)
             if p.isEnabled {
-                Task { try? await AlarmScheduler.shared.schedule(alarm: alarm) }
+                // Sync both paths (v1 notifications + v2 AlarmKit) to match the rest of the app.
+                Task { [alarm] in
+                    try? await AlarmScheduler.shared.schedule(alarm: alarm)
+                    try? await AlarmKitService.shared.syncAlarm(alarm)
+                }
             }
         }
 
-        resultMessage = "成功匯入 \(parsed.count) 筆鬧鐘"
+        resultMessage = L("import_result %lld", parsed.count)
         importText = ""
     }
 }

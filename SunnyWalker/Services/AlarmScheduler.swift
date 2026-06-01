@@ -20,10 +20,10 @@ final class AlarmScheduler {
         center.removePendingNotificationRequests(withIdentifiers: staleIDs)
 
         let content = UNMutableNotificationContent()
-        content.title = "起床囉！"
+        content.title = L("起床囉！")
         content.body = alarm.recordingName.isEmpty
-            ? "早安！☀️ 快來聽鬧鐘"
-            : "點開來聽：\(alarm.recordingName)"
+            ? L("早安！☀️ 快來聽鬧鐘")
+            : L("點開來聽：%@", alarm.recordingName)
         content.sound = UNNotificationSound(
             named: UNNotificationSoundName(rawValue: alarm.soundFileName)
         )

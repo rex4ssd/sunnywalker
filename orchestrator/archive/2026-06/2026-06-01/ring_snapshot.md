@@ -847,233 +847,6 @@ All four mandatory Day 9 brief items delivered plus the optional injection refac
 → End of Day 9
 
 
-## [A] Day 10 — 2026-06-01 02:23:56+08:00
-Status: IN_PROGRESS
-Model:  claude-sonnet-4-6
-
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
-
-
-## [A] Day 10 — 2026-06-01 02:31:32+08:00 (orchestrator-injected)
-Status: PAUSED_TOKEN_LIMIT
-Model:  (orchestrator)
-
-### Reason
-Token / rate limit hit. Subprocess returned credit-exhausted error.
-
-### Last log
-`/Users/lion/Documents/SunnyWalker/orchestrator/logs/2026-06-01/a_coder.log`
-
-### For next
-Auto-retryable. Run `python sw.py next` again when usage refreshes (2026-06-01 06:31:32+08:00).
-
-## [A] Day 10 — 2026-06-01 06:32:31+08:00
-Status: IN_PROGRESS
-Model:  claude-sonnet-4-6
-
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
-
-
-## [A] Day 10 — 2026-06-01 06:32:33+08:00 (orchestrator-injected)
-Status: PAUSED_TOKEN_LIMIT
-Model:  (orchestrator)
-
-### Reason
-Token / rate limit hit. Subprocess returned credit-exhausted error.
-
-### Last log
-`/Users/lion/Documents/SunnyWalker/orchestrator/logs/2026-06-01/a_coder.log`
-
-### For next
-Auto-retryable. Run `python sw.py next` again when usage refreshes (2026-06-01 10:32:33+08:00).
-
-## [A] Day 10 — 2026-06-01 10:33:23+08:00
-Status: IN_PROGRESS
-Model:  claude-sonnet-4-6
-
-_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
-
-
-
-## [A] Day 10 — 2026-06-01 10:38:35+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Verified AlarmRingView voice fallback button (recognitionFailureCount ≥ 3 → showFallbackButton) — completed in prior paused session; confirmed correct
-- Verified RewardView ConfettiSwiftUI integration (`.confettiCannon` modifier) — completed in prior paused session; confirmed correct
-- Verified AlarmListView struct-based SampleAlarmData fix (no @Model outside ModelContext) — completed in prior paused session; confirmed correct
-- Added `XCRemoteSwiftPackageReference` + `XCSwiftPackageProductDependency` for ConfettiSwiftUI to project.pbxproj (was missing — build would have failed with "No such module")
-- Added `packageReferences` to project object and `packageProductDependencies` to SunnyWalker target in project.pbxproj
-- Added `@Environment(\.verticalSizeClass) private var vSizeClass` to HomeView for iPad landscape detection
-- Added iPad landscape guard: `if sizeClass == .regular && vSizeClass == .compact` → smaller clock (52pt) + scaled TotoroAvatar (0.75x)
-- Refactored `clockHeader` from computed `var` to `func clockHeader(fontSize: CGFloat = 76)` to support landscape size override
-- Added 2 `VoiceFallbackTests` to SunnyWalkerTests.swift documenting spec §8 3-failure threshold
-
-### Files
-~ SunnyWalker/Views/Alarm/AlarmRingView.swift (verified — no edits needed this session)
-~ SunnyWalker/Views/Alarm/RewardView.swift (verified — no edits needed this session)
-~ SunnyWalker/Views/Alarm/AlarmListView.swift (verified — no edits needed this session)
-~ SunnyWalker/Views/Home/HomeView.swift (landscape guard + clockHeader func)
-~ SunnyWalkerTests/SunnyWalkerTests.swift (2 new VoiceFallbackTests)
-~ SunnyWalker.xcodeproj/project.pbxproj (ConfettiSwiftUI SPM package + product dependency)
-
-### Stamps
-✅ Spec §8 voice fallback button after 3 failed recognitions — implemented in AlarmRingView
-✅ ConfettiSwiftUI added to project.pbxproj (XCRemoteSwiftPackageReference + XCSwiftPackageProductDependency)
-✅ RewardView uses .confettiCannon() modifier with GhibliColors tokens — no raw literals
-✅ AlarmListView SampleAlarmData is struct-based — no @Model outside ModelContext
-✅ iPad landscape guard: sizeClass==.regular && vSizeClass==.compact → compact layout
-✅ No new Swift files (validate.sh [0/4] pbxproj check should pass trivially)
-✅ 38 tests (36 existing + 2 new VoiceFallbackTests)
-✅ No third-party SDKs beyond ConfettiSwiftUI (spec §3.3 permits it)
-✅ requiresOnDeviceRecognition = true remains in SpeechRecognizer.swift
-⚠️ ConfettiSwiftUI package needs network access on first build to be resolved by SPM — B should verify build passes
-⚠️ GhibliFonts.clock() default is 76pt; landscape uses 52pt — may still clip on very small iPad landscape if font scale is large
-⚠️ SpeechRecognizer.onFailure requires real device (zh-TW on-device recognition); fallback logic tested indirectly
-
-### For next (B — Validator)
-Please run `bash scripts/validate.sh`. Expect:
-- Build: PASS if network available for ConfettiSwiftUI SPM resolution; may FAIL offline with "no such module 'ConfettiSwiftUI'"
-  - If offline fail: add `https://github.com/simibac/ConfettiSwiftUI` via Xcode GUI → File → Add Package Dependencies
-- Tests: 38 tests expected (36 existing + 2 new VoiceFallbackTests); all should pass
-- Lint: skipped (swiftlint not installed)
-- .pbxproj check: PASS — no new Swift files added this day
-
-New/modified files to verify in .pbxproj: NONE (no new .swift files this day)
-
-→ Hand off to B
-
-## [B] Day 10 — 2026-06-01 10:41:30+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Read ring.md; confirmed A's Day 10 entry ends with `→ Hand off to B`
-- Ran `bash scripts/validate.sh` (exit 65)
-- Attempted `xcodebuild -resolvePackageDependencies` — ConfettiSwiftUI resolved to 1.1.0 and checked out to DerivedData
-- Re-ran `bash scripts/validate.sh` after resolution — still exit 65, same error
-- Inspected `project.pbxproj` to diagnose root cause
-
-### Build: FAIL
-- Build: **FAIL** (rc=65)
-- Tests: skipped (build failed, rc=99)
-- Lint: skipped (swiftlint not installed, rc=99)
-
-### Verdict: red
-
-### Stamps
-❌ Build fails — `RewardView.swift:4:8: error: unable to resolve module dependency: 'ConfettiSwiftUI'`
-✅ `.pbxproj` registration check passed (rc=0) — no new unregistered Swift files
-⚠️ ConfettiSwiftUI is in `packageProductDependencies` + `packageReferences`, but NO `PBXFrameworksBuildPhase` exists in the `SunnyWalker` target — Xcode only builds 1 target and never compiles the package
-
-### Notable errors
-1. `RewardView.swift:4` — `unable to resolve module dependency: 'ConfettiSwiftUI'` — missing `PBXFrameworksBuildPhase` means SPM product is never compiled; xcodebuild log shows "Target dependency graph (1 target)" confirming ConfettiSwiftUI is not wired as a build dependency
-
-### Root cause diagnosis
-A correctly added:
-- `XCRemoteSwiftPackageReference "ConfettiSwiftUI"` (UUID `AAFF1122BB3344CC55DD6677`) to `packageReferences`
-- `XCSwiftPackageProductDependency` (UUID `EE99FF0011AA22BB33CC44DD`) to `XCSwiftPackageProductDependency` section
-- `EE99FF0011AA22BB33CC44DD` to the `SunnyWalker` target's `packageProductDependencies`
-
-**Missing**: The `SunnyWalker` target's `buildPhases` only contains `Sources` and `Resources`. There is no `PBXFrameworksBuildPhase`. Without it, Xcode's build system does not compile ConfettiSwiftUI as a dependency, so the Swift compiler cannot find its module.
-
-### For next (C — Reporter)
-**BROKEN — Do NOT commit without fixing.**
-
-Today's outcome: **red**. Recommended commit prefix: `[BROKEN-FIXED]`.
-Subject suggestion: "Day 10: voice fallback + ConfettiSwiftUI + struct-based previews + iPad landscape"
-
-**pbxproj fix required — 4 sections to edit:**
-
-C must add to `project.pbxproj`:
-
-**Step 1** — Add a `PBXBuildFile` entry (new UUID `FF1122AABB3344CC55DD6677`) in `PBXBuildFile` section:
-```
-		FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */ = {
-			isa = PBXBuildFile;
-			productRef = EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */;
-		};
-```
-
-**Step 2** — Add a `PBXFrameworksBuildPhase` section (new UUID `CC3344DDEE5566FF7788AA99`):
-```
-/* Begin PBXFrameworksBuildPhase section */
-		CC3344DDEE5566FF7788AA99 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-```
-
-**Step 3** — Add `CC3344DDEE5566FF7788AA99` to the `SunnyWalker` target's `buildPhases` array (between Sources and Resources):
-```
-			buildPhases = (
-				4FB60F10CA141CB3050F07D2 /* Sources */,
-				CC3344DDEE5566FF7788AA99 /* Frameworks */,
-				523852C83B0CD689ACE0DB05 /* Resources */,
-			);
-```
-
-After the fix, re-run `bash scripts/validate.sh` and confirm:
-- build rc=0
-- tests: 38 passed, 0 failed
-- pbxproj check: pass
-
-→ Hand off to C
-
-
-## [C] Day 10 — 2026-06-01 10:46:06+08:00
-Status: DONE
-Model:  claude-sonnet-4-6
-
-### What I did
-- Read ring.md; confirmed B's Day 10 entry ends with `→ Hand off to C`
-- Applied B's three-step pbxproj fix (PBXBuildFile entry + PBXFrameworksBuildPhase section + buildPhases update for ConfettiSwiftUI)
-- Re-ran `bash scripts/validate.sh` — confirmed build rc=0, tests 38 pass, pbxproj check pass
-- Staged all changes and committed via `bash scripts/git_ca.sh`
-
-### Commit
-b3791b7  [BROKEN-FIXED] Day 10: voice fallback + ConfettiSwiftUI + struct-based previews + iPad landscape  [A:✅ B:❌→✅]
-
-### Daily report
-
-**TL;DR**: Day 10 delivered spec §8 voice fallback button, ConfettiSwiftUI confetti in RewardView, struct-based AlarmListView previews, and iPad landscape guard — B caught a missing PBXFrameworksBuildPhase for ConfettiSwiftUI that C fixed, restoring a clean 38/38 pass.
-
-**Done today**:
-- `AlarmRingView`: voice fallback button appears after 3 failed recognition cycles (`recognitionFailureCount >= 3 → showFallbackButton`), calls same `handleWakeUp()` path as voice — spec §8 mitigation fully implemented
-- `RewardView`: replaced custom `ConfettiOverlay` with `ConfettiSwiftUI`'s `.confettiCannon()` modifier; GhibliColors tokens maintained, no raw literals
-- `AlarmListView`: `sampleAlarms` 7-day carry-over resolved — `SampleAlarmData` is now a plain `struct`, no `@Model` outside `ModelContext`
-- `HomeView`: iPad landscape guard added (`sizeClass == .regular && vSizeClass == .compact` → 52pt clock + 0.75x TotoroAvatar); `clockHeader` refactored to a `func(fontSize:)` to support the size override
-- `SunnyWalkerTests`: 2 new `VoiceFallbackTests` verifying the 3-failure threshold state transition (38 total)
-- `project.pbxproj`: `XCRemoteSwiftPackageReference` + `XCSwiftPackageProductDependency` for ConfettiSwiftUI added by A; C added the missing `PBXFrameworksBuildPhase` (`CC3344DDEE5566FF7788AA99`) + `PBXBuildFile` entry (`FF1122AABB3344CC55DD6677`) + wired it into the `SunnyWalker` target's `buildPhases`
-
-**Build & tests**: Build rc=0, 38/38 tests pass, pbxproj check pass, lint skipped (swiftlint not installed)
-
-**Tomorrow preview**: D will evaluate Day 10 against spec; remaining open items are synthetic `.caf` audio (not Ghibli-aesthetic), programmatic app icon placeholder (blocks App Store), and `checkPendingAlarm()` production path untestable in XCTest
-
-### Stamps
-✅ Pushed to dev/auto (b3791b7)
-✅ No push to main
-✅ Build rc=0, 38/38 tests pass
-✅ PBXFrameworksBuildPhase added — ConfettiSwiftUI now a proper build dependency
-⚠️ `.caf` assets are synthetic arpeggios — audible but not Ghibli-aesthetic
-⚠️ App icon is a programmatic PIL placeholder — illustrated watercolor icon still needed
-⚠️ `checkPendingAlarm()` production path has no automated test
-
-### For next (D — Reviewer)
-Please evaluate against spec Day 10. Specific concerns:
-1. Verify `AlarmRingView` fallback button appears correctly after 3 failed recognition cycles — A's `onFailure` callback integration with `SpeechRecognizer` should be checked against the actual stub interface
-2. ConfettiSwiftUI `.confettiCannon()` usage in `RewardView` — confirm the modifier API matches ConfettiSwiftUI 1.1.0 (the resolved version)
-3. iPad landscape layout: `sizeClass == .regular && vSizeClass == .compact` — check whether this is the correct size class combination for iPad landscape (some sources say iPad landscape is `.regular/.regular`, not `.regular/.compact`)
-
-→ Hand off to D
-
-
 ## [D] Day 10 — 2026-06-01 11:15:00+08:00
 Status: DONE
 Model:  claude-sonnet-4-6
@@ -1162,4 +935,216 @@ Day 10 delivered all four brief items structurally — voice fallback button, Co
 - `orchestrator/current/ring.md` last 4 entries
 
 → End of Day 10
+
+
+## [A] Day 11 — 2026-06-01 11:25:59+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Fixed `SpeechRecognizer.startListening` to launch a timeout `Task` that fires `onFailure` after `listeningTimeout` seconds (default 8s) even when the child says random words and no system error occurs — this is the primary spec §8 failure scenario
+- Added `private var timeoutTask: Task<Void, Never>?`; `stop()` now cancels and nils it so a matched keyword or system error correctly kills the pending timeout
+- Added `listeningTimeout: TimeInterval = 8.0` parameter (default-valued; all existing call sites in `AlarmRingView` are unchanged)
+- Removed dead `@Environment(\.verticalSizeClass) private var vSizeClass` from `HomeView` (it was only used in the dead branch)
+- Replaced the unreachable `sizeClass == .regular && vSizeClass == .compact` iPad landscape branch with a `GeometryReader { geo in geo.size.width > geo.size.height }` check inside the `sizeClass == .regular` block — iPad landscape now correctly renders the compact 52pt clock layout
+- Added `import Speech` to `SunnyWalkerTests.swift`
+- Marked `VoiceFallbackTests` `@MainActor` (needed for `SpeechRecognizer` access)
+- Added `testSpeechRecognizerTimeoutCallsOnFailure` — integration test that calls `startListening(listeningTimeout: 0.3)` with no audio input and asserts `onFailure` fires; skips automatically when on-device zh-TW recognition is unavailable (simulator)
+
+### Files
+~ SunnyWalker/Services/SpeechRecognizer.swift
+~ SunnyWalker/Views/Home/HomeView.swift
+~ SunnyWalkerTests/SunnyWalkerTests.swift
+
+### Stamps
+✅ Spec §8 voice fallback now fires for the common "no keyword match" case, not just system errors
+✅ `requiresOnDeviceRecognition = true` preserved — never removed
+✅ No new Swift files created — validate.sh [0/4] pbxproj check will pass trivially
+✅ No third-party SDKs added
+✅ Zero raw color/font literals in modified files
+✅ iPad landscape GeometryReader fix is reachable on actual hardware; dead `vSizeClass` branch removed
+⚠️ `testSpeechRecognizerTimeoutCallsOnFailure` uses `XCTSkipUnless(sfRec?.supportsOnDeviceRecognition == true, ...)` — skipped in simulator but exercises real timeout path on device
+⚠️ `AlarmRingView.startSpeechCycle` passes `listeningTimeout` using default (8.0s) — no call site change needed; acceptable for production
+
+### For next (B — Validator)
+Please run `bash scripts/validate.sh`. Expect:
+- Build: pass (no new files, only modifications to existing registered files)
+- Tests: 38 existing pass; +1 new test (`testSpeechRecognizerTimeoutCallsOnFailure`) skips in simulator (XCTSkip), so count shows as 38 pass + 1 skip — that is correct
+- Lint: clean
+- pbxproj check [0/4]: pass (no new Swift files)
+
+New files created: none
+Modified files: `SunnyWalker/Services/SpeechRecognizer.swift`, `SunnyWalker/Views/Home/HomeView.swift`, `SunnyWalkerTests/SunnyWalkerTests.swift`
+
+→ Hand off to B
+
+
+## [B] Day 11 — 2026-06-01 11:26:58+08:00
+Status: IN_PROGRESS
+Model:  claude-sonnet-4-6
+
+_(orchestrator stub — agent is running; replaced by agent's DONE entry on completion)_
+
+
+## [B] Day 11 — 2026-06-01 11:30:15+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Ran `scripts/validate.sh` from repo root
+- Build: pass (rc=0)
+- Tests: 38 passed, 0 failed, 1 skipped (`testSpeechRecognizerTimeoutCallsOnFailure` — XCTSkip: on-device zh-TW recognition unavailable in simulator; requires real device)
+- Lint: swiftlint not installed, skipped (rc=99 — infrastructure, not A's fault)
+- pbxproj check [0/4]: pass — no new Swift files, all three modified files already registered
+
+### Verdict: green
+
+### Stamps
+✅ Build compiles (rc=0)
+✅ 38/38 non-skipped tests pass; 0 failures
+✅ pbxproj check passes — no new Swift files to register
+✅ `testSpeechRecognizerTimeoutCallsOnFailure` correctly skips in simulator with clear XCTSkip message
+⚠️ swiftlint not installed — lint step skipped (persistent infrastructure gap, not Day 11 regression)
+⚠️ A predicted "38 pass + 1 skip"; actual is 39 total executed (38 passed + 1 skipped) — count matches
+
+### Notable errors
+None — build and tests clean.
+
+### For next (C — Reporter)
+Today's outcome: green. Recommended commit prefix: none (no broken-fixed cycle today).
+Subject suggestion: "Day 11: SpeechRecognizer timeout fallback + GeometryReader iPad landscape fix"
+
+→ Hand off to C
+
+
+## [C] Day 11 — 2026-06-01 11:31:42+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### What I did
+- Read ring.md and confirmed B's Day 11 verdict: green → Hand off to C
+- Staged all changes with `git add -A`
+- Committed via `scripts/git_ca.sh` (dev/auto branch enforced)
+- Wrote daily report below
+
+### Commit
+9430a7a  Day 11: SpeechRecognizer timeout fallback + GeometryReader iPad landscape fix  [A:✅ B:✅]
+
+### Daily report
+
+**TL;DR**: Day 11 fixed the spec §8 voice-fallback's silent failure mode (timeout now fires `onFailure` after 8s of no keyword match) and replaced the dead iPad landscape size-class guard with a working `GeometryReader`-based check.
+
+**Done today**:
+- `SpeechRecognizer.swift`: Added `listeningTimeout: TimeInterval = 8.0` parameter to `startListening`; internal `timeoutTask` fires `onFailure?()` after timeout even when child says random words and no system error occurs; `stop()` cancels the timeout task so a successful keyword match doesn't trigger a ghost failure
+- `HomeView.swift`: Removed dead `@Environment(\.verticalSizeClass)` and the unreachable `sizeClass == .regular && vSizeClass == .compact` branch; replaced with `GeometryReader { geo in geo.size.width > geo.size.height }` inside the `sizeClass == .regular` block — iPad landscape now correctly renders the compact 52pt clock
+- `SunnyWalkerTests.swift`: Added `@MainActor` to `VoiceFallbackTests`; added `testSpeechRecognizerTimeoutCallsOnFailure` — integration test calling `startListening(listeningTimeout: 0.3)` with no audio and asserting `onFailure` fires via `XCTestExpectation`; skips cleanly in simulator with `XCTSkipUnless`; added `import Speech`
+
+**Build & tests**: Build rc=0; 38/38 pass, 1 skipped (`testSpeechRecognizerTimeoutCallsOnFailure` — on-device zh-TW not available in simulator; correct behavior)
+
+**Tomorrow preview**: D to evaluate Day 11 against spec §8 and any remaining open risks; A to continue toward spec §9+ (settings screen, export/import polish, remaining audio asset work)
+
+### Stamps
+✅ Pushed to dev/auto
+✅ No push to main
+✅ Spec §8 voice fallback now fires for "no keyword match" case — the primary child failure scenario
+✅ iPad landscape layout is now reachable on real hardware
+⚠️ `testSpeechRecognizerTimeoutCallsOnFailure` skipped in simulator — requires real device for full validation
+⚠️ `.caf` assets still synthetic arpeggios — audio aesthetic QA blocked (carry-over, not Day 11 scope)
+⚠️ App icon still a programmatic PIL placeholder (carry-over, not Day 11 scope)
+
+### For next (D — Reviewer)
+Please evaluate against spec Day 11. Specific concerns:
+1. Confirm `SpeechRecognizer` timeout task is correctly cancelled when a keyword matches or a system error fires — the `stop()` call must nil `timeoutTask` before it fires `onFailure?()`.
+2. Confirm iPad `GeometryReader` landscape condition is correct (`geo.size.width > geo.size.height`) and doesn't break iPhone layout.
+3. Assess whether 38 pass + 1 skip is an acceptable test posture for the voice-fallback integration path, given the simulator limitation.
+
+→ Hand off to D
+
+
+## [D] Day 11 — 2026-06-01 11:45:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6
+
+### Verdict: on_track
+Completion: 90%
+
+Both Day 10 ❌ items are fixed cleanly. `SpeechRecognizer` now fires `onFailure` after an 8-second timeout when no keyword is matched — the primary spec §8 scenario (child says random words, no system error thrown). The iPad landscape guard is now reachable via `GeometryReader { geo in geo.size.width > geo.size.height }`, replacing the dead `sizeClass == .regular && vSizeClass == .compact` condition that could never match on real iPad hardware. The integration test correctly skips in simulator and would catch removal of the timeout callback on a real device. Code quality is consistently high: `@MainActor`, no raw literals, no new third-party SDKs. The 10% gap comes from three persistent carry-overs (synthetic `.caf` audio, programmatic app icon, `checkPendingAlarm` untestable path) and one UX observation: during the 8-second listening window and across 3 attempts (24+ seconds total), `AlarmRingView` shows no visual feedback — a 7-year-old has no indicator that the app is listening, which attempt they're on, or that a retry is happening automatically.
+
+### Alignment with spec
+- ✅ Milestone Day 11 (SpeechRecognizer console output, on-device recognition): Already complete since Day 5; project runs ~5 days ahead of spec. Day 11 resolves the spec §8 risk mitigation that was structurally broken since Day 10.
+- ✅ Aesthetic / UX: No new UI components introduced. Existing theme tokens and layout patterns fully preserved. GeometryReader iPad layout is clean.
+- ✅ On-device only: `requiresOnDeviceRecognition = true` confirmed at `SpeechRecognizer.swift:40`. No new third-party SDKs. No network calls.
+
+### Code quality (spot-checked)
+- `Services/SpeechRecognizer.swift`: Timeout task correctly structured — `[weak self]` avoids retain cycle; double guard `!Task.isCancelled && self.isListening` catches both explicit cancellation from `stop()` and natural expiry. `stop()` cancels and nils `timeoutTask` before audio engine cleanup — order matters here and it's correct. When `onFailure` fires via system error, `stop()` sets `isListening = false` then cancels the timeout task; the timeout task's `self.isListening` guard prevents double-calling `onFailure`. One pre-existing latent concern (not Day 11's fault): the `recognitionTask` callback closure accesses `@MainActor`-isolated properties (`isListening`, `recognizedText`, `matchedKeyword`) from an arbitrary background thread (SFSpeechRecognizer callbacks are not main-actor). Swift strict concurrency checking would flag this; it compiles today because the closure crosses an `@objc` API boundary and the project does not enable strict concurrency globally.
+- `Views/Home/HomeView.swift`: `GeometryReader` sits inside a full-screen `ZStack`, so it receives the full screen frame — layout is correct. Comment explaining why the old condition was dead is valuable. `clockHeader(fontSize: 52)` for landscape, `clockHeader(fontSize: 76)` default for portrait, iPhone layout untouched. Clean.
+- `SunnyWalkerTests/SunnyWalkerTests.swift`: `testSpeechRecognizerTimeoutCallsOnFailure` uses `XCTSkipUnless(sfRec?.supportsOnDeviceRecognition == true, ...)` — correct guard. `listeningTimeout: 0.3` + `wait(timeout: 2.0)` gives 6.7× headroom against flake. The test does attempt to start `AVAudioEngine.inputNode` on a real device; if mic permission is absent the `try startListening(...)` would throw and `exp` would never fulfill, failing with timeout — acceptable test design given the simulator skip already covers CI.
+
+### Process
+- A: Targeted execution with zero scope creep. No new files, so the validate.sh [0/4] check was trivially green — A correctly called this out in the handoff. Self-flagged the simulator skip behavior accurately. Brief was accurate and honest.
+- B: Green verdict accurate. Confirmed the 38 pass + 1 skip count matches A's prediction. Clean and concise. No false positives.
+- C: Correct commit format, accurate daily report. Three specific concerns for D (timeout cancellation correctness, GeometryReader condition, test posture) were exactly the right items to surface — all addressed in this review.
+
+### Risks / blockers
+1. **No listening feedback in AlarmRingView — highest UX priority**: During each 8-second timeout window `AlarmRingView` shows no visual or textual indication that it is actively listening, which attempt the child is on (1/3, 2/3, 3/3), or that a retry is happening automatically. After three silent 8-second waits (24+ seconds total), the fallback button appears with no explanation. Spec §8 wires the state machine; the UX around it is invisible to a 7-year-old. This is the most important unaddressed usability gap.
+2. **Pre-existing concurrency concern in SpeechRecognizer**: Recognition callback accesses `@MainActor` properties from an arbitrary thread. Not a new Day 11 regression; compiles and functions today. Would surface under Swift strict concurrency or Thread Sanitizer.
+3. **Synthetic `.caf` arpeggios**: C-E-G harmonic tones are audible but not the ambient nature sounds the spec's Ghibli aesthetic intends. Blocks real-device aesthetic QA. Day 8 carry-over.
+4. **Programmatic PIL app icon**: "SW" gradient placeholder passes `xcodebuild archive` but cannot go to App Store. Day 9 carry-over. Needs design work — do not block Day 12.
+5. **`checkPendingAlarm()` production path untestable**: `UIApplication.shared.delegate` returns nil in XCTest. Logic correct; injected-delegate path has tests; production default-parameter call site has no automated guard. Low priority.
+
+### Stamps
+✅ Both Day 10 ❌ items resolved — `SpeechRecognizer` timeout fires for "no keyword match" case; iPad landscape guard is now reachable on real hardware
+✅ `requiresOnDeviceRecognition = true` preserved at `SpeechRecognizer.swift:40` — privacy guarantee intact
+✅ Timeout task correctly cancelled in `stop()` before audio engine teardown — no double `onFailure` call possible
+✅ `testSpeechRecognizerTimeoutCallsOnFailure` covers the no-match timeout path; skips cleanly in simulator with descriptive message
+✅ 38/38 pass + 1 skip; build rc=0; no new Swift files; validate.sh [0/4] passes trivially
+✅ Zero raw color/font literals; no new third-party SDKs; all on-device
+⚠️ `AlarmRingView` listening UX is invisible — no animated indicator, no attempt counter, no retry feedback for child during 8s window
+⚠️ Pre-existing concurrency concern: recognition callback accesses `@MainActor` properties from non-main thread (not new to Day 11)
+⚠️ Synthetic `.caf` arpeggios (Day 8 carry-over) — does not block Day 12
+⚠️ Programmatic app icon (Day 9 carry-over) — does not block Day 12
+
+### For next (A — Coder)  ← TOMORROW's brief
+
+**Primary task**: Add listening feedback UI to `AlarmRingView` so a 7-year-old can tell at a glance whether the app is listening, which attempt they are on, and when a retry is starting — the state machine is wired but invisible.
+
+**Specific work items**:
+1. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - Add an animated listening indicator (pulsing `Circle` or `Image(systemName: "mic.fill")` with `scaleEffect` + `.easeInOut.repeatForever`) visible while `speechTask != nil && !showFallbackButton`
+   - Add attempt-counter text ("第 N/3 次，說「我起床了」！") using `GhibliFonts.body()` and `GhibliColors` — update it based on `recognitionFailureCount`
+   - After each failure, briefly show "沒關係，再試一次！" for 1.5 seconds (use `Task.sleep`) before the next 8-second window opens
+   - Acceptance: at any point during the alarm ring flow, a 7-year-old can tell whether the app is listening (animated mic), which attempt (1/3, 2/3), and whether a retry is coming
+
+2. Modify: `SunnyWalker/Views/Alarm/AlarmRingView.swift`
+   - Animate the fallback button in (`.transition(.scale.combined(with: .opacity))`) with a 0.5-second delay (disable button interaction for 0.5s after appearance to prevent accidental tap-through)
+   - Add a brief explanation above the fallback button: "說不出來嗎？" in `GhibliFonts.caption()`
+   - Acceptance: fallback button appearance is friendly and intentional; cannot be accidentally tapped immediately on appearance
+
+3. Replace: `SunnyWalker/Theme/Sounds/totoro_breath.caf` and `leaf_rustle.caf`
+   - Use `afconvert` to convert a short public-domain CC0 ambient sound (forest, gentle chime, birdsong) to `.caf` format; files must be ≤30 seconds
+   - Acceptance: `AudioPlayer.play(url:)` produces a clearly audible, non-jarring ambient sound; `AlarmRingView` no longer logs "skipping playback" or "using fallback"; the 440/660 Hz arpeggio tones are gone
+
+4. Modify: `SunnyWalkerTests/SunnyWalkerTests.swift`
+   - Add at least 1 test verifying the attempt-counter string format (e.g. that `"第 \(count)/3 次"` produces `"第 1/3 次"` for count=1) — keep it simple and unit-level
+   - Acceptance: string formatting for the attempt counter has a test guard
+
+**Carry-overs from today**:
+- Synthetic `.caf` arpeggios → item 3 above
+- Programmatic PIL app icon (low priority; needs design work; do not block Day 12)
+- `checkPendingAlarm()` production path untestable in XCTest (low priority)
+- Pre-existing SpeechRecognizer concurrency concern (low priority; compiles and works today; track for future strict-concurrency audit)
+
+**Constraints**:
+- `requiresOnDeviceRecognition = true` must remain in `SpeechRecognizer.swift` — never remove
+- No third-party SDKs beyond ConfettiSwiftUI
+- Explicitly list every new `.swift` file in "For next (B)" — validate.sh [0/4] will catch unregistered files
+- Use theme tokens throughout — zero raw color/font literals
+- Keep 38 pass + 1 skip; item 4 should add at least 1 new passing test
+
+**Files to read first**:
+- `SunnyWalker/Views/Alarm/AlarmRingView.swift` (add indicator, counter, retry message, fallback animation — items 1, 2)
+- Spec §8 (voice fallback risk table — "3 次語音失敗自動切按鈕模式")
+- `orchestrator/current/ring.md` last 4 entries
+
+→ End of Day 11
 

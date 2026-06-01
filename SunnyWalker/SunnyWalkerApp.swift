@@ -70,10 +70,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 @main
 struct SunnyWalkerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var localization = LocalizationManager.shared
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                // Drives live language switching: Text(LocalizedStringKey) re-localizes
+                // from Localizable.xcstrings whenever the chosen language changes.
+                .environment(\.locale, localization.locale)
                 .task {
                     // Request mic + speech permissions (v1 path)
                     await PermissionManager.shared.requestAllPermissions()

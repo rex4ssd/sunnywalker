@@ -59,7 +59,7 @@ final class Alarm {
         let symbols = ["日", "一", "二", "三", "四", "五", "六"]
         return weekdays.compactMap { index in
             guard index >= 1, index <= 7 else { return nil }
-            return symbols[index - 1]
+            return L(symbols[index - 1])   // localized: 日→S, 一→M, … (Localizable.xcstrings)
         }
     }
 }

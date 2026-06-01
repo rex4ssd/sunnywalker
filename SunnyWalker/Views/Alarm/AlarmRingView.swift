@@ -32,7 +32,7 @@ struct AlarmRingView: View {
 
     /// Attempt label (1-indexed): shows which cycle the child is on while listening.
     var attemptLabel: String {
-        "第 \(min(recognitionFailureCount + 1, 3))/3 次，說「我起床了」！"
+        L("attempt_counter %lld", min(recognitionFailureCount + 1, 3))
     }
 
     var body: some View {

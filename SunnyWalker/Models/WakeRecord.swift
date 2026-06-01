@@ -36,7 +36,7 @@ final class WakeRecord {
 
     var responseFormatted: String {
         let s = responseSeconds
-        if s < 60 { return "\(s) 秒" }
-        return "\(s / 60) 分 \(s % 60) 秒"
+        if s < 60 { return L("response_seconds %lld", s) }
+        return L("response_minutes %1$lld %2$lld", s / 60, s % 60)
     }
 }
