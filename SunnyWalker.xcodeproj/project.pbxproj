@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */; };
 		6038E36000101404AEC7372B /* GhibliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
 		CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */; };
@@ -107,6 +108,7 @@
 		35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedSideManager.swift; sourceTree = "<group>"; };
 		934C934671804C5B926D7DBE /* StopAlarmIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAlarmIntent.swift; sourceTree = "<group>"; };
 		33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
+		8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
 		EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeHistoryView.swift; sourceTree = "<group>"; };
 		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 				7BD2360682B2434A47F2021F /* Info.plist */,
 				9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */,
 				33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */,
+				8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */,
 			);
 			path = SunnyWalker;
 			sourceTree = "<group>";
@@ -345,6 +348,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */,
+				C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */,
 				44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */,
 				660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */,
 			);
@@ -495,7 +499,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -596,7 +600,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -1,90 +1,71 @@
 # SunnyWalker — Main Entry
 
-_A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
+_A voice-interactive alarm clock for 7-year-olds. iOS 26+, Swift + SwiftUI,
 Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
-Last updated: **2026-06-01T05:10:00+08:00**
+Last updated: **2026-06-01T13:15:00+08:00**
 
 > **This is the resume manifest. After a crash / shutdown / vacation, read this file first.**
 
 ## ▶️  Resume point
-- Current day: **24**
-- Last entry: `[A] Day 23` — `DONE`  ← [B][C][D] pending if needed; P0–P5 feature-complete
-- Next up: **P6 App Store prep** — icon, privacy strings, TestFlight, App Store Connect
+- Current day: **30**
+- Last entry: `[A] Day 29` — `DONE`
+- Status: **v1.0.0 feature complete** — P0–P6 delivered
+- Next: TestFlight 上架 / 真機 AlarmKit 測試（需要 entitlement 批准）
 
-## 🏁 Feature status (Day 23)
-- ✅ P0 AlarmKit PoC  ✅ P1 StopAlarmIntent routing  ✅ P2 AlarmTaskType
-- ✅ P3 RewardView    ✅ P4 BedSideManager           ✅ P5 WakeRecord + history
-- ⏳ P6 App Store
+## 🏁 Feature status (Day 29)
+- ✅ P0 AlarmKit PoC scaffolding
+- ✅ P1 StopAlarmIntent — lock-screen stop → AlarmRingView routing
+- ✅ P2 AlarmTaskType voice/button — picker, migration-safe, test coverage
+- ✅ P3 RewardView — spring bounce, wiggle, star burst, confetti
+- ✅ P4 BedSideManager — dim screen, stay-on, force-quit brightness restore
+- ✅ P5 WakeRecord + WakeHistoryView — parent history, response time
+- ✅ P6 Edit/Delete alarms, PrivacyInfo.xcprivacy, Accessibility/reduceMotion
 
-## 🔧 Commit Day 20–23
+## 📊 Test count
+- 60 pass + 1 skip (as of Day 28)
+- Classes: Smoke, AlarmModel, VoiceClip, AudioPlayer, AlarmSound, WakePhrase,
+  AudioRecorder, SpeechRecognizer, AppDelegateNotification, GateQuestion,
+  VoiceFallback, AttemptCounter, CheckPendingAlarm, AlarmTaskType,
+  EffectiveTaskType, WakeRecord, AlarmModelEdgeCase
+
+## 🔧 Commit Day 24–29
 ```bash
 cd ~/Documents/SunnyWalker
 rm -f .git/HEAD.lock .git/index.lock
-git add SunnyWalker/Services/BedSideManager.swift \
-  SunnyWalker/Services/AlarmScheduler.swift \
-  SunnyWalker/Services/PermissionManager.swift \
-  SunnyWalker/SunnyWalkerApp.swift \
-  SunnyWalker/Models/WakeRecord.swift \
+git add \
+  SunnyWalker/Views/Settings/AlarmEditorView.swift \
+  SunnyWalker/Views/Alarm/AlarmListView.swift \
   SunnyWalker/Views/Alarm/AlarmRingView.swift \
-  SunnyWalker/Views/Home/HomeView.swift \
-  SunnyWalker/Views/Settings/WakeHistoryView.swift \
+  SunnyWalker/Views/Alarm/RewardView.swift \
+  SunnyWalker/Views/Components/TotoroAvatar.swift \
+  SunnyWalker/Services/AlarmKitService.swift \
+  SunnyWalker/PrivacyInfo.xcprivacy \
   SunnyWalker.xcodeproj/project.pbxproj \
   SunnyWalkerTests/SunnyWalkerTests.swift \
   orchestrator/current/ring.md MAIN_ENTRY.md
-git commit -m "Day 20-23: brightness failsafe + WakeRecord + history UI + v0.2.0"
-git tag v0.2.0-beta
+git commit -m "Day 24-29: edit/delete + privacy manifest + a11y + sound + v1.0.0
+
+Day 24: AlarmEditorView edit mode; AlarmListView context menu / long-press editor
+Day 25: Swipe-to-delete + context menu delete; AlarmKit cancel + UNUserNotificationCenter clear
+Day 26: PrivacyInfo.xcprivacy — NSPrivacyTracking=false, UserDefaults+FileTimestamp APIs
+Day 27: accessibilityReduceMotion in AlarmRingView+RewardView; TotoroAvatar VoiceOver labels
+Day 28: AlertSound.named(.caf) in all AlarmConfiguration; AlarmModelEdgeCaseTests (5 tests)
+Day 29: MARKETING_VERSION → 1.0.0; 60 pass + 1 skip"
+git tag v1.0.0-rc1
 git push origin dev/auto --tags
 ```
-- Recovery command: `sw next`
-- ⚠️ Pending manual git commit (see below)
 
-## 🔧  Manual steps required
-```bash
-cd ~/Documents/SunnyWalker
-rm .git/index.lock
-git add SunnyWalker.xcodeproj/project.pbxproj SunnyWalker/Info.plist \
-  SunnyWalker/SunnyWalker.entitlements SunnyWalker/Services/AlarmKitService.swift \
-  SunnyWalker/Views/Home/HomeView.swift orchestrator/current/ring.md MAIN_ENTRY.md
-git commit -m "Day 13: P0 AlarmKit PoC — iOS 26 target, AlarmKitService, entitlements, DEBUG test button"
-rm SunnyWalker/Theme/Sounds/_totoro_breath.wav
-```
-- 🔑 Submit AlarmKit entitlement request: Xcode → Signing & Capabilities → "+" → "Alarms" → Apply
+## ⚠️ 上架前必做
+1. **AlarmKit entitlement** — 到 developer.apple.com 申請；沒有就無法真機測試
+2. **真機測試** — 鎖屏響鈴、靜音突破、weekly repeat 正確性
+3. **App icon** — `Assets.xcassets/AppIcon` 目前是 PIL "SW" placeholder；需要設計師出圖
+4. **TestFlight** — 上傳 build，邀請內測
+5. **App Store Connect** — 填寫 description、keywords、age rating（4+）、隱私政策 URL
 
-## ⏰  Schedule, cooldown & approval
-- ✅ No active cooldown (cooldown_hours = 4.0)
-- ✅ Today runs full A→B→C→D (no stop_after configured)
-
-## 💓  Heartbeat (crash detection)
-- No active heartbeat — system is idle / not running
-
-## 🔁  Recent ring entries (last 8)
-- ✅ `[D]` Day  4  2026-05-31 16:28:00+08:00  End Day 4
-- ✅ `[D]` Day  5  2026-05-31 22:42:00+08:00  End Day 5
-- ✅ `[D]` Day  6  2026-05-31 23:47:00+08:00  End Day 6
-- ✅ `[D]` Day  7  2026-06-01 00:35:00+08:00  End Day 7
-- ✅ `[D]` Day  8  2026-06-01 02:08:00+08:00  End Day 8
-- ✅ `[D]` Day  9  2026-06-01 03:15:00+08:00  End Day 9
-- ✅ `[D]` Day 10  2026-06-01 11:15:00+08:00  End Day 10
-- ✅ `[D]` Day 11  2026-06-01 11:45:00+08:00  End Day 11
-
-Full ring: `orchestrator/current/ring.md`
-
-## 📋  Recent daily reports (2-min reads)
-- `orchestrator/reports/daily/2026-05-29.md`
-- `orchestrator/reports/daily/2026-05-30.md`
-- `orchestrator/reports/daily/2026-05-31.md`
-- `orchestrator/reports/daily/2026-06-01.md`
-
-## 📅  Weekly reports
-- `orchestrator/reports/weekly/2026-W22.md`
-
-## 📝  Live progress
-- `orchestrator/progress/progress.md`
-
-## 🗂️  Active verbose logs (not yet archived)
-- `orchestrator/logs/2026-05-29`
-- `orchestrator/logs/2026-05-30`
-- `orchestrator/logs/supervisor`
-
+## 📁 重要路徑
+- Spec: `docs/design/DESIGN_v2.md`
+- Dev plan: `docs/plan/DEV_PLAN_v2.md`
+- Ring: `orchestrator/current/ring.md`
+- Tests: `SunnyWalkerTests/SunnyWalkerTests.swift`

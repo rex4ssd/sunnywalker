@@ -36,6 +36,8 @@ struct TotoroAvatar: View {
             .offset(y: -68)
         }
         .frame(width: 120, height: 140)
+        .accessibilityLabel("龍貓")
+        .accessibilityHint("SunnyWalker 吉祥物")
         .onReceive(blinkTimer) { _ in
             withAnimation(GhibliAnimations.blinkClose) { isBlinking = true }
             // 120 ms delay before reopening — GCD one-shot is the right tool here

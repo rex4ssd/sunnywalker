@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmRingView.swift  |  Day 21  |  WakeRecord logging on dismiss
+// SunnyWalker — AlarmRingView.swift  |  Day 27  |  Accessibility + reduceMotion
 
 import SwiftUI
 import SwiftData
@@ -8,6 +8,7 @@ struct AlarmRingView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var audioPlayer = AudioPlayer()
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @State private var wiggle = false
@@ -49,9 +50,9 @@ struct AlarmRingView: View {
                 Spacer()
 
                 TotoroAvatar()
-                    .rotationEffect(.degrees(wiggle ? 10 : -10), anchor: .bottom)
+                    .rotationEffect(.degrees(reduceMotion ? 0 : (wiggle ? 10 : -10)), anchor: .bottom)
                     .animation(
-                        .easeInOut(duration: 0.35).repeatForever(autoreverses: true),
+                        reduceMotion ? .none : .easeInOut(duration: 0.35).repeatForever(autoreverses: true),
                         value: wiggle
                     )
                     .padding(.bottom, 32)
@@ -70,11 +71,12 @@ struct AlarmRingView: View {
                                 Image(systemName: "mic.fill")
                                     .font(.system(size: 36))
                                     .foregroundStyle(GhibliColors.lanternOrange)
-                                    .scaleEffect(micPulse ? 1.25 : 0.85)
+                                    .scaleEffect(reduceMotion ? 1.0 : (micPulse ? 1.25 : 0.85))
                                     .animation(
-                                        .easeInOut(duration: 0.65).repeatForever(autoreverses: true),
+                                        reduceMotion ? .none : .easeInOut(duration: 0.65).repeatForever(autoreverses: true),
                                         value: micPulse
                                     )
+                                    .accessibilityLabel("正在聆聽")
 
                                 // Attempt counter
                                 Text(attemptLabel)

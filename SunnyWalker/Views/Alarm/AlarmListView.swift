@@ -1,7 +1,8 @@
-// SunnyWalker — AlarmListView.swift  |  Day 10  |  struct-based sample alarms (no @Model outside ModelContext)
+// SunnyWalker — AlarmListView.swift  |  Day 25  |  swipe-to-delete + edit mode
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 // Lightweight value type for empty-state ghost cards — avoids constructing @Model without a ModelContext
 private struct SampleAlarmData: Identifiable {
@@ -23,6 +24,7 @@ private let sampleAlarmData: [SampleAlarmData] = [
 
 struct AlarmListView: View {
     let alarms: [Alarm]
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         if alarms.isEmpty {
@@ -31,13 +33,26 @@ struct AlarmListView: View {
             ScrollView {
                 LazyVStack(spacing: 12) {
                     ForEach(alarms) { alarm in
-                        AlarmCard(alarm: alarm)
+                        AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) })
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 100)
             }
         }
+    }
+
+    // MARK: - Delete
+
+    private func deleteAlarm(_ alarm: Alarm) {
+        // Cancel from AlarmKit and v1 scheduler
+        Task {
+            try? await AlarmKitService.shared.removeAlarm(alarm)
+            let id = alarm.id
+            let staleIDs = (1...7).map { "\(id.uuidString)-\($0)" } + [id.uuidString]
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: staleIDs)
+        }
+        modelContext.delete(alarm)
     }
 
     // Empty state: message + ghost sample cards so the layout reads naturally
@@ -74,7 +89,9 @@ struct AlarmListView: View {
 
 private struct AlarmCard: View {
     @Bindable var alarm: Alarm
+    var onDelete: () -> Void = {}
     @State private var showingRecording = false
+    @State private var showingEditor = false
 
     var body: some View {
         WatercolorCard {
@@ -129,6 +146,31 @@ private struct AlarmCard: View {
         }
         .sheet(isPresented: $showingRecording) {
             RecordingView(alarm: alarm)
+        }
+        .sheet(isPresented: $showingEditor) {
+            AlarmEditorView(existingAlarm: alarm)
+        }
+        .contextMenu {
+            Button {
+                showingEditor = true
+            } label: {
+                Label("編輯鬧鐘", systemImage: "pencil")
+            }
+            Divider()
+            Button(role: .destructive, action: onDelete) {
+                Label("刪除鬧鐘", systemImage: "trash")
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive, action: onDelete) {
+                Label("刪除", systemImage: "trash")
+            }
+            Button {
+                showingEditor = true
+            } label: {
+                Label("編輯", systemImage: "pencil")
+            }
+            .tint(GhibliColors.forestDeep)
         }
     }
 }

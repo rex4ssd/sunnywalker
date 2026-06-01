@@ -1,10 +1,11 @@
-// SunnyWalker — RewardView.swift  |  Day 18  |  Totoro celebration animation
+// SunnyWalker — RewardView.swift  |  Day 27  |  Accessibility + reduceMotion
 
 import SwiftUI
 import ConfettiSwiftUI
 
 struct RewardView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var confettiCounter = 0
 
     // Celebration animation state
@@ -37,17 +38,18 @@ struct RewardView: View {
                     .scaleEffect(textScale)
                     .opacity(textOpacity)
 
-                // Totoro: bounces in + perpetual happy wiggle
+                // Totoro: bounces in + perpetual happy wiggle (suppressed with reduceMotion)
                 TotoroAvatar()
-                    .scaleEffect(totoroScale)
+                    .scaleEffect(reduceMotion ? 1.0 : totoroScale)
                     .rotationEffect(
-                        .degrees(wiggle ? 12 : -12),
+                        .degrees(reduceMotion ? 0 : (wiggle ? 12 : -12)),
                         anchor: .bottom
                     )
                     .animation(
-                        .easeInOut(duration: 0.4).repeatForever(autoreverses: true),
+                        reduceMotion ? .none : .easeInOut(duration: 0.4).repeatForever(autoreverses: true),
                         value: wiggle
                     )
+                    .accessibilityHidden(true)
 
                 Text("早安！新的一天開始囉 ☀️")
                     .font(GhibliFonts.body(20))
@@ -71,25 +73,16 @@ struct RewardView: View {
             radius: 420
         )
         .onAppear {
-            // Stagger the entrance for a playful feel
-            // 1. Totoro bounces in
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) {
-                totoroScale = 1.0
+            if reduceMotion {
+                totoroScale = 1.0; textScale = 1.0; textOpacity = 1.0; starsVisible = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) { totoroScale = 1.0 }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { wiggle = true }
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.6).delay(0.15)) {
+                    textScale = 1.0; textOpacity = 1.0
+                }
+                withAnimation(.easeIn(duration: 0.3).delay(0.25)) { starsVisible = true }
             }
-            // 2. Start wiggle after bounce settles
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                wiggle = true
-            }
-            // 3. Text fades + scales in shortly after
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.6).delay(0.15)) {
-                textScale = 1.0
-                textOpacity = 1.0
-            }
-            // 4. Stars appear
-            withAnimation(.easeIn(duration: 0.3).delay(0.25)) {
-                starsVisible = true
-            }
-            // 5. Confetti
             confettiCounter += 1
         }
         .task {

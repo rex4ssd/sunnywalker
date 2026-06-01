@@ -109,7 +109,12 @@ final class AlarmKitService {
     func scheduleTestAlarm() async throws -> UUID {
         let id = UUID()
         let attrs = makeAttributes(alarmID: id.uuidString, title: "SunnyWalker PoC 測試！")
-        let config = AlarmConfiguration.timer(duration: 60, attributes: attrs)
+        // AlarmKit supports .caf and .mp3; .aiff does NOT work (verified WWDC25)
+        let config = AlarmConfiguration.timer(
+            duration: 60,
+            attributes: attrs,
+            sound: .named("totoro_breath.caf")
+        )
         try await manager.schedule(id: id, configuration: config)
         print("AlarmKitService: test timer scheduled — id=\(id), fires in 60s")
         return id
@@ -125,6 +130,7 @@ final class AlarmKitService {
         let config = AlarmConfiguration(
             schedule: .fixed(date),
             attributes: attrs,
+            sound: .named("totoro_breath.caf"),
             stopIntent: StopAlarmIntent(alarmID: alarmID)
         )
         try await manager.schedule(id: id, configuration: config)
@@ -223,9 +229,11 @@ final class AlarmKitService {
             schedule = .relative(Alarm.Schedule.Relative(time: time, repeats: recurrence))
         }
 
+        let soundName = alarm.soundFileName.isEmpty ? "totoro_breath.caf" : alarm.soundFileName
         let config = AlarmConfiguration(
             schedule: schedule,
             attributes: attrs,
+            sound: .named(soundName),
             stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
         )
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.

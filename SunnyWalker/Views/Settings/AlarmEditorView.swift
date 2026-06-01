@@ -1,4 +1,4 @@
-// SunnyWalker — AlarmEditorView.swift  |  Day 17  |  AlarmTaskType picker
+// SunnyWalker — AlarmEditorView.swift  |  Day 24  |  edit mode support
 
 import SwiftUI
 import SwiftData
@@ -7,11 +7,18 @@ struct AlarmEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    // tempAlarm carries a stable UUID so RecordingView writes to the right file
-    @State private var tempAlarm = Alarm(label: "起床囉", hour: 7, minute: 0)
+    /// Pass an existing alarm to enter edit mode; nil = create mode.
+    var existingAlarm: Alarm? = nil
+
+    private var isEditing: Bool { existingAlarm != nil }
+
+    // tempAlarm: stable UUID in create mode so RecordingView writes to correct path.
+    // In edit mode we work directly on existingAlarm via state copies below.
+    @State private var tempAlarm: Alarm
+
     @State private var selectedTime = Date()
     @State private var label = "起床囉"
-    @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]  // Mon–Fri default
+    @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]
     @State private var selectedTaskType: AlarmTaskType = .voice
     @State private var isSaving = false
     @State private var showingRecording = false
@@ -19,6 +26,28 @@ struct AlarmEditorView: View {
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
     ]
+
+    init(existingAlarm: Alarm? = nil) {
+        self.existingAlarm = existingAlarm
+        if let a = existingAlarm {
+            // Edit mode: initialise state from the existing alarm
+            _tempAlarm = State(initialValue: a)
+            var comps = DateComponents()
+            comps.hour = a.hour; comps.minute = a.minute
+            let t = Calendar.current.date(from: comps) ?? Date()
+            _selectedTime    = State(initialValue: t)
+            _label           = State(initialValue: a.label)
+            _selectedWeekdays = State(initialValue: Set(a.weekdays))
+            _selectedTaskType = State(initialValue: a.effectiveTaskType)
+        } else {
+            // Create mode
+            _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0))
+            _selectedTime     = State(initialValue: Date())
+            _label            = State(initialValue: "起床囉")
+            _selectedWeekdays = State(initialValue: [2, 3, 4, 5, 6])
+            _selectedTaskType = State(initialValue: .voice)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -30,7 +59,6 @@ struct AlarmEditorView: View {
                         labelField
                         weekdayPicker
                         taskTypePicker
-                        // Recording is only meaningful for .voice mode
                         if selectedTaskType == .voice {
                             recordingRow
                         }
@@ -39,7 +67,7 @@ struct AlarmEditorView: View {
                     .padding(24)
                 }
             }
-            .navigationTitle("新增鬧鐘")
+            .navigationTitle(isEditing ? "編輯鬧鐘" : "新增鬧鐘")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -164,7 +192,7 @@ struct AlarmEditorView: View {
     }
 
     private var saveButton: some View {
-        GhibliButton("儲存鬧鐘", color: GhibliColors.lanternOrange) {
+        GhibliButton(isEditing ? "儲存修改" : "儲存鬧鐘", color: GhibliColors.lanternOrange) {
             saveAlarm()
         }
         .disabled(isSaving)
@@ -176,17 +204,21 @@ struct AlarmEditorView: View {
         isSaving = true
         let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
         let trimmed = label.trimmingCharacters(in: .whitespaces)
-        // Reuse tempAlarm so the stable UUID matches any recording already saved to disk
-        tempAlarm.label = trimmed.isEmpty ? "起床囉" : trimmed
-        tempAlarm.hour = comps.hour ?? 7
-        tempAlarm.minute = comps.minute ?? 0
+
+        // Apply changes to the alarm object (create or edit)
+        tempAlarm.label    = trimmed.isEmpty ? "起床囉" : trimmed
+        tempAlarm.hour     = comps.hour ?? 7
+        tempAlarm.minute   = comps.minute ?? 0
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
         tempAlarm.taskType = selectedTaskType
-        modelContext.insert(tempAlarm)
+
+        if !isEditing {
+            modelContext.insert(tempAlarm)
+        }
+        // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
+
         Task {
-            // v1 path (UNUserNotificationCenter) — kept until AlarmKit device test confirms parity
             try? await AlarmScheduler.shared.schedule(alarm: tempAlarm)
-            // v2 path (AlarmKit) — upserts; no-ops silently if entitlement not yet approved
             try? await AlarmKitService.shared.syncAlarm(tempAlarm)
             await MainActor.run {
                 isSaving = false
@@ -218,7 +250,7 @@ private struct WeekdayChip: View {
     }
 }
 
-#Preview {
+#Preview("Create") {
     AlarmEditorView()
         .modelContainer(for: Alarm.self, inMemory: true)
 }

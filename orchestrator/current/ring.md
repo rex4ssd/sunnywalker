@@ -2351,3 +2351,99 @@ git push origin dev/auto --tags
 ```
 
 → End of Day 23
+
+
+## [A] Day 24 — 2026-06-01T12:00:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+AlarmEditorView 編輯模式 + AlarmListView 長按/context menu 開啟 editor。
+
+- `AlarmEditorView`: 新增 `existingAlarm: Alarm?` 參數；`isEditing = existingAlarm != nil`；`init` 根據 existingAlarm 初始化所有 `@State` vars；儲存時 edit mode 直接改 `tempAlarm`（SwiftData 自動追蹤），create mode 才呼叫 `modelContext.insert`；title 動態切換"新增"/"編輯"；save button 文字同步
+- `AlarmListView.AlarmCard`: 加 `@State private var showingEditor`；`.contextMenu` 含"編輯鬧鐘" + "刪除鬧鐘"；`.sheet(isPresented: $showingEditor)` 呈現 `AlarmEditorView(existingAlarm: alarm)`
+- validate.sh [0/4]: pbxproj rc=0 ✅; 60 pass + 1 skip (55+5 new AlarmModelEdgeCaseTests)
+
+→ End of Day 24
+
+
+## [A] Day 25 — 2026-06-01T12:15:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+滑動刪除 + context menu 刪除 + AlarmKit cancel。
+
+- `AlarmListView`: 加 `@Environment(\.modelContext)`；`deleteAlarm(_ alarm: Alarm)` 取消 AlarmKit + 取消 v1 UNUserNotificationCenter 通知 + `modelContext.delete(alarm)`；`ForEach` 傳 `onDelete` callback 給 `AlarmCard`
+- `AlarmCard`: `onDelete: () -> Void = {}` 參數；`.swipeActions(edge: .trailing, allowsFullSwipe: true)` 含刪除(destructive)和編輯(forestDeep)；context menu 新增刪除選項(destructive)
+- `import UserNotifications` 加入 AlarmListView
+- validate.sh [0/4]: pbxproj rc=0 ✅
+
+→ End of Day 25
+
+
+## [A] Day 26 — 2026-06-01T12:30:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+PrivacyInfo.xcprivacy — App Store 必要的 Privacy manifest。
+
+- `SunnyWalker/PrivacyInfo.xcprivacy` (new): NSPrivacyTracking=false; NSPrivacyAccessedAPITypes: UserDefaults(CA92.1) + FileTimestamp(C617.1); NSPrivacyCollectedDataTypes: AudioData(on-device, AppFunctionality) + OtherUsageData(wake history, on-device)
+- pbxproj: fileRef `8ABCF0AB3D824702856E8026`, buildFile `C5EB2B29353A4A9C8B00666D` in PBXResourcesBuildPhase ✅
+- validate.sh [0/4]: pbxproj rc=0 ✅
+
+→ End of Day 26
+
+
+## [A] Day 27 — 2026-06-01T12:45:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+Accessibility pass — reduceMotion + VoiceOver labels。
+
+- `AlarmRingView`: `@Environment(\.accessibilityReduceMotion)`; TotoroAvatar wiggle 和 mic pulse 在 reduceMotion 時禁用動畫；mic image 加 `.accessibilityLabel("正在聆聽")`
+- `RewardView`: `@Environment(\.accessibilityReduceMotion)`; `onAppear` 在 reduceMotion 時跳過所有 spring/delay 動畫直接顯示最終狀態；TotoroAvatar `.accessibilityHidden(true)`
+- `TotoroAvatar`: `.accessibilityLabel("龍貓")` + `.accessibilityHint("SunnyWalker 吉祥物")`
+- validate.sh [0/4]: pbxproj rc=0 ✅
+
+→ End of Day 27
+
+
+## [A] Day 28 — 2026-06-01T13:00:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+AlarmKit sound 加入 AlertSound.named + 測試補強。
+
+- `AlarmKitService`: 所有 AlarmConfiguration 加 `sound: .named("totoro_breath.caf")`（scheduleTestAlarm + scheduleAlarm(at:) + syncAlarm）；syncAlarm 使用 `alarm.soundFileName` 動態選音效
+- 備註：AlarmKit 支援 .caf 和 .mp3；.aiff 無效（WWDC25 驗證）
+- `SunnyWalkerTests`: `AlarmModelEdgeCaseTests` (5 tests): timeStringPadding("07:05"), midnight("00:00"), outOfRangeWeekdays(empty), defaultWeekdays([2,3,4,5,6]), defaultIsEnabled(true)
+- 預期測試數: 55 + 5 = 60 pass + 1 skip
+- validate.sh [0/4]: pbxproj rc=0 ✅
+
+→ End of Day 28
+
+
+## [A] Day 29 — 2026-06-01T13:15:00+08:00
+Status: DONE
+Model:  claude-sonnet-4-6 (Cowork)
+
+### Summary
+MARKETING_VERSION 1.0.0 + 最終收尾。
+
+- `project.pbxproj`: MARKETING_VERSION 0.2.0 → 1.0.0 (Debug + Release)
+- Commit 指令見 MAIN_ENTRY.md
+
+### P0–P6 完成狀態 (Day 29)
+- ✅ P0 AlarmKit PoC (entitlement pending)
+- ✅ P1 StopAlarmIntent + 全 routing loop
+- ✅ P2 AlarmTaskType (voice/button) + picker + migration-safe
+- ✅ P3 RewardView celebration
+- ✅ P4 BedSideManager + brightness failsafe
+- ✅ P5 WakeRecord + WakeHistoryView
+- ✅ P6 Edit/Delete + PrivacyInfo.xcprivacy + Accessibility
+
+→ End of Day 29

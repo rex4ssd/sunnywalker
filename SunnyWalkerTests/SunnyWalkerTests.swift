@@ -467,3 +467,33 @@ final class WakeRecordTests: XCTestCase {
         XCTAssertEqual(record.responseSeconds, 0)
     }
 }
+
+/// Day 28: Alarm model edge-case tests.
+final class AlarmModelEdgeCaseTests: XCTestCase {
+
+    func testAlarmTimeStringPadding() {
+        let alarm = Alarm(label: "A", hour: 7, minute: 5)
+        XCTAssertEqual(alarm.timeString, "07:05", "Single-digit minute must be zero-padded")
+    }
+
+    func testAlarmTimeStringMidnight() {
+        let alarm = Alarm(label: "B", hour: 0, minute: 0)
+        XCTAssertEqual(alarm.timeString, "00:00")
+    }
+
+    func testAlarmWeekdaySymbolsOutOfRange() {
+        let alarm = Alarm(label: "C", hour: 8, minute: 0)
+        alarm.weekdays = [0, 8, -1]   // all out-of-range
+        XCTAssertTrue(alarm.weekdaySymbols.isEmpty, "Out-of-range weekday indices must be dropped")
+    }
+
+    func testAlarmDefaultWeekdays() {
+        let alarm = Alarm(label: "D", hour: 6, minute: 30)
+        XCTAssertEqual(alarm.weekdays, [2, 3, 4, 5, 6], "Default weekdays should be Mon–Fri")
+    }
+
+    func testAlarmDefaultIsEnabled() {
+        let alarm = Alarm(label: "E", hour: 7, minute: 0)
+        XCTAssertTrue(alarm.isEnabled, "New alarms must default to enabled")
+    }
+}
