@@ -16,10 +16,22 @@ final class SpeechRecognizer: ObservableObject {
     private var isListening = false
     private var timeoutTask: Task<Void, Never>?
 
-    private let keywords = ["我起床了", "好的", "知道了", "起床囉"]
+    private let keywords: [String]
 
     init() {
-        recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
+        // Pick recognizer locale and wake keywords to match the app's chosen language.
+        // SunnyLocalization.code is read once at init time — the AlarmRingView creates a
+        // fresh SpeechRecognizer via @StateObject, so language changes take effect the
+        // next time AlarmRingView appears.
+        let code = SunnyLocalization.code
+        switch code {
+        case "en":
+            recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+            keywords   = ["I'm awake", "I am awake", "I'm up", "I am up", "wake up", "awake"]
+        default:
+            recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
+            keywords   = ["我起床了", "好的", "知道了", "起床囉"]
+        }
     }
 
     func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil, listeningTimeout: TimeInterval = 8.0) throws {
@@ -44,6 +56,7 @@ final class SpeechRecognizer: ObservableObject {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
         try session.setActive(true, options: [])
+        print("🎤 SpeechRecognizer: session → .playAndRecord active (locale=\(recognizer.locale.identifier), onDevice=\(recognizer.supportsOnDeviceRecognition))")
 
         let newRequest = SFSpeechAudioBufferRecognitionRequest()
         newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
@@ -68,11 +81,13 @@ final class SpeechRecognizer: ObservableObject {
             try audioEngine.start()
         } catch {
             // Roll back the tap so a retry starts from a clean state.
+            print("🎤 SpeechRecognizer: audioEngine.start() FAILED — \(error.localizedDescription)")
             inputNode.removeTap(onBus: 0)
             request = nil
             throw error
         }
         isListening = true
+        print("🎤 SpeechRecognizer: listening (inputFormat sampleRate=\(format.sampleRate) ch=\(format.channelCount))")
 
         // Fires onFailure after listeningTimeout seconds if the child says random words
         // and no keyword match occurs (the primary spec §8 failure scenario, not just system errors).

@@ -7,61 +7,48 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */; };
-		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
-		C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */; };
-		6038E36000101404AEC7372B /* GhibliColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */; };
-		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
-		CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */; };
-		42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934C934671804C5B926D7DBE /* StopAlarmIntent.swift */; };
-		E9D2B038759A4164AB1EFFC2 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */; };
-		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
-		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
-		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
-		B2C05224080444FFB81F6DB6 /* WakeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A33375D159471D87BDC522 /* WakeRecord.swift */; };
+		11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */; };
 		145CCD43707947468712511C /* WakeHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */; };
+		1A1B1C1D2A2B2C2D3A3B3C3D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */; };
+		37414878589A4940A186D2D1 /* CloudBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */; };
+		38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */; };
+		42F4DABBD2B0408EB6315653 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934C934671804C5B926D7DBE /* StopAlarmIntent.swift */; };
+		44EEFF5500AABB11CC22DD33 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 33DDEE44FF5500AABB11CC22 /* sunny_wake.caf */; };
+		517FFF4CB31F472BA4BCCEC4 /* SunnyFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8D8E8520C4AA099AB555C /* SunnyFonts.swift */; };
+		55FF44EE33DD22CC11BB00AA /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */; };
+		58F211BACAAD454887C03533 /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0721562310FD4FD889EE77C0 /* Animations.swift */; };
+		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		6038E36000101404AEC7372B /* SunnyColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770EA07DE7688AAA38F4D4E0 /* SunnyColors.swift */; };
+		660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */; };
+		6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CCDD3344EEFF5566 /* RewardView.swift */; };
+		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
+		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
+		75285E92488D4FC7BBF116E0 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395FEB57BFB047F0B4263EBA /* SunnyButton.swift */; };
+		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
+		A1A2A3A4B1B2B3B4C1C2C3C4 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */; };
+		A1D2E3F4A5B6C7D8E9F0A1B2 /* DaytimeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */; };
+		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
+		AA01BB02CC03DD04EE05FF06 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */; };
+		AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */; };
+		B2C05224080444FFB81F6DB6 /* WakeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50A33375D159471D87BDC522 /* WakeRecord.swift */; };
+		B4FCE32C2FD0139400D40B40 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FCE32B2FD0139400D40B40 /* AppSettings.swift */; };
+		B9294C37B2B74E39A72BAD0F /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */; };
+		BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BB11CC22DD33EE44FF55AA /* RecordingView.swift */; };
+		C3D4E5F6A7B8C9D0E1F2A3B4 /* AlarmEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */; };
+		C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */; };
+		CCEBE8A6E7144DCEB7A1C259 /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */; };
+		D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */; };
+		D48A6E959C404F659A9B7C41 /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C815F3C94E334FCC8C44B587 /* SunnyAvatar.swift */; };
+		DD22EE33FF44AA55BB66CC11 /* ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */; };
+		DE19B91E7EBC4F488AC8FF27 /* VoiceClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */; };
 		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
 		E409258EA2C6052DDE696951 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB6388EF249B7365D9B3B48 /* HomeView.swift */; };
+		E9D2B038759A4164AB1EFFC2 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */; };
 		EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */; };
-		517FFF4CB31F472BA4BCCEC4 /* GhibliFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */; };
-		58F211BACAAD454887C03533 /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0721562310FD4FD889EE77C0 /* Animations.swift */; };
-		DE19B91E7EBC4F488AC8FF27 /* VoiceClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */; };
-		B9294C37B2B74E39A72BAD0F /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */; };
-		37414878589A4940A186D2D1 /* CloudBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */; };
-		75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395FEB57BFB047F0B4263EBA /* GhibliButton.swift */; };
-		D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */; };
-		D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */; };
-		A1D2E3F4A5B6C7D8E9F0A1B2 /* DaytimeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* AlarmRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8C7D6E5F4A3B2C1D0E9F8 /* AlarmRingView.swift */; };
-		C3D4E5F6A7B8C9D0E1F2A3B4 /* AlarmEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */; };
-		AA01BB02CC03DD04EE05FF06 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */; };
-		55FF44EE33DD22CC11BB00AA /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */; };
-		6655FFEE4433DDCC2211BBAA /* RewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CCDD3344EEFF5566 /* RewardView.swift */; };
-		AA99BB88CC77DD66EE55FF44 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */; };
-		BB00CC11DD22EE33FF44AA55 /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BB11CC22DD33EE44FF55AA /* RecordingView.swift */; };
-		DD22EE33FF44AA55BB66CC11 /* ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */; };
+		FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */; };
 		FF44AA55BB66CC11DD22EE33 /* MarkdownAlarmIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */; };
-		11BBCC22DD33EE44FF5500AA /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */; };
-		44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */ = {isa = PBXBuildFile; fileRef = 33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */; };
-		660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */; };
-		FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */ = {
-			isa = PBXBuildFile;
-			productRef = EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */;
-		};
-		A1A2A3A4B1B2B3B4C1C2C3C4 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */; };
-		1A1B1C1D2A2B2C2D3A3B3C3D /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		CC3344DDEE5566FF7788AA99 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXContainerItemProxy section */
 		67D4C7C450593D2F0A999EAC /* PBXContainerItemProxy */ = {
@@ -74,50 +61,62 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0972897111DE3E819D823136 /* SunnyWalker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SunnyWalker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
+		00BB11CC22DD33EE44FF55AA /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
+		0721562310FD4FD889EE77C0 /* Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animations.swift; sourceTree = "<group>"; };
+		0972897111DE3E819D823136 /* SunnyWalker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SunnyWalker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
+		11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		14909DF5F592C0045CF04728 /* AlarmListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmListView.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
-		50A33375D159471D87BDC522 /* WakeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeRecord.swift; sourceTree = "<group>"; };
-		770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliColors.swift; sourceTree = "<group>"; };
-		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
-		8A39961C2B11BD747210DF5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
-		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
-		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
-		A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliFonts.swift; sourceTree = "<group>"; };
-		0721562310FD4FD889EE77C0 /* Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animations.swift; sourceTree = "<group>"; };
-		FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceClip.swift; sourceTree = "<group>"; };
 		22A2AA7D2B5E43A9AF2C06E6 /* WakePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakePhrase.swift; sourceTree = "<group>"; };
-		88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
-		395FEB57BFB047F0B4263EBA /* GhibliButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhibliButton.swift; sourceTree = "<group>"; };
-		0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
-		C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotoroAvatar.swift; sourceTree = "<group>"; };
 		2B3C4D5E6F7A8B9C0D1E2F3A /* DaytimeScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaytimeScene.swift; sourceTree = "<group>"; };
-		A9B8C7D6E5F4A3B2C1D0E9F8 /* AlarmRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmRingView.swift; sourceTree = "<group>"; };
-		B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEditorView.swift; sourceTree = "<group>"; };
-		11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
-		FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
-		AABB1122CCDD3344EEFF5566 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
-		99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
-		00BB11CC22DD33EE44FF55AA /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
-		CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
-		EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
-		7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitService.swift; sourceTree = "<group>"; };
-		35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedSideManager.swift; sourceTree = "<group>"; };
-		934C934671804C5B926D7DBE /* StopAlarmIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAlarmIntent.swift; sourceTree = "<group>"; };
 		33690FC34EDC4DB2AB3AC7D9 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
-		8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
-		EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeHistoryView.swift; sourceTree = "<group>"; };
-		33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = totoro_breath.caf; sourceTree = "<group>"; };
-		55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = leaf_rustle.caf; sourceTree = "<group>"; };
-		D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		33DDEE44FF5500AABB11CC22 /* sunny_wake.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = sunny_wake.caf; sourceTree = "<group>"; };
+		35BDB6DCCE6E44A296040C24 /* BedSideManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BedSideManager.swift; sourceTree = "<group>"; };
+		395FEB57BFB047F0B4263EBA /* SunnyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyButton.swift; sourceTree = "<group>"; };
 		4A4B4C4D5A5B5C5D6A6B6C6D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		50A33375D159471D87BDC522 /* WakeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeRecord.swift; sourceTree = "<group>"; };
+		55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */ = {isa = PBXFileReference; lastKnownFileType = audio.caf; path = leaf_rustle.caf; sourceTree = "<group>"; };
+		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
+		770EA07DE7688AAA38F4D4E0 /* SunnyColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyColors.swift; sourceTree = "<group>"; };
+		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7C47F7355F664DE4B80EC443 /* AlarmKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitService.swift; sourceTree = "<group>"; };
+		888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
+		88EBD3D4BCB747A3ACCC9595 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
+		8A39961C2B11BD747210DF5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8ABCF0AB3D824702856E8026 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		934C934671804C5B926D7DBE /* StopAlarmIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAlarmIntent.swift; sourceTree = "<group>"; };
+		99AA88BB77CC66DD55EE44FF /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
+		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
+		A1B8D8E8520C4AA099AB555C /* SunnyFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyFonts.swift; sourceTree = "<group>"; };
+		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A9B8C7D6E5F4A3B2C1D0E9F8 /* AlarmRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmRingView.swift; sourceTree = "<group>"; };
+		AABB1122CCDD3344EEFF5566 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
+		B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEditorView.swift; sourceTree = "<group>"; };
+		B4FCE32B2FD0139400D40B40 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
+		C815F3C94E334FCC8C44B587 /* SunnyAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyAvatar.swift; sourceTree = "<group>"; };
+		CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
+		D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeHistoryView.swift; sourceTree = "<group>"; };
+		EE33FF44AA55BB66CC11DD22 /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
+		FD9EEB09F94A4A96A8574309 /* VoiceClip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceClip.swift; sourceTree = "<group>"; };
+		FF00EE11DD22CC33BB44AA55 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CC3344DDEE5566FF7788AA99 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF1122AABB3344CC55DD6677 /* ConfettiSwiftUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		095C19C14024F6CD35129004 = {
@@ -129,24 +128,24 @@
 			);
 			sourceTree = "<group>";
 		};
+		22CCDD33EE44FF5500AABB11 /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				33DDEE44FF5500AABB11CC22 /* sunny_wake.caf */,
+				55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */,
+			);
+			path = Sounds;
+			sourceTree = "<group>";
+		};
 		2819B31AAA627270102010BD /* Theme */ = {
 			isa = PBXGroup;
 			children = (
-				770EA07DE7688AAA38F4D4E0 /* GhibliColors.swift */,
-				A1B8D8E8520C4AA099AB555C /* GhibliFonts.swift */,
+				770EA07DE7688AAA38F4D4E0 /* SunnyColors.swift */,
+				A1B8D8E8520C4AA099AB555C /* SunnyFonts.swift */,
 				0721562310FD4FD889EE77C0 /* Animations.swift */,
 				22CCDD33EE44FF5500AABB11 /* Sounds */,
 			);
 			path = Theme;
-			sourceTree = "<group>";
-		};
-		22CCDD33EE44FF5500AABB11 /* Sounds */ = {
-			isa = PBXGroup;
-			children = (
-				33DDEE44FF5500AABB11CC22 /* totoro_breath.caf */,
-				55FF0011AABB22CC33DD44EE /* leaf_rustle.caf */,
-			);
-			path = Sounds;
 			sourceTree = "<group>";
 		};
 		5426B93631556471059DA32A /* SunnyWalkerTests */ = {
@@ -157,6 +156,24 @@
 			path = SunnyWalkerTests;
 			sourceTree = "<group>";
 		};
+		55669AC9E92F4AC8AAE45274 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				395FEB57BFB047F0B4263EBA /* SunnyButton.swift */,
+				0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */,
+				C815F3C94E334FCC8C44B587 /* SunnyAvatar.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		5C528A8CF12C45C5A39894EA /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				934C934671804C5B926D7DBE /* StopAlarmIntent.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
 		6218564575F4EA0F85D3DEC8 /* Alarm */ = {
 			isa = PBXGroup;
 			children = (
@@ -165,18 +182,6 @@
 				AABB1122CCDD3344EEFF5566 /* RewardView.swift */,
 			);
 			path = Alarm;
-			sourceTree = "<group>";
-		};
-		D5E6F7A8B9C0D1E2F3A4B5C6 /* Settings */ = {
-			isa = PBXGroup;
-			children = (
-				B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */,
-				00BB11CC22DD33EE44FF55AA /* RecordingView.swift */,
-				CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */,
-				00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */,
-				EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */,
-			);
-			path = Settings;
 			sourceTree = "<group>";
 		};
 		64D650D499538406B85A625F /* SunnyWalker */ = {
@@ -239,17 +244,22 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		5C528A8CF12C45C5A39894EA /* Intents */ = {
+		D5E6F7A8B9C0D1E2F3A4B5C6 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				934C934671804C5B926D7DBE /* StopAlarmIntent.swift */,
+				B4C5D6E7F8A9B0C1D2E3F4A5 /* AlarmEditorView.swift */,
+				00BB11CC22DD33EE44FF55AA /* RecordingView.swift */,
+				CC11DD22EE33FF44AA55BB66 /* ParentalGateView.swift */,
+				00AABB11CC22DD33EE44FF55 /* AlarmIOView.swift */,
+				EC433FCE83EB4CAFB7A5FC5C /* WakeHistoryView.swift */,
 			);
-			path = Intents;
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		EFBEA798C78CDDC40F5F236A /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				B4FCE32B2FD0139400D40B40 /* AppSettings.swift */,
 				888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */,
 				8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */,
 				11AA22BB33CC44DD55EE66FF /* AudioPlayer.swift */,
@@ -261,16 +271,6 @@
 				D1D2D3D4E1E2E3E4F1F2F3F4 /* Localization.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		55669AC9E92F4AC8AAE45274 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				395FEB57BFB047F0B4263EBA /* GhibliButton.swift */,
-				0BFC27C615FE4BB2BE541B12 /* WatercolorCard.swift */,
-				C815F3C94E334FCC8C44B587 /* TotoroAvatar.swift */,
-			);
-			path = Components;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -322,8 +322,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 3CB33E2368DAD785BABEE546 /* Build configuration list for PBXProject "SunnyWalker" */;
 			developmentRegion = "zh-Hant";
@@ -356,7 +354,7 @@
 			files = (
 				59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */,
 				C5EB2B29353A4A9C8B00666D /* PrivacyInfo.xcprivacy in Resources */,
-				44EEFF5500AABB11CC22DD33 /* totoro_breath.caf in Resources */,
+				44EEFF5500AABB11CC22DD33 /* sunny_wake.caf in Resources */,
 				660011AABB22CC33DD44EE55 /* leaf_rustle.caf in Resources */,
 				1A1B1C1D2A2B2C2D3A3B3C3D /* Localizable.xcstrings in Resources */,
 			);
@@ -374,17 +372,18 @@
 				8672D8B3917813013073515A /* AlarmListView.swift in Sources */,
 				6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
-				6038E36000101404AEC7372B /* GhibliColors.swift in Sources */,
+				6038E36000101404AEC7372B /* SunnyColors.swift in Sources */,
 				E409258EA2C6052DDE696951 /* HomeView.swift in Sources */,
 				EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */,
-				517FFF4CB31F472BA4BCCEC4 /* GhibliFonts.swift in Sources */,
+				517FFF4CB31F472BA4BCCEC4 /* SunnyFonts.swift in Sources */,
 				58F211BACAAD454887C03533 /* Animations.swift in Sources */,
 				DE19B91E7EBC4F488AC8FF27 /* VoiceClip.swift in Sources */,
 				B9294C37B2B74E39A72BAD0F /* WakePhrase.swift in Sources */,
 				37414878589A4940A186D2D1 /* CloudBackground.swift in Sources */,
-				75285E92488D4FC7BBF116E0 /* GhibliButton.swift in Sources */,
+				75285E92488D4FC7BBF116E0 /* SunnyButton.swift in Sources */,
 				D2230931C30F4BBC8CAC72F7 /* WatercolorCard.swift in Sources */,
-				D48A6E959C404F659A9B7C41 /* TotoroAvatar.swift in Sources */,
+				D48A6E959C404F659A9B7C41 /* SunnyAvatar.swift in Sources */,
+				B4FCE32C2FD0139400D40B40 /* AppSettings.swift in Sources */,
 				A1D2E3F4A5B6C7D8E9F0A1B2 /* DaytimeScene.swift in Sources */,
 				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* AlarmRingView.swift in Sources */,
@@ -423,25 +422,6 @@
 		};
 /* End PBXTargetDependency section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		EE99FF0011AA22BB33CC44DD /* XCSwiftPackageProductDependency */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
-			productName = ConfettiSwiftUI;
-		};
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin XCBuildConfiguration section */
 		22D186CCB9AB9DA8171AF873 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -453,7 +433,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.SunnyWalkerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rexcode.sunnywalkertests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SunnyWalker.app/SunnyWalker";
@@ -496,6 +476,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = NYH8MKW8NH;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -525,13 +506,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SunnyWalker/SunnyWalker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SunnyWalker/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.sunnywalker;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rexcode.sunnywalker;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -543,13 +525,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = SunnyWalker/SunnyWalker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SunnyWalker/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.sunnywalker;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rexcode.sunnywalker;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -591,6 +574,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = NYH8MKW8NH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -631,7 +615,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.m2k.SunnyWalkerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rexcode.sunnywalkertests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SunnyWalker.app/SunnyWalker";
@@ -669,6 +653,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EE99FF0011AA22BB33CC44DD /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AAFF1122BB3344CC55DD6677 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9CDE5F91F9849D6056C19DD5 /* Project object */;
 }

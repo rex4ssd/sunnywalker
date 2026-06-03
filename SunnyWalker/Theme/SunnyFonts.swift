@@ -1,8 +1,8 @@
-// SunnyWalker — GhibliFonts.swift  |  Day 1  |  typography helpers
+// SunnyWalker — SunnyFonts.swift  |  Day 1  |  typography helpers
 
 import SwiftUI
 
-enum GhibliFonts {
+enum SunnyFonts {
     // Rounded system font fallback — feels child-friendly without a custom font file.
     // Swap .systemDesign to a registered custom font name once assets are added.
     static func title(_ size: CGFloat = 32) -> Font {

@@ -34,6 +34,12 @@ final class Alarm {
     /// Use `effectiveTaskType` everywhere in the UI — never access this directly.
     var taskType: AlarmTaskType?
 
+    /// "貪睡模式" / strict mode: when true, dismissing the notification (tapping ✕) does NOT stop
+    /// the alarm — it keeps nagging (repeated notifications) until the child opens the app and
+    /// completes the wake task. Optional for SwiftData lightweight migration on existing rows.
+    /// Use `effectiveRequireAppToStop` — never read this directly.
+    var requireAppToStop: Bool?
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -43,16 +49,32 @@ final class Alarm {
         self.weekdays = [2, 3, 4, 5, 6]  // Mon–Fri by default
         self.isEnabled = true
         self.recordingName = recordingName
-        self.soundFileName = "totoro_breath.caf"
+        self.soundFileName = "sunny_wake.caf"
         self.createdAt = .now
         self.taskType = taskType
+        self.requireAppToStop = false
     }
 
     /// Always resolves to a concrete value — nil (pre-Day-16 rows) → `.voice`.
     var effectiveTaskType: AlarmTaskType { taskType ?? .voice }
 
+    /// nil (rows created before strict mode existed) → false.
+    var effectiveRequireAppToStop: Bool { requireAppToStop ?? false }
+
+    /// Always 24-hour (used internally / for scheduling).
     var timeString: String {
         String(format: "%02d:%02d", hour, minute)
+    }
+
+    /// Display string that respects the user's 12h/24h preference.
+    func formattedTime(use24h: Bool) -> String {
+        if use24h {
+            return String(format: "%02d:%02d", hour, minute)
+        } else {
+            let h12 = hour % 12 == 0 ? 12 : hour % 12
+            let period = hour < 12 ? "AM" : "PM"
+            return String(format: "%d:%02d %@", h12, minute, period)
+        }
     }
 
     var weekdaySymbols: [String] {

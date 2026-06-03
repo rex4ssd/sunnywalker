@@ -25,7 +25,7 @@ struct CloudBackground: View {
             ForEach(specs.indices, id: \.self) { i in
                 let spec = specs[i]
                 Ellipse()
-                    .fill(GhibliColors.cloudWhite.opacity(0.55))
+                    .fill(SunnyColors.cloudWhite.opacity(0.55))
                     .frame(width: spec.width, height: spec.height)
                     .offset(
                         x: spec.xStart + offsets[i],
@@ -49,7 +49,7 @@ struct CloudBackground: View {
 #Preview {
     ZStack {
         LinearGradient(
-            colors: [GhibliColors.skyBlue, GhibliColors.cloudWhite],
+            colors: [SunnyColors.skyBlue, SunnyColors.cloudWhite],
             startPoint: .top, endPoint: .bottom
         )
         .ignoresSafeArea()

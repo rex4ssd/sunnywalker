@@ -30,15 +30,22 @@ struct AlarmListView: View {
         if alarms.isEmpty {
             emptyState
         } else {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(alarms) { alarm in
-                        AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) })
-                    }
+            // List (not ScrollView+LazyVStack) so .swipeActions works natively.
+            List {
+                ForEach(alarms) { alarm in
+                    AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) })
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 100)
+                // Spacer row so FAB doesn't cover the last card
+                Color.clear.frame(height: 80)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(.init())
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
     }
 
@@ -63,11 +70,11 @@ struct AlarmListView: View {
                     Text("🌿")
                         .font(.system(size: 56))
                     Text("還沒有鬧鐘")
-                        .font(GhibliFonts.title(22))
-                        .foregroundStyle(GhibliColors.nightIndigo)
+                        .font(SunnyFonts.title(22))
+                        .foregroundStyle(SunnyColors.nightIndigo)
                     Text("點右下角的 + 來新增第一個吧！")
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.totoroGray)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 24)
@@ -92,27 +99,28 @@ private struct AlarmCard: View {
     var onDelete: () -> Void = {}
     @State private var showingRecording = false
     @State private var showingEditor = false
+    @ObservedObject private var settings = AppSettings.shared
 
     var body: some View {
         WatercolorCard {
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(alarm.timeString)
-                        .font(GhibliFonts.clock(40))
+                    Text(alarm.formattedTime(use24h: settings.use24HourClock))
+                        .font(SunnyFonts.clock(40))
                         .foregroundStyle(
-                            alarm.isEnabled ? GhibliColors.nightIndigo : GhibliColors.totoroGray
+                            alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
                         )
                     HStack(spacing: 4) {
                         // Known default/common names localize; custom parent names show as typed.
                         Text(LocalizedStringKey(alarm.label))
-                            .font(GhibliFonts.caption())
-                            .foregroundStyle(GhibliColors.totoroGray)
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.sunnyGray)
                         if !alarm.weekdays.isEmpty {
                             Text("·")
-                                .foregroundStyle(GhibliColors.totoroGray.opacity(0.5))
+                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
                             Text(alarm.weekdaySymbols.joined(separator: " "))
-                                .font(GhibliFonts.caption(14))
-                                .foregroundStyle(GhibliColors.totoroGray.opacity(0.8))
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
                         }
                     }
                 }
@@ -125,13 +133,13 @@ private struct AlarmCard: View {
                     Image(systemName: alarm.recordingName.isEmpty ? "mic" : "mic.fill")
                         .font(.system(size: 20))
                         .foregroundStyle(alarm.recordingName.isEmpty
-                            ? GhibliColors.totoroGray.opacity(0.6)
-                            : GhibliColors.leafFresh)
+                            ? SunnyColors.sunnyGray.opacity(0.6)
+                            : SunnyColors.leafFresh)
                 }
                 .padding(.trailing, 14)
                 .accessibilityLabel(alarm.recordingName.isEmpty ? "錄製起床音" : "已錄製起床音")
                 Toggle("", isOn: $alarm.isEnabled)
-                    .tint(GhibliColors.leafFresh)
+                    .tint(SunnyColors.leafFresh)
                     .labelsHidden()
             }
             .padding(.horizontal, 20)
@@ -150,7 +158,11 @@ private struct AlarmCard: View {
         .sheet(isPresented: $showingRecording) {
             RecordingView(alarm: alarm)
         }
-        .sheet(isPresented: $showingEditor) {
+        .sheet(isPresented: $showingEditor, onDismiss: {
+            // Re-sync after editing in case saveAlarm() had a timing issue.
+            // This guarantees the UNNotification always reflects the latest time/weekdays.
+            Task { try? await AlarmScheduler.shared.syncWithModel(alarm: alarm) }
+        }) {
             AlarmEditorView(existingAlarm: alarm)
         }
         .contextMenu {
@@ -173,7 +185,7 @@ private struct AlarmCard: View {
             } label: {
                 Label("編輯", systemImage: "pencil")
             }
-            .tint(GhibliColors.forestDeep)
+            .tint(SunnyColors.forestDeep)
         }
     }
 }
@@ -188,15 +200,15 @@ private struct SampleAlarmCard: View {
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(data.timeString)
-                        .font(GhibliFonts.clock(40))
-                        .foregroundStyle(GhibliColors.nightIndigo)
+                        .font(SunnyFonts.clock(40))
+                        .foregroundStyle(SunnyColors.nightIndigo)
                     Text(LocalizedStringKey(data.label))
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.totoroGray)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
                 }
                 Spacer()
                 Toggle("", isOn: .constant(data.isEnabled))
-                    .tint(GhibliColors.leafFresh)
+                    .tint(SunnyColors.leafFresh)
                     .labelsHidden()
                     .disabled(true)
             }
@@ -214,11 +226,11 @@ private struct SampleAlarmCard: View {
     sample2.isEnabled = false
     return AlarmListView(alarms: [sample, sample2])
         .modelContainer(container)
-        .background(GhibliColors.skyBlue)
+        .background(SunnyColors.skyBlue)
 }
 
 #Preview("Empty state") {
     AlarmListView(alarms: [])
         .modelContainer(for: Alarm.self, inMemory: true)
-        .background(GhibliColors.skyBlue)
+        .background(SunnyColors.skyBlue)
 }

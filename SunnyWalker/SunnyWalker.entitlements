@@ -2,10 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- AlarmKit entitlement — requires Apple Developer Portal approval.
-	     In Xcode: Signing & Capabilities → "+ Capability" → "Alarms"
-	     Without approval, AlarmManager.requestAuthorization() will throw. -->
+	<!-- AlarmKit entitlement — requires Apple Developer Portal approval before use.
+	     Steps to re-enable:
+	       1. Apply at developer.apple.com for com.apple.developer.alarmkit
+	       2. Wait for Apple approval (days to weeks)
+	       3. Uncomment the two lines below and rebuild
+	     Until approved, app uses UNNotification fallback (AlarmScheduler.swift).
 	<key>com.apple.developer.alarmkit</key>
 	<true/>
+	-->
 </dict>
 </plist>

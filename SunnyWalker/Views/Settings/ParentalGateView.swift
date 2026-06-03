@@ -91,7 +91,7 @@ struct ParentalGateView: View {
 
     var body: some View {
         ZStack {
-            GhibliColors.cloudWhite.ignoresSafeArea()
+            SunnyColors.cloudWhite.ignoresSafeArea()
             VStack(spacing: 32) {
                 header
                 questionCard
@@ -113,19 +113,19 @@ struct ParentalGateView: View {
             Text("🔐")
                 .font(.system(size: 48))
             Text("請大人來幫忙")
-                .font(GhibliFonts.title(24))
-                .foregroundStyle(GhibliColors.nightIndigo)
+                .font(SunnyFonts.title(24))
+                .foregroundStyle(SunnyColors.nightIndigo)
             Text("請回答以下問題才能繼續")
-                .font(GhibliFonts.caption())
-                .foregroundStyle(GhibliColors.totoroGray)
+                .font(SunnyFonts.caption())
+                .foregroundStyle(SunnyColors.sunnyGray)
         }
     }
 
     private var questionCard: some View {
         WatercolorCard {
             Text(LocalizedStringKey(question.prompt))
-                .font(GhibliFonts.title(20))
-                .foregroundStyle(GhibliColors.nightIndigo)
+                .font(SunnyFonts.title(20))
+                .foregroundStyle(SunnyColors.nightIndigo)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 20)
@@ -136,7 +136,7 @@ struct ParentalGateView: View {
     private var optionButtons: some View {
         VStack(spacing: 12) {
             ForEach(question.options, id: \.self) { opt in
-                GhibliButton(LocalizedStringKey(opt), color: GhibliColors.leafFresh) {
+                SunnyButton(LocalizedStringKey(opt), color: SunnyColors.leafFresh) {
                     check(opt)
                 }
             }
@@ -145,8 +145,8 @@ struct ParentalGateView: View {
 
     private var cancelButton: some View {
         Button("取消") { dismiss() }
-            .font(GhibliFonts.caption())
-            .foregroundStyle(GhibliColors.totoroGray)
+            .font(SunnyFonts.caption())
+            .foregroundStyle(SunnyColors.sunnyGray)
     }
 
     // MARK: - Logic

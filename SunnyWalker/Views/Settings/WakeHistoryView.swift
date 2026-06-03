@@ -11,7 +11,7 @@ struct WakeHistoryView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                GhibliColors.cloudWhite.ignoresSafeArea()
+                SunnyColors.cloudWhite.ignoresSafeArea()
                 if records.isEmpty {
                     emptyState
                 } else {
@@ -23,8 +23,8 @@ struct WakeHistoryView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("關閉") { dismiss() }
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.totoroGray)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
                 }
             }
         }
@@ -37,11 +37,11 @@ struct WakeHistoryView: View {
             Text("🌙")
                 .font(.system(size: 64))
             Text("還沒有起床紀錄")
-                .font(GhibliFonts.title(22))
-                .foregroundStyle(GhibliColors.nightIndigo)
+                .font(SunnyFonts.title(22))
+                .foregroundStyle(SunnyColors.nightIndigo)
             Text("小朋友每次成功起床後\n會在這裡留下記錄")
-                .font(GhibliFonts.caption())
-                .foregroundStyle(GhibliColors.totoroGray)
+                .font(SunnyFonts.caption())
+                .foregroundStyle(SunnyColors.sunnyGray)
                 .multilineTextAlignment(.center)
         }
     }
@@ -89,27 +89,27 @@ private struct WakeRecordCard: View {
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(record.alarmLabel)
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.nightIndigo)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.nightIndigo)
                     Text(record.wokeAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(GhibliFonts.body(18))
-                        .foregroundStyle(GhibliColors.nightIndigo)
+                        .font(SunnyFonts.body(18))
+                        .foregroundStyle(SunnyColors.nightIndigo)
                     HStack(spacing: 6) {
                         Image(systemName: "timer")
                             .font(.caption)
                         Text(L("response_label %@", record.responseFormatted))
-                            .font(GhibliFonts.caption(14))
+                            .font(SunnyFonts.caption(14))
                     }
-                    .foregroundStyle(GhibliColors.totoroGray)
+                    .foregroundStyle(SunnyColors.sunnyGray)
                 }
                 Spacer()
                 VStack(spacing: 4) {
                     Image(systemName: methodIcon)
                         .font(.system(size: 20))
-                        .foregroundStyle(GhibliColors.leafFresh)
+                        .foregroundStyle(SunnyColors.leafFresh)
                     Text(methodLabel)
-                        .font(GhibliFonts.caption(12))
-                        .foregroundStyle(GhibliColors.totoroGray)
+                        .font(SunnyFonts.caption(12))
+                        .foregroundStyle(SunnyColors.sunnyGray)
                 }
             }
             .padding(.horizontal, 20)

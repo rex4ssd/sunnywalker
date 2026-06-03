@@ -1,8 +1,8 @@
-// SunnyWalker — TotoroAvatar.swift  |  Day 2  |  forest-spirit mascot (blinks every 5 s)
+// SunnyWalker — SunnyAvatar.swift  |  Day 2  |  forest-spirit mascot (blinks every 5 s)
 
 import SwiftUI
 
-struct TotoroAvatar: View {
+struct SunnyAvatar: View {
     @State private var isBlinking = false
 
     // Timer.publish per spec §3.3 — drives the 5-second blink cadence
@@ -12,12 +12,12 @@ struct TotoroAvatar: View {
         ZStack {
             // Body — rounded gray oval
             Ellipse()
-                .fill(GhibliColors.totoroGray)
+                .fill(SunnyColors.sunnyGray)
                 .frame(width: 100, height: 120)
 
             // Belly — lighter oval
             Ellipse()
-                .fill(GhibliColors.cloudWhite.opacity(0.7))
+                .fill(SunnyColors.cloudWhite.opacity(0.7))
                 .frame(width: 60, height: 70)
                 .offset(y: 14)
 
@@ -36,13 +36,13 @@ struct TotoroAvatar: View {
             .offset(y: -68)
         }
         .frame(width: 120, height: 140)
-        .accessibilityLabel("龍貓")
+        .accessibilityLabel("小晴")
         .accessibilityHint("SunnyWalker 吉祥物")
         .onReceive(blinkTimer) { _ in
-            withAnimation(GhibliAnimations.blinkClose) { isBlinking = true }
+            withAnimation(SunnyAnimations.blinkClose) { isBlinking = true }
             // 120 ms delay before reopening — GCD one-shot is the right tool here
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(GhibliAnimations.blinkOpen) { isBlinking = false }
+                withAnimation(SunnyAnimations.blinkOpen) { isBlinking = false }
             }
         }
     }
@@ -61,7 +61,7 @@ struct TotoroAvatar: View {
 
     private var ear: some View {
         Triangle()
-            .fill(GhibliColors.totoroGray)
+            .fill(SunnyColors.sunnyGray)
             .frame(width: 22, height: 28)
     }
 }
@@ -79,7 +79,7 @@ private struct Triangle: Shape {
 }
 
 #Preview {
-    TotoroAvatar()
+    SunnyAvatar()
         .padding(40)
-        .background(GhibliColors.skyBlue)
+        .background(SunnyColors.skyBlue)
 }

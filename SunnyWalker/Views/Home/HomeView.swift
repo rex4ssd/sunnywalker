@@ -10,6 +10,10 @@ struct HomeView: View {
     @Query(sort: [SortDescriptor(\Alarm.hour), SortDescriptor(\Alarm.minute)])
     private var alarms: [Alarm]
 
+    // Drives alarm-ring routing when the app is resumed from the background (e.g. after the
+    // user unlocks and taps the AlarmKit stop button on the lock screen).
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var currentTime = Date()
 
     // "+" (add alarm) gate states
@@ -23,21 +27,20 @@ struct HomeView: View {
     // Day 19: bed-side mode
     @StateObject private var bedSide = BedSideManager.shared
 
+    // Language switching — no parental gate, accessible to kids
+    @ObservedObject private var localization = LocalizationManager.shared
 
-    // IO button gate states
-    @State private var showingParentalGateForIO = false
-    @State private var gateDidSucceedIO = false
-    @State private var showingIO = false
+    // App settings (drives background-listening start/stop)
+    @ObservedObject private var settings = AppSettings.shared
 
-    // Wake history (parental-gated)
-    @State private var showingParentalGateForHistory = false
-    @State private var gateDidSucceedHistory = false
-    @State private var showingHistory = false
+
+    // Settings (no parental gate — contains sub-gates for History/IO inside)
+    @State private var showingSettings = false
 
     // Drives only the time-of-day scene (background gradient + clock color), which can
     // only change on an hour boundary — a 60s cadence is plenty. The per-second clock
     // redraw lives in ClockHeaderView so it no longer invalidates the whole screen
-    // (animated background, cloud layer, Totoro, and the alarm list) every second.
+    // (animated background, cloud layer, mascot, and the alarm list) every second.
     private let sceneTick = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     private var scene: DaytimeScene {
@@ -60,7 +63,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
-                                TotoroAvatar()
+                                SunnyAvatar()
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
@@ -75,7 +78,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
-                                TotoroAvatar()
+                                SunnyAvatar()
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
@@ -90,7 +93,7 @@ struct HomeView: View {
                     ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                         .padding(.top, 56)
                         .padding(.bottom, 12)
-                    TotoroAvatar()
+                    SunnyAvatar()
                         .padding(.bottom, 8)
                     AlarmListView(alarms: alarms)
                 }
@@ -100,17 +103,66 @@ struct HomeView: View {
         .ignoresSafeArea(edges: .top)
         .onAppear {
             checkPendingAlarm()
-            // Sync pre-existing enabled alarms to AlarmKit on first authorized launch.
-            // AlarmKitService.syncAllEnabled is a no-op if not authorized yet.
-            Task { await AlarmKitService.shared.syncAllEnabled(alarms) }
+        }
+        // Use .task(id:) instead of onAppear so sync re-fires when @Query finishes loading.
+        // onAppear fires before SwiftData populates @Query → alarms is [] on first call.
+        // Triggering on alarms.count catches the initial load (0 → N) and any add/delete.
+        .task(id: alarms.count) {
+            guard !alarms.isEmpty else { return }
+            if AlarmKitService.shared.isAuthorized {
+                await AlarmKitService.shared.syncAllEnabled(alarms)
+            } else {
+                // AlarmKit entitlement still pending → the UNNotification path is what actually
+                // fires. Re-arm it on every launch so (a) alarms stay scheduled and (b) the custom
+                // sound self-heal in AlarmScheduler.schedule applies to pre-existing recordings.
+                print("🏠 HomeView.task: AlarmKit NOT authorized — re-arming \(alarms.count) alarms on UNNotification path")
+                for alarm in alarms {
+                    try? await AlarmScheduler.shared.syncWithModel(alarm: alarm)
+                }
+            }
+            // @Query may have been empty when onAppear ran (killed-state launch). Retry routing
+            // now that alarms are loaded so a pending alarm can resolve to a real Alarm object.
+            checkPendingAlarm()
+            syncBackgroundListening()
+        }
+        .onChange(of: settings.backgroundListeningEnabled) { _, _ in
+            syncBackgroundListening()
+        }
+        .onChange(of: firingAlarm != nil) { _, ringing in
+            // Free the mic for AlarmRingView while it's up (two AVAudioEngines would clash);
+            // resume the keep-alive listener once it's dismissed.
+            if ringing {
+                BackgroundListeningManager.shared.stop()
+            } else if settings.backgroundListeningEnabled {
+                BackgroundListeningManager.shared.start()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Background-resume case: after StopAlarmIntent foregrounds the app, onAppear does
+            // NOT fire again and the ephemeral .alarmFired post can be lost. Re-check the pending
+            // alarm on every activation so the in-app wake screen reliably appears — without this
+            // the alarm just goes silent when the user unlocks. (Fixes "解鎖鐘就停了".)
+            if newPhase == .active {
+                print("🏠 HomeView.scenePhase → active; re-checking pending alarm")
+                checkPendingAlarm()
+            }
         }
         .onReceive(sceneTick) { currentTime = $0 }
         .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in
+            print("🏠 HomeView.onReceive(.alarmFired): object=\(String(describing: note.object))")
             guard let uuidString = note.object as? String,
                   let uuid = UUID(uuidString: uuidString),
-                  let alarm = alarms.first(where: { $0.id == uuid }) else { return }
+                  let alarm = alarms.first(where: { $0.id == uuid }) else {
+                print("🏠 HomeView.onReceive: no matching alarm in \(alarms.count) loaded alarms — ignored")
+                return
+            }
+            // Consume the pending-alarm marker so a later background-resume doesn't re-trigger
+            // the ring spuriously (the scenePhase/onAppear paths read the same marker).
+            UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
+            (UIApplication.shared.delegate as? AppDelegate)?.pendingAlarmID = nil
             // Restore brightness before showing AlarmRingView (bed-side may have dimmed screen)
             bedSide.disable()
+            print("🏠 HomeView.onReceive: routing → AlarmRingView for \(uuid.uuidString.prefix(8))")
             firingAlarm = alarm
         }
         .fullScreenCover(item: $firingAlarm) { alarm in
@@ -121,11 +173,42 @@ struct HomeView: View {
     // Handles the killed-state case: AppDelegate stored the alarm ID before HomeView was ready.
     // Accepts an injected delegate to allow unit testing without UIApplicationMain.
     func checkPendingAlarm(delegate: AppDelegate? = UIApplication.shared.delegate as? AppDelegate) {
-        guard let delegate, let id = delegate.pendingAlarmID else { return }
-        delegate.pendingAlarmID = nil
+        // Two sources, in priority order:
+        //  1. AppDelegate.pendingAlarmID — set during a killed-state launch.
+        //  2. UserDefaults "pendingAlarmKitAlarmID" — set by StopAlarmIntent and still present
+        //     when the app was only backgrounded (didFinishLaunching never re-ran to drain it).
+        var pendingID = delegate?.pendingAlarmID
+        if pendingID == nil {
+            pendingID = UserDefaults.standard.string(forKey: "pendingAlarmKitAlarmID")
+        }
+        guard let id = pendingID else { return }
+        // Consume from both sources so the ring fires exactly once.
+        delegate?.pendingAlarmID = nil
+        UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
         guard let uuid = UUID(uuidString: id),
-              let alarm = alarms.first(where: { $0.id == uuid }) else { return }
+              let alarm = alarms.first(where: { $0.id == uuid }) else {
+            print("🏠 HomeView.checkPendingAlarm: pending=\(id.prefix(8)) but no matching alarm (alarms=\(alarms.count)) — will retry on next load")
+            return
+        }
+        print("🏠 HomeView.checkPendingAlarm: routing → AlarmRingView for \(uuid.uuidString.prefix(8))")
         firingAlarm = alarm
+    }
+
+    /// Push the current alarm list to the background-listening manager and start/stop it to match
+    /// the setting. Called whenever alarms change or the toggle flips. (Experimental, off by default.)
+    private func syncBackgroundListening() {
+        let snaps = alarms.map {
+            AlarmSnapshot(
+                id: $0.id, hour: $0.hour, minute: $0.minute, weekdays: $0.weekdays,
+                isEnabled: $0.isEnabled, recordingName: $0.recordingName, soundFileName: $0.soundFileName
+            )
+        }
+        BackgroundListeningManager.shared.updateAlarms(snaps)
+        if settings.backgroundListeningEnabled {
+            if firingAlarm == nil { BackgroundListeningManager.shared.start() }
+        } else {
+            BackgroundListeningManager.shared.stop()
+        }
     }
 
     // MARK: - AlarmKit PoC DEBUG overlay (stripped from Release builds)
@@ -143,67 +226,75 @@ struct HomeView: View {
 
     // MARK: - FAB buttons (add alarm + IO)
 
+    /// Capsule label shown to the left of each FAB button.
+    /// Takes LocalizedStringKey so xcstrings translations apply automatically.
+    private func fabLabel(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(SunnyFonts.caption(13))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(.black.opacity(0.30))
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.20), radius: 3, y: 2)
+    }
+
     private var addButton: some View {
-        VStack(spacing: 16) {
-            // Bed-side mode toggle — no parental gate (parent uses this themselves)
-            Button {
-                if bedSide.isBedSideActive {
-                    bedSide.disable()
-                } else {
-                    bedSide.enable()
+        VStack(alignment: .trailing, spacing: 16) {
+            // Language switcher — no parental gate, kids can use it too
+            HStack(spacing: 12) {
+                fabLabel("language_setting")
+                Menu {
+                    ForEach(AppLanguage.allCases) { lang in
+                        Button {
+                            localization.language = lang
+                        } label: {
+                            Text(lang.displayKey)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "globe")
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(SunnyColors.sunnyGray.opacity(0.55))
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
                 }
-            } label: {
-                Image(systemName: bedSide.isBedSideActive ? "moon.fill" : "moon")
-                    .font(.title3.bold())
-                    .foregroundStyle(bedSide.isBedSideActive ? GhibliColors.starGold : .white)
-                    .frame(width: 48, height: 48)
-                    .background(
-                        bedSide.isBedSideActive
-                            ? GhibliColors.nightDeep
-                            : GhibliColors.nightIndigo.opacity(0.75)
-                    )
-                    .clipShape(Circle())
-                    .shadow(color: GhibliColors.nightDeep.opacity(0.45), radius: 8, y: 4)
+                .accessibilityLabel(Text("language_setting"))
             }
-            .accessibilityLabel(bedSide.isBedSideActive ? "關閉床邊模式" : "開啟床邊模式")
 
-            // Wake history button — gated behind parental gate
-            Button {
-                showingParentalGateForHistory = true
-            } label: {
-                Image(systemName: "chart.bar.fill")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(GhibliColors.forestDeep)
-                    .clipShape(Circle())
-                    .shadow(color: GhibliColors.forestDeep.opacity(0.45), radius: 8, y: 4)
+            // Settings — no top-level gate; sub-items (Bed Side/History/IO) gate inside SettingsView
+            HStack(spacing: 12) {
+                fabLabel("settings_label")
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(SunnyColors.forestDeep)
+                        .clipShape(Circle())
+                        .shadow(color: SunnyColors.forestDeep.opacity(0.45), radius: 8, y: 4)
+                }
+                .accessibilityLabel(Text("settings_label"))
             }
-            .accessibilityLabel("起床紀錄")
 
-            // IO / export button — gated behind parental gate
-            Button {
-                showingParentalGateForIO = true
-            } label: {
-                Image(systemName: "square.and.arrow.up.on.square")
-                    .font(.title3.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 48, height: 48)
-                    .background(GhibliColors.leafFresh)
-                    .clipShape(Circle())
-                    .shadow(color: GhibliColors.leafFresh.opacity(0.45), radius: 8, y: 4)
-            }
             // Add alarm button — gated behind parental gate
-            Button {
-                showingParentalGate = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 60, height: 60)
-                    .background(GhibliColors.lanternOrange)
-                    .clipShape(Circle())
-                    .shadow(color: GhibliColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
+            HStack(spacing: 12) {
+                fabLabel("新增鬧鐘")
+                Button {
+                    showingParentalGate = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
+                        .frame(width: 60, height: 60)
+                        .background(SunnyColors.lanternOrange)
+                        .clipShape(Circle())
+                        .shadow(color: SunnyColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
+                }
             }
         }
         .padding(24)
@@ -219,29 +310,8 @@ struct HomeView: View {
         .sheet(isPresented: $showingAddAlarm) {
             AlarmEditorView()
         }
-        // Parental gate for IO → AlarmIOView
-        .sheet(isPresented: $showingParentalGateForIO, onDismiss: {
-            if gateDidSucceedIO {
-                gateDidSucceedIO = false
-                showingIO = true
-            }
-        }) {
-            ParentalGateView(onSuccess: { gateDidSucceedIO = true })
-        }
-        .sheet(isPresented: $showingIO) {
-            AlarmIOView()
-        }
-        // Parental gate for wake history
-        .sheet(isPresented: $showingParentalGateForHistory, onDismiss: {
-            if gateDidSucceedHistory {
-                gateDidSucceedHistory = false
-                showingHistory = true
-            }
-        }) {
-            ParentalGateView(onSuccess: { gateDidSucceedHistory = true })
-        }
-        .sheet(isPresented: $showingHistory) {
-            WakeHistoryView()
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
     }
 }
@@ -250,31 +320,210 @@ struct HomeView: View {
 // MARK: - Clock header (self-contained per-second redraw)
 
 /// Owns its own 1-second timer so only this small view re-renders each tick —
-/// the surrounding screen (background, clouds, Totoro, alarm list) is untouched.
+/// the surrounding screen (background, clouds, mascot, alarm list) is untouched.
 private struct ClockHeaderView: View {
     let fontSize: CGFloat
     let textColor: Color
 
     @State private var now = Date()
+    @ObservedObject private var settings = AppSettings.shared
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: 6) {
-            Text(now, format: .dateTime.hour().minute())
-                .font(GhibliFonts.clock(fontSize))
+            // Use DateFormatter with explicit format strings so the result is locale-independent.
+            // Date.FormatStyle.hour(.twoDigits(amPM:omitted)) respects the device locale's
+            // hour cycle — on zh_TW (12h cycle) 15:50 becomes "03:50" instead of "15:50".
+            Text(verbatim: formattedTime(now))
+                .font(SunnyFonts.clock(fontSize))
                 .foregroundStyle(textColor)
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.3), value: now)
 
             Text(now, format: .dateTime.weekday(.wide).month().day())
-                .font(GhibliFonts.subtitle())
+                .font(SunnyFonts.subtitle())
                 .foregroundStyle(textColor.opacity(0.7))
         }
         .onReceive(tick) { now = $0 }
+    }
+
+    private func formattedTime(_ date: Date) -> String {
+        // en_US_POSIX locale forces unambiguous HH:mm / h:mm a output regardless of device locale.
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = settings.use24HourClock ? "HH:mm" : "h:mm a"
+        return fmt.string(from: date)
     }
 }
 
 #Preview {
     HomeView()
         .modelContainer(for: Alarm.self, inMemory: true)
+}
+
+// MARK: - SettingsView
+// Defined here (not a separate file) so no new Xcode target membership is needed.
+
+struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var localization = LocalizationManager.shared
+    @ObservedObject private var bedSide = BedSideManager.shared
+
+    // Parental gate for Bed Side Mode (兒童鎖)
+    @State private var showingGateForBedSide = false
+    @State private var gateBedSideOK = false
+
+    // Parental gate for History
+    @State private var showingGateForHistory = false
+    @State private var gateHistoryOK = false
+    @State private var showingHistory = false
+
+    // Parental gate for IO
+    @State private var showingGateForIO = false
+    @State private var gateIOOK = false
+    @State private var showingIO = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                // Clock format
+                Section(header: Text("time_format_section")) {
+                    Toggle(isOn: Binding(
+                        get: { !settings.use24HourClock },
+                        set: { settings.use24HourClock = !$0 }
+                    )) {
+                        Label("12h_label", systemImage: "clock")
+                    }
+                    .tint(SunnyColors.leafFresh)
+                    Toggle(isOn: $settings.use24HourClock) {
+                        Label("24h_label", systemImage: "clock.fill")
+                    }
+                    .tint(SunnyColors.leafFresh)
+                }
+
+                // Language
+                Section(header: Text("language_section")) {
+                    Picker(selection: $localization.language) {
+                        ForEach(AppLanguage.allCases) { lang in
+                            Text(lang.displayKey).tag(lang)
+                        }
+                    } label: {
+                        Label("language_setting", systemImage: "globe")
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+
+                // Recording gap
+                Section(
+                    header: Text("recording_gap_section"),
+                    footer: Text("recording_gap_footer")
+                ) {
+                    Stepper(value: $settings.recordingGapSeconds, in: 0...5) {
+                        HStack {
+                            Label("recording_gap_label", systemImage: "waveform")
+                            Spacer()
+                            Text("\(settings.recordingGapSeconds) s")
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+
+                // Alarm ring duration — auto-stops + lets the screen sleep to save battery
+                Section(
+                    header: Text("響鈴時長"),
+                    footer: Text("鬧鐘響這麼久還沒被關掉，就自動停止並讓螢幕休眠，避免小孩不在時一直耗電。")
+                ) {
+                    Stepper(value: $settings.alarmRingDurationMinutes, in: 1...10) {
+                        HStack {
+                            Label("自動停止時間", systemImage: "alarm")
+                            Spacer()
+                            Text("\(settings.alarmRingDurationMinutes) 分")
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                                .monospacedDigit()
+                        }
+                    }
+                }
+
+                // Background listening (experimental) — keeps the mic alive so the child can
+                // voice-stop with the screen off. OFF by default; warns about the always-on mic.
+                Section(
+                    header: Text("背景聲控（實驗）"),
+                    footer: Text("開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。")
+                ) {
+                    Toggle(isOn: $settings.backgroundListeningEnabled) {
+                        Label("背景聆聽模式", systemImage: settings.backgroundListeningEnabled ? "mic.fill" : "mic.slash")
+                            .foregroundStyle(settings.backgroundListeningEnabled ? SunnyColors.lanternOrange : .primary)
+                    }
+                    .tint(SunnyColors.lanternOrange)
+                }
+
+                // Parental — 兒童鎖，每個動作都需要通過家長驗證
+                Section(
+                    header: Text("parental_section"),
+                    footer: Text("bedside_lock_footer")
+                ) {
+                    // Bed Side Mode — child-locked toggle
+                    Button {
+                        showingGateForBedSide = true
+                    } label: {
+                        HStack {
+                            Label("bedside_mode_label", systemImage: bedSide.isBedSideActive ? "moon.fill" : "moon")
+                                .foregroundStyle(bedSide.isBedSideActive ? SunnyColors.starGold : .primary)
+                            Spacer()
+                            // Status badge
+                            Text(bedSide.isBedSideActive ? "bedside_on" : "bedside_off")
+                                .font(SunnyFonts.caption(13))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(bedSide.isBedSideActive ? SunnyColors.nightDeep : SunnyColors.sunnyGray)
+                                .clipShape(Capsule())
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                        }
+                    }
+
+                    Button { showingGateForHistory = true } label: {
+                        Label("起床紀錄", systemImage: "chart.bar.fill")
+                            .foregroundStyle(SunnyColors.forestDeep)
+                    }
+                    Button { showingGateForIO = true } label: {
+                        Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
+                            .foregroundStyle(SunnyColors.leafFresh)
+                    }
+                }
+            }
+            .navigationTitle(Text("settings_label"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") { dismiss() }
+                        .font(SunnyFonts.caption())
+                }
+            }
+        }
+        // Bed Side Mode — gate then immediately toggle (no second sheet needed)
+        .sheet(isPresented: $showingGateForBedSide, onDismiss: {
+            if gateBedSideOK {
+                gateBedSideOK = false
+                if bedSide.isBedSideActive { bedSide.disable() } else { bedSide.enable() }
+            }
+        }) { ParentalGateView(onSuccess: { gateBedSideOK = true }) }
+
+        .sheet(isPresented: $showingGateForHistory, onDismiss: {
+            if gateHistoryOK { gateHistoryOK = false; showingHistory = true }
+        }) { ParentalGateView(onSuccess: { gateHistoryOK = true }) }
+        .sheet(isPresented: $showingHistory) { WakeHistoryView() }
+        .sheet(isPresented: $showingGateForIO, onDismiss: {
+            if gateIOOK { gateIOOK = false; showingIO = true }
+        }) { ParentalGateView(onSuccess: { gateIOOK = true }) }
+        .sheet(isPresented: $showingIO) { AlarmIOView() }
+    }
+}
+
+#Preview("Settings") {
+    SettingsView()
 }

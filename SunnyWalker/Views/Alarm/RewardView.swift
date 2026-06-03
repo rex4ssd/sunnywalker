@@ -17,10 +17,10 @@ struct RewardView: View {
 
     var body: some View {
         ZStack {
-            GhibliColors.wheatGold
+            SunnyColors.wheatGold
                 .ignoresSafeArea()
 
-            // Decorative star burst behind Totoro
+            // Decorative star burst behind mascot
             if starsVisible {
                 starBurst
                     .transition(.opacity)
@@ -31,15 +31,15 @@ struct RewardView: View {
 
                 // Title bounces in from below
                 Text("你好棒！🌟")
-                    .font(GhibliFonts.title(40))
-                    .foregroundStyle(GhibliColors.forestDeep)
+                    .font(SunnyFonts.title(40))
+                    .foregroundStyle(SunnyColors.forestDeep)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
                     .scaleEffect(textScale)
                     .opacity(textOpacity)
 
-                // Totoro: bounces in + perpetual happy wiggle (suppressed with reduceMotion)
-                TotoroAvatar()
+                // Mascot: bounces in + perpetual happy wiggle (suppressed with reduceMotion)
+                SunnyAvatar()
                     .scaleEffect(reduceMotion ? 1.0 : totoroScale)
                     .rotationEffect(
                         .degrees(reduceMotion ? 0 : (wiggle ? 12 : -12)),
@@ -52,8 +52,8 @@ struct RewardView: View {
                     .accessibilityHidden(true)
 
                 Text("早安！新的一天開始囉 ☀️")
-                    .font(GhibliFonts.body(20))
-                    .foregroundStyle(GhibliColors.forestDeep.opacity(0.75))
+                    .font(SunnyFonts.body(20))
+                    .foregroundStyle(SunnyColors.forestDeep.opacity(0.75))
                     .opacity(textOpacity)
 
                 Spacer()
@@ -63,11 +63,11 @@ struct RewardView: View {
             counter: $confettiCounter,
             num: 60,
             colors: [
-                GhibliColors.lanternOrange,
-                GhibliColors.starGold,
-                GhibliColors.leafFresh,
-                GhibliColors.skyBlue,
-                GhibliColors.cloudWhite
+                SunnyColors.lanternOrange,
+                SunnyColors.starGold,
+                SunnyColors.leafFresh,
+                SunnyColors.skyBlue,
+                SunnyColors.cloudWhite
             ],
             confettiSize: 10,
             radius: 420
@@ -98,7 +98,7 @@ struct RewardView: View {
             ForEach(0..<8, id: \.self) { i in
                 Image(systemName: "star.fill")
                     .font(.system(size: CGFloat.random(in: 12...22)))
-                    .foregroundStyle(GhibliColors.starGold.opacity(Double.random(in: 0.5...0.9)))
+                    .foregroundStyle(SunnyColors.starGold.opacity(Double.random(in: 0.5...0.9)))
                     .offset(
                         x: cos(Double(i) * .pi / 4) * 130,
                         y: sin(Double(i) * .pi / 4) * 130

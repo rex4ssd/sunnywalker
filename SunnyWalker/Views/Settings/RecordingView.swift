@@ -17,7 +17,7 @@ struct RecordingView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                GhibliColors.cloudWhite.ignoresSafeArea()
+                SunnyColors.cloudWhite.ignoresSafeArea()
                 VStack(spacing: 40) {
                     Spacer()
                     totoroSection
@@ -32,8 +32,8 @@ struct RecordingView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("完成") { dismiss() }
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.forestDeep)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.forestDeep)
                 }
             }
         }
@@ -42,29 +42,29 @@ struct RecordingView: View {
     // MARK: - Subviews
 
     private var totoroSection: some View {
-        TotoroAvatar()
+        SunnyAvatar()
     }
 
     private var statusSection: some View {
         VStack(spacing: 8) {
             if audioRecorder.isRecording {
                 Text("錄音中…")
-                    .font(GhibliFonts.title(24))
-                    .foregroundStyle(GhibliColors.lanternOrange)
+                    .font(SunnyFonts.title(24))
+                    .foregroundStyle(SunnyColors.lanternOrange)
             } else if hasRecording {
                 Text("錄音完成 ✅")
-                    .font(GhibliFonts.title(24))
-                    .foregroundStyle(GhibliColors.forestDeep)
+                    .font(SunnyFonts.title(24))
+                    .foregroundStyle(SunnyColors.forestDeep)
             } else {
                 Text("請說一段起床的話給孩子聽")
-                    .font(GhibliFonts.title(22))
-                    .foregroundStyle(GhibliColors.nightIndigo)
+                    .font(SunnyFonts.title(22))
+                    .foregroundStyle(SunnyColors.nightIndigo)
                     .multilineTextAlignment(.center)
             }
             if let error = recordingError {
                 Text(error)
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(GhibliColors.lanternOrange)
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.lanternOrange)
                     .multilineTextAlignment(.center)
             }
         }
@@ -73,16 +73,16 @@ struct RecordingView: View {
     private var controlSection: some View {
         VStack(spacing: 16) {
             if audioRecorder.isRecording {
-                GhibliButton("停止錄音 ⏹", color: GhibliColors.forestDeep) {
+                SunnyButton("停止錄音 ⏹", color: SunnyColors.forestDeep) {
                     stopRecording()
                 }
             } else {
-                GhibliButton(hasRecording ? "重新錄音 🎙️" : "開始錄音 🎙️",
-                             color: GhibliColors.lanternOrange) {
+                SunnyButton(hasRecording ? "重新錄音 🎙️" : "開始錄音 🎙️",
+                             color: SunnyColors.lanternOrange) {
                     startRecording()
                 }
                 if hasRecording {
-                    GhibliButton("試聽 ▶️", color: GhibliColors.skyBlue) {
+                    SunnyButton("試聽 ▶️", color: SunnyColors.skyBlue) {
                         playRecording()
                     }
                 }
@@ -105,6 +105,13 @@ struct RecordingView: View {
     private func stopRecording() {
         audioRecorder.stop()
         alarm.recordingName = alarm.id.uuidString
+        // Export a lock-screen-playable CAF and point the alarm's sound at it, so AlarmKit
+        // rings the parent's custom recording immediately — instead of the bundled default
+        // tone that only switched to the recording after the app was opened.
+        // (Re-scheduling happens in AlarmEditorView.saveAlarm, which reads soundFileName.)
+        if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.id.uuidString) {
+            alarm.soundFileName = caf
+        }
     }
 
     private func playRecording() {

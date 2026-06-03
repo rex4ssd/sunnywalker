@@ -2,6 +2,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct AlarmRingView: View {
     var alarm: Alarm? = nil
@@ -14,6 +15,7 @@ struct AlarmRingView: View {
     @State private var wiggle = false
     @State private var showingReward = false
     @State private var speechTask: Task<Void, Never>?
+    @State private var ringTimeoutTask: Task<Void, Never>?
     @State private var recognitionFailureCount = 0
     @State private var showFallbackButton = false
 
@@ -49,7 +51,7 @@ struct AlarmRingView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                TotoroAvatar()
+                SunnyAvatar()
                     .rotationEffect(.degrees(reduceMotion ? 0 : (wiggle ? 10 : -10)), anchor: .bottom)
                     .animation(
                         reduceMotion ? .none : .easeInOut(duration: 0.35).repeatForever(autoreverses: true),
@@ -58,7 +60,7 @@ struct AlarmRingView: View {
                     .padding(.bottom, 32)
 
                 Text("該起床囉！☀️")
-                    .font(GhibliFonts.title(28))
+                    .font(SunnyFonts.title(28))
                     .foregroundStyle(scene.clockTextColor)
                     .padding(.bottom, 24)
 
@@ -70,7 +72,7 @@ struct AlarmRingView: View {
                                 // Pulsing mic
                                 Image(systemName: "mic.fill")
                                     .font(.system(size: 36))
-                                    .foregroundStyle(GhibliColors.lanternOrange)
+                                    .foregroundStyle(SunnyColors.lanternOrange)
                                     .scaleEffect(reduceMotion ? 1.0 : (micPulse ? 1.25 : 0.85))
                                     .animation(
                                         reduceMotion ? .none : .easeInOut(duration: 0.65).repeatForever(autoreverses: true),
@@ -80,14 +82,14 @@ struct AlarmRingView: View {
 
                                 // Attempt counter
                                 Text(attemptLabel)
-                                    .font(GhibliFonts.body())
+                                    .font(SunnyFonts.body())
                                     .foregroundStyle(scene.clockTextColor)
                             }
                             .transition(.opacity)
                         } else if showRetryMessage {
                             Text("沒關係，再試一次！")
-                                .font(GhibliFonts.body())
-                                .foregroundStyle(GhibliColors.leafFresh)
+                                .font(SunnyFonts.body())
+                                .foregroundStyle(SunnyColors.leafFresh)
                                 .transition(.opacity)
                         }
                     }
@@ -103,16 +105,16 @@ struct AlarmRingView: View {
                     // .button mode: show primary "我起床了！" directly (no hint needed)
                     if alarm?.effectiveTaskType != .button {
                         Text("說不出來嗎？")
-                            .font(GhibliFonts.caption())
+                            .font(SunnyFonts.caption())
                             .foregroundStyle(scene.clockTextColor.opacity(0.75))
                             .padding(.bottom, 8)
                             .transition(.opacity)
                     }
 
                     let isButtonMode = alarm?.effectiveTaskType == .button
-                    GhibliButton(
+                    SunnyButton(
                         isButtonMode ? "我起床了！" : "按這裡起床 🌟",
-                        color: isButtonMode ? GhibliColors.lanternOrange : GhibliColors.leafFresh
+                        color: isButtonMode ? SunnyColors.lanternOrange : SunnyColors.leafFresh
                     ) {
                         handleWakeUp(dismissMethod: isButtonMode ? "button" : "fallback")
                     }
@@ -122,7 +124,7 @@ struct AlarmRingView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
 
-                GhibliButton("我起床了！", color: GhibliColors.lanternOrange) {
+                SunnyButton("我起床了！", color: SunnyColors.lanternOrange) {
                     handleWakeUp(dismissMethod: "voice")
                 }
                 .padding(.horizontal, 40)
@@ -133,7 +135,12 @@ struct AlarmRingView: View {
         .onAppear {
             firedAt = Date()   // record alarm fire time for WakeRecord
             wiggle = true
+            // App is now open for this alarm → stop the strict-mode "貪睡模式" nag notifications.
+            if let alarm { AlarmScheduler.shared.cancelNags(alarm.id) }
+            // Keep the screen awake while the alarm is actively ringing.
+            UIApplication.shared.isIdleTimerDisabled = true
             startAudio()
+            startRingTimeout()
             // .button taskType: skip speech — child taps to dismiss immediately
             if alarm?.effectiveTaskType == .button {
                 showFallbackButton = true
@@ -149,8 +156,11 @@ struct AlarmRingView: View {
         }
         .onDisappear {
             speechTask?.cancel()
+            ringTimeoutTask?.cancel()
             audioPlayer.stop()
             speechRecognizer.stop()
+            // Let the device auto-lock / sleep again once the alarm screen is gone.
+            UIApplication.shared.isIdleTimerDisabled = false
         }
         .fullScreenCover(isPresented: $showingReward, onDismiss: { dismiss() }) {
             RewardView()
@@ -161,23 +171,30 @@ struct AlarmRingView: View {
 
     private func startSpeechCycle() {
         guard !showingReward, !showFallbackButton else { return }
+        print("🎤 AlarmRingView.startSpeechCycle: attempt #\(recognitionFailureCount + 1) — ducking + start listening")
         isListening = true
         micPulse = true
+        // Duck the recording so the child can speak without shouting over it.
+        audioPlayer.duck(to: 0.12)
         do {
             try speechRecognizer.startListening(onMatch: { keyword in
-                print("SpeechRecognizer: matched '\(keyword)' — triggering wake-up")
-                isListening = false
-                micPulse = false
-                handleWakeUp(dismissMethod: "voice")
+                print("🎤 AlarmRingView: MATCHED '\(keyword)' — waking up")
+                self.isListening = false
+                self.micPulse = false
+                self.audioPlayer.unduck()
+                self.handleWakeUp(dismissMethod: "voice")
             }, onFailure: {
-                isListening = false
-                micPulse = false
-                handleRecognitionFailure()
+                print("🎤 AlarmRingView: speech onFailure (no match / timeout)")
+                self.isListening = false
+                self.micPulse = false
+                self.audioPlayer.unduck()
+                self.handleRecognitionFailure()
             })
         } catch {
-            print("SpeechRecognizer: failed to start — \(error.localizedDescription)")
+            print("🎤 AlarmRingView.startSpeechCycle: startListening THREW — \(error.localizedDescription)")
             isListening = false
             micPulse = false
+            audioPlayer.unduck()
             handleRecognitionFailure()
         }
     }
@@ -208,8 +225,34 @@ struct AlarmRingView: View {
         }
     }
 
+    // MARK: - Ring duration auto-stop
+
+    /// After the parent-configured ring duration, give up waking the child, silence everything,
+    /// and let the screen sleep — so the battery doesn't drain if nobody's there.
+    private func startRingTimeout() {
+        let minutes = max(1, min(10, AppSettings.shared.alarmRingDurationMinutes))
+        print("⏰ AlarmRingView: ring auto-stop in \(minutes) min")
+        ringTimeoutTask = Task {
+            try? await Task.sleep(for: .seconds(Double(minutes * 60)))
+            guard !Task.isCancelled else { return }
+            handleAutoStop()
+        }
+    }
+
+    private func handleAutoStop() {
+        print("⏰ AlarmRingView: ring duration reached — auto-stopping + releasing screen")
+        speechTask?.cancel()
+        ringTimeoutTask?.cancel()
+        audioPlayer.stop()
+        speechRecognizer.stop()
+        // Allow the device to sleep so the screen turns off and stops draining battery.
+        UIApplication.shared.isIdleTimerDisabled = false
+        dismiss()
+    }
+
     private func handleWakeUp(dismissMethod: String = "voice") {
         speechTask?.cancel()
+        ringTimeoutTask?.cancel()
         audioPlayer.stop()
         speechRecognizer.stop()
         // Log wake record for parent history
@@ -229,21 +272,27 @@ struct AlarmRingView: View {
     // MARK: - Audio
 
     private func startAudio() {
+        // Read gap from AppSettings here so AudioPlayer stays dependency-free.
+        let gap = AppSettings.shared.recordingGapSeconds
+
         let recordingName = alarm?.recordingName ?? ""
         if !recordingName.isEmpty {
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let url = docs.appendingPathComponent("Recordings/\(recordingName).m4a")
             if FileManager.default.fileExists(atPath: url.path) {
-                audioPlayer.play(url: url)
+                print("🎬 AlarmRingView.startAudio: playing CUSTOM recording \(recordingName).m4a")
+                audioPlayer.play(url: url, loop: true, gapSeconds: gap)
                 return
             }
+            print("🎬 AlarmRingView.startAudio: recording \(recordingName).m4a MISSING — falling back")
         }
 
-        let soundName = alarm?.soundFileName ?? "totoro_breath.caf"
+        let soundName = alarm?.soundFileName ?? "sunny_wake.caf"
         if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) {
-            audioPlayer.play(url: bundleURL)
+            print("🎬 AlarmRingView.startAudio: playing bundled \(soundName)")
+            audioPlayer.play(url: bundleURL, loop: true, gapSeconds: gap)
         } else {
-            print("AudioPlayer: no recording — skipping playback")
+            print("🎬 AlarmRingView.startAudio: no recording and no bundled sound — skipping playback")
         }
     }
 }

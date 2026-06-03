@@ -33,27 +33,28 @@ final class AlarmKitService {
 
     // MARK: - Authorization
 
-    var isAuthorized: Bool {
-        manager.authorizationState == .authorized
-    }
+    /// Runtime-verified flag — only true after requestAuthorization() succeeds THIS session.
+    /// Intentionally NOT derived from manager.authorizationState alone: iOS caches
+    /// the user's "Alarms: ON" permission even after the com.apple.developer.alarmkit
+    /// entitlement is removed from the binary, so authorizationState can return .authorized
+    /// while manager.schedule() throws. Trusting the cached state would cause AlarmScheduler
+    /// (UNNotification fallback) to bail out, leaving no alarm scheduled at all.
+    private var _isAuthorized = false
+
+    var isAuthorized: Bool { _isAuthorized }
 
     func requestAuthorization() async -> Bool {
-        switch manager.authorizationState {
-        case .authorized:
-            return true
-        case .notDetermined:
-            do {
-                let state = try await manager.requestAuthorization()
-                print("AlarmKitService: authorization → \(state)")
-                return state == .authorized
-            } catch {
-                print("AlarmKitService: requestAuthorization failed — \(error)")
-                return false
-            }
-        case .denied:
-            print("AlarmKitService: denied — user must enable in Settings → SunnyWalker")
-            return false
-        @unknown default:
+        // Always call through to the system — never short-circuit on cached .authorized.
+        // If the entitlement is missing from the binary, manager.requestAuthorization()
+        // will throw even when authorizationState == .authorized, and we catch that here.
+        do {
+            let state = try await manager.requestAuthorization()
+            _isAuthorized = state == .authorized
+            print("AlarmKitService: authorization → \(state), isAuthorized=\(_isAuthorized)")
+            return _isAuthorized
+        } catch {
+            _isAuthorized = false
+            print("AlarmKitService: requestAuthorization failed (entitlement missing or denied) — \(error)")
             return false
         }
     }
@@ -103,6 +104,7 @@ final class AlarmKitService {
         }
     }
 
+    #if DEBUG
     // MARK: - Schedule: 60-second test timer (P0 PoC — no stopIntent needed)
 
     @discardableResult
@@ -112,7 +114,7 @@ final class AlarmKitService {
         // NOTE: custom AlarmKit sounds (.named) crash the Simulator's ToneLibrary (SpringBoard
         // aborts in -[TLAlertQueuePlayerController _prepareAudioEnvironmentForStateDescriptor:]).
         // Using the system default alarm tone here; the parent's recording still plays in-app.
-        // To re-enable branded sound on a REAL device, add: sound: .named("totoro_breath.caf")
+        // To re-enable branded sound on a REAL device, add: sound: .named("sunny_wake.caf")
         try await manager.schedule(
             id: id,
             configuration: .timer(
@@ -124,6 +126,8 @@ final class AlarmKitService {
         return id
     }
 
+    #endif // DEBUG
+
     // MARK: - Schedule: fixed-time one-shot (P1)
 
     @discardableResult
@@ -131,16 +135,28 @@ final class AlarmKitService {
         let id = UUID()
         let title = label.isEmpty ? L("該起床囉！☀️") : label
         let attrs = makeAttributes(alarmID: alarmID, title: title)
-        // Real API: AlarmManager.AlarmConfiguration.alarm(schedule:attributes:stopIntent:secondaryIntent:sound:)
+        // On Simulator: omit sound — .named() crashes Simulator ToneLibrary (SpringBoard abort).
+        // On real device: ring with the custom CAF.
+        #if targetEnvironment(simulator)
         try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: .fixed(date),
                 attributes: attrs,
                 stopIntent: StopAlarmIntent(alarmID: alarmID)
-                // sound: .named("totoro_breath.caf")  // re-enable on a real device (crashes Simulator ToneLibrary)
             )
         )
+        #else
+        try await manager.schedule(
+            id: id,
+            configuration: .alarm(
+                schedule: .fixed(date),
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarmID),
+                sound: .named("sunny_wake.caf")
+            )
+        )
+        #endif
         print("AlarmKitService: fixed alarm scheduled — id=\(id), fires at \(date)")
         return id
     }
@@ -172,15 +188,26 @@ final class AlarmKitService {
             AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence)
         )
 
+        #if targetEnvironment(simulator)
         try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: schedule,
                 attributes: attrs,
                 stopIntent: StopAlarmIntent(alarmID: alarmID)
-                // sound: .named("totoro_breath.caf")  // re-enable on a real device (crashes Simulator ToneLibrary)
             )
         )
+        #else
+        try await manager.schedule(
+            id: id,
+            configuration: .alarm(
+                schedule: schedule,
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarmID),
+                sound: .named("sunny_wake.caf")
+            )
+        )
+        #endif
         print("AlarmKitService: recurring alarm scheduled — id=\(id), \(hour):\(String(format: "%02d", minute)), weekdays=\(weekdays)")
         return id
     }
@@ -190,12 +217,33 @@ final class AlarmKitService {
     /// Sync all enabled alarms to AlarmKit in one pass.
     /// Called once on launch so pre-existing SwiftData alarms appear in the system alarm list.
     /// Errors per-alarm are swallowed — a single bad alarm should not block the rest.
+    ///
+    /// ⚠️ Race-fix: alarms queued via the legacy UNNotification path (AlarmScheduler)
+    /// before AlarmKit auth was granted remain pending in UNUserNotificationCenter.
+    /// Once AlarmKit takes over we must cancel them; otherwise the device fires BOTH
+    /// a full-screen AlarmKit alert AND a 30-second UNNotification banner (double-fire).
     func syncAllEnabled(_ alarms: [Alarm]) async {
         guard isAuthorized else { return }
+        // Cancel UNNotification only for alarms that AlarmKit successfully takes over.
+        // If syncAlarm throws (entitlement revoked, API error, etc.) the UNNotification
+        // stays active as a fallback — prevents an alarm from silently disappearing.
+        var successIDs: [UUID] = []
         for alarm in alarms where alarm.isEnabled {
-            try? await syncAlarm(alarm)
+            do {
+                try await syncAlarm(alarm)
+                successIDs.append(alarm.id)
+            } catch {
+                print("AlarmKitService: syncAlarm failed for \(alarm.id) — keeping UNNotification fallback. \(error)")
+            }
         }
-        print("AlarmKitService: bulk sync complete — \(alarms.filter(\.isEnabled).count) alarms")
+        for id in successIDs {
+            AlarmScheduler.shared.cancel(id)
+        }
+        // Disabled alarms should not fire via either path.
+        for alarm in alarms where !alarm.isEnabled {
+            AlarmScheduler.shared.cancel(alarm.id)
+        }
+        print("AlarmKitService: bulk sync complete — \(successIDs.count)/\(alarms.filter(\.isEnabled).count) synced to AlarmKit")
     }
 
     // MARK: - Sync (primary P1 API)
@@ -235,9 +283,17 @@ final class AlarmKitService {
             schedule = .relative(AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence))
         }
 
+        // ⚠️ AlarmKit will NOT re-arm an id that has already fired and been stopped — once an
+        // alarm is in a terminal (.stopped/.countdown-finished) state, calling schedule() with
+        // the same id is silently ignored. Symptom: a rung alarm whose time is later pushed back
+        // never rings again. Explicitly cancelling first frees the id so the reschedule re-arms.
+        try? await manager.cancel(id: alarm.id)
+
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
-        // Custom sound omitted — crashes Simulator ToneLibrary; on a real device add:
-        //   sound: .named(alarm.soundFileName.isEmpty ? "totoro_breath.caf" : alarm.soundFileName)
+        // On Simulator: omit sound — .named() crashes Simulator ToneLibrary.
+        // On real device: ring with the custom CAF (or fallback to default name).
+        let soundName = alarm.soundFileName.isEmpty ? "sunny_wake.caf" : alarm.soundFileName
+        #if targetEnvironment(simulator)
         try await manager.schedule(
             id: alarm.id,
             configuration: .alarm(
@@ -246,6 +302,17 @@ final class AlarmKitService {
                 stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
             )
         )
+        #else
+        try await manager.schedule(
+            id: alarm.id,
+            configuration: .alarm(
+                schedule: schedule,
+                attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString),
+                sound: .named(soundName)
+            )
+        )
+        #endif
         print("AlarmKitService: synced \(alarm.id) — \(alarm.hour):\(String(format: "%02d", alarm.minute)), weekdays=\(alarm.weekdays)")
     }
 

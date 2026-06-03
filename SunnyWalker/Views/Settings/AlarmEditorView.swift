@@ -20,6 +20,7 @@ struct AlarmEditorView: View {
     @State private var label = "起床囉"
     @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]
     @State private var selectedTaskType: AlarmTaskType = .voice
+    @State private var requireAppToStop = false
     @State private var isSaving = false
     @State private var showingRecording = false
 
@@ -39,6 +40,7 @@ struct AlarmEditorView: View {
             _label           = State(initialValue: a.label)
             _selectedWeekdays = State(initialValue: Set(a.weekdays))
             _selectedTaskType = State(initialValue: a.effectiveTaskType)
+            _requireAppToStop = State(initialValue: a.effectiveRequireAppToStop)
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0))
@@ -52,7 +54,7 @@ struct AlarmEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                GhibliColors.cloudWhite.ignoresSafeArea()
+                SunnyColors.cloudWhite.ignoresSafeArea()
                 ScrollView {
                     VStack(spacing: 24) {
                         timePicker
@@ -62,6 +64,7 @@ struct AlarmEditorView: View {
                         if selectedTaskType == .voice {
                             recordingRow
                         }
+                        strictModeRow
                         saveButton
                     }
                     .padding(24)
@@ -72,8 +75,8 @@ struct AlarmEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { dismiss() }
-                        .font(GhibliFonts.caption())
-                        .foregroundStyle(GhibliColors.totoroGray)
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
                 }
             }
         }
@@ -88,6 +91,9 @@ struct AlarmEditorView: View {
                 .labelsHidden()
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
+                // iOS 26 Liquid Glass adaptive color makes wheel text invisible on
+                // the light WatercolorCard background — force light scheme for dark text.
+                .colorScheme(.light)
         }
     }
 
@@ -95,12 +101,12 @@ struct AlarmEditorView: View {
         WatercolorCard {
             VStack(alignment: .leading, spacing: 8) {
                 Text("鬧鐘名稱")
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(GhibliColors.totoroGray)
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
                 TextField("例如：上學囉！", text: $label)
-                    .font(GhibliFonts.body())
-                    .foregroundStyle(GhibliColors.nightIndigo)
-                    .tint(GhibliColors.leafFresh)
+                    .font(SunnyFonts.body())
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                    .tint(SunnyColors.leafFresh)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -111,8 +117,8 @@ struct AlarmEditorView: View {
         WatercolorCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("重複日")
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(GhibliColors.totoroGray)
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
                 HStack(spacing: 8) {
                     ForEach(weekdayLabels, id: \.0) { num, sym in
                         WeekdayChip(symbol: sym, isSelected: selectedWeekdays.contains(num)) {
@@ -134,8 +140,8 @@ struct AlarmEditorView: View {
         WatercolorCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("關鬧鐘方式")
-                    .font(GhibliFonts.caption())
-                    .foregroundStyle(GhibliColors.totoroGray)
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
                 Picker("", selection: $selectedTaskType) {
                     Label("說話關 🎤", systemImage: "mic.fill").tag(AlarmTaskType.voice)
                     Label("按鈕關 👆", systemImage: "hand.tap.fill").tag(AlarmTaskType.button)
@@ -144,8 +150,8 @@ struct AlarmEditorView: View {
                 Text(selectedTaskType == .voice
                      ? LocalizedStringKey("小朋友說出喚醒語才能關掉鬧鐘")
                      : LocalizedStringKey("小朋友按按鈕就能關掉鬧鐘，適合年幼寶寶"))
-                    .font(GhibliFonts.caption(13))
-                    .foregroundStyle(GhibliColors.totoroGray.opacity(0.8))
+                    .font(SunnyFonts.caption(13))
+                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -160,26 +166,26 @@ struct AlarmEditorView: View {
                         .font(.system(size: 20))
                         .foregroundStyle(
                             tempAlarm.recordingName.isEmpty
-                                ? GhibliColors.totoroGray.opacity(0.6)
-                                : GhibliColors.leafFresh
+                                ? SunnyColors.sunnyGray.opacity(0.6)
+                                : SunnyColors.leafFresh
                         )
                         .frame(width: 28)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("錄音喚醒語")
-                            .font(GhibliFonts.caption())
-                            .foregroundStyle(GhibliColors.nightIndigo)
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
                         Text(tempAlarm.recordingName.isEmpty ? LocalizedStringKey("尚未錄音") : LocalizedStringKey("已錄音 ✅"))
-                            .font(GhibliFonts.caption(14))
+                            .font(SunnyFonts.caption(14))
                             .foregroundStyle(
                                 tempAlarm.recordingName.isEmpty
-                                    ? GhibliColors.totoroGray
-                                    : GhibliColors.forestDeep
+                                    ? SunnyColors.sunnyGray
+                                    : SunnyColors.forestDeep
                             )
                     }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(GhibliColors.totoroGray.opacity(0.5))
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
@@ -191,8 +197,28 @@ struct AlarmEditorView: View {
         }
     }
 
+    private var strictModeRow: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(isOn: $requireAppToStop) {
+                    Label("貪睡模式", systemImage: requireAppToStop ? "bed.double.fill" : "bed.double")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                }
+                .tint(SunnyColors.lanternOrange)
+                Text(requireAppToStop
+                     ? LocalizedStringKey("打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來")
+                     : LocalizedStringKey("不打勾：在通知上按 ✕ 就能關掉鬧鐘"))
+                    .font(SunnyFonts.caption(13))
+                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+    }
+
     private var saveButton: some View {
-        GhibliButton(isEditing ? "儲存修改" : "儲存鬧鐘", color: GhibliColors.lanternOrange) {
+        SunnyButton(isEditing ? "儲存修改" : "儲存鬧鐘", color: SunnyColors.lanternOrange) {
             saveAlarm()
         }
         .disabled(isSaving)
@@ -211,6 +237,7 @@ struct AlarmEditorView: View {
         tempAlarm.minute   = comps.minute ?? 0
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
         tempAlarm.taskType = selectedTaskType
+        tempAlarm.requireAppToStop = requireAppToStop
 
         if !isEditing {
             modelContext.insert(tempAlarm)
@@ -238,12 +265,12 @@ private struct WeekdayChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(LocalizedStringKey(symbol))
-                .font(GhibliFonts.caption(14))
-                .foregroundStyle(isSelected ? .white : GhibliColors.totoroGray)
+                .font(SunnyFonts.caption(14))
+                .foregroundStyle(isSelected ? .white : SunnyColors.sunnyGray)
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(isSelected ? GhibliColors.leafFresh : GhibliColors.totoroGray.opacity(0.12))
+                        .fill(isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12))
                 )
         }
         .ghibliButtonStyle()

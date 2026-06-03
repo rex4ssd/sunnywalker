@@ -15,7 +15,7 @@ struct WatercolorCard<Content: View>: View {
         content()
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(GhibliColors.cloudWhite.opacity(0.92))
+                    .fill(SunnyColors.cloudWhite.opacity(0.92))
                     .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
             )
     }
@@ -25,14 +25,14 @@ struct WatercolorCard<Content: View>: View {
     WatercolorCard {
         VStack(spacing: 8) {
             Text("07:30")
-                .font(GhibliFonts.clock(40))
-                .foregroundStyle(GhibliColors.nightIndigo)
+                .font(SunnyFonts.clock(40))
+                .foregroundStyle(SunnyColors.nightIndigo)
             Text("上學囉 · 一 二 三 四 五")
-                .font(GhibliFonts.caption())
-                .foregroundStyle(GhibliColors.totoroGray)
+                .font(SunnyFonts.caption())
+                .foregroundStyle(SunnyColors.sunnyGray)
         }
         .padding()
     }
     .padding()
-    .background(GhibliColors.skyBlue)
+    .background(SunnyColors.skyBlue)
 }

@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         if let alarmKitID = UserDefaults.standard.string(forKey: "pendingAlarmKitAlarmID") {
             pendingAlarmID = alarmKitID
             UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
+            print("🚀 AppDelegate.didFinishLaunching: picked up killed-state pendingAlarmID=\(alarmKitID.prefix(8))")
         }
 
         return true
@@ -44,6 +45,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let snd = response.notification.request.content.sound
+        print("🔔 AppDelegate.didReceive: user tapped banner; content.sound=\(String(describing: snd)) id=\(response.notification.request.identifier)")
         handleAlarmPayload(response.notification.request.content.userInfo)
         completionHandler()
     }
@@ -54,12 +57,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let snd = notification.request.content.sound
+        print("🔔 AppDelegate.willPresent: alarm fired in FOREGROUND → banner+sound; content.sound=\(String(describing: snd)) id=\(notification.request.identifier)")
         completionHandler([.banner, .sound])
     }
 
     // Extracted so tests can call this directly without a real UNNotificationResponse.
     func handleAlarmPayload(_ userInfo: [AnyHashable: Any]) {
-        guard let alarmID = userInfo["alarmID"] as? String else { return }
+        guard let alarmID = userInfo["alarmID"] as? String else {
+            print("🔔 AppDelegate.handleAlarmPayload: no alarmID in payload — ignored")
+            return
+        }
+        print("🔔 AppDelegate.handleAlarmPayload: alarmID=\(alarmID.prefix(8)) → post .alarmFired")
         pendingAlarmID = alarmID
         NotificationCenter.default.post(name: .alarmFired, object: alarmID)
     }

@@ -9,4 +9,7 @@
 - 不會有任何連外付費，直接付給 apple
 
 ## Pricing model (定價方案/機制)
--  lemonsqueezy付款和取key
+- **iOS App（App Store）**：數位商品 / 訂閱一律走 Apple IAP（StoreKit 2）。
+  ⚠️ 違反 App Store Guideline 3.1.1 禁止使用第三方金流（LemonSqueezy / Stripe 等），送審直接退件。
+- **macOS direct sale（App Store 以外）**：可使用 LemonSqueezy 付款 + license key。
+  此路徑與 iOS App 完全分開，不適用 3.1.1。

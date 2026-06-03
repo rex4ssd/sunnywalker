@@ -21,15 +21,15 @@ enum DaytimeScene {
 
     var gradientColors: [Color] {
         switch self {
-        case .dawn:    return [GhibliColors.lanternOrange, GhibliColors.wheatGold]
-        case .morning: return [GhibliColors.skyBlue, GhibliColors.cloudWhite]
-        case .noon:    return [GhibliColors.noonSky, GhibliColors.cloudWhite]
-        case .dusk:    return [GhibliColors.lanternOrange.opacity(0.9), GhibliColors.wheatGold.opacity(0.7)]
-        case .night:   return [GhibliColors.nightIndigo, GhibliColors.nightDeep]
+        case .dawn:    return [SunnyColors.lanternOrange, SunnyColors.wheatGold]
+        case .morning: return [SunnyColors.skyBlue, SunnyColors.cloudWhite]
+        case .noon:    return [SunnyColors.noonSky, SunnyColors.cloudWhite]
+        case .dusk:    return [SunnyColors.lanternOrange.opacity(0.9), SunnyColors.wheatGold.opacity(0.7)]
+        case .night:   return [SunnyColors.nightIndigo, SunnyColors.nightDeep]
         }
     }
 
     var clockTextColor: Color {
-        self == .night ? GhibliColors.starGold : GhibliColors.nightIndigo
+        self == .night ? SunnyColors.starGold : SunnyColors.nightIndigo
     }
 }

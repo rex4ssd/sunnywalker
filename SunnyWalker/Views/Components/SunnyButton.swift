@@ -1,13 +1,13 @@
-// SunnyWalker — GhibliButton.swift  |  Day 1  |  primary tappable button
+// SunnyWalker — SunnyButton.swift  |  Day 1  |  primary tappable button
 
 import SwiftUI
 
-struct GhibliButton: View {
+struct SunnyButton: View {
     let title: LocalizedStringKey
     let color: Color
     let action: () -> Void
 
-    init(_ title: LocalizedStringKey, color: Color = GhibliColors.lanternOrange, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringKey, color: Color = SunnyColors.lanternOrange, action: @escaping () -> Void) {
         self.title = title
         self.color = color
         self.action = action
@@ -16,7 +16,7 @@ struct GhibliButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(GhibliFonts.button())
+                .font(SunnyFonts.button())
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -32,10 +32,10 @@ struct GhibliButton: View {
 
 #Preview {
     VStack(spacing: 16) {
-        GhibliButton("起床囉！", color: GhibliColors.lanternOrange) {}
-        GhibliButton("好的，知道了", color: GhibliColors.leafFresh) {}
-        GhibliButton("設定", color: GhibliColors.totoroGray) {}
+        SunnyButton("起床囉！", color: SunnyColors.lanternOrange) {}
+        SunnyButton("好的，知道了", color: SunnyColors.leafFresh) {}
+        SunnyButton("設定", color: SunnyColors.sunnyGray) {}
     }
     .padding()
-    .background(GhibliColors.skyBlue)
+    .background(SunnyColors.skyBlue)
 }

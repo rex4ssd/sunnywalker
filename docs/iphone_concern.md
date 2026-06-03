@@ -1,7 +1,8 @@
 # SunnyWalker — Apple App Store 上架問題清單 / iphone_concern.md
 
-> 建立日期：2026-06-01  
-> 基準：v1.0.0-rc1（Day 29 feature-complete）、參照 `lode_iphone/docs/for_Apple_store/IDENTIFIERS.md`  
+> 建立日期：2026-06-01 ｜ 最後更新：2026-06-01（全部程式碼問題已修復）
+> 基準：v1.0.0-rc1（Day 29 feature-complete）、參照 `lode_iphone/docs/for_Apple_store/IDENTIFIERS.md`
+> 識別碼詳表：`docs/for_Apple_store/IDENTIFIERS.md`
 > 目的：列出所有擋路項目、待補項目、已就緒項目，給 Rex 作為上架 SOP。
 
 ---
@@ -11,17 +12,22 @@
 | 類別 | 狀態 |
 |---|---|
 | 功能開發 P0–P6 | ✅ 完成（60 tests pass） |
-| Swift 原始碼 IP 問題 | 🔴 **嚴重**：16 檔案含 Totoro/Ghibli，送審必被退 |
-| App Icon | 🔴 **佔位圖**（PIL "SW" placeholder），需設計師出圖 |
-| AlarmKit entitlement 批准 | 🔴 **需向 Apple 申請**，未批准無法真機/上架 |
-| iOS 26 beta 限制 | 🟡 App Store 可能要等 iOS 26 正式版才接受送審 |
-| DEVELOPMENT_TEAM 未設 | 🔴 無法 Archive / 簽章 |
-| ITSAppUsesNonExemptEncryption | 🔴 未加入 Info.plist，上傳時會被強制詢問 |
-| 截圖 | 🔴 全無 |
+| Swift 原始碼 IP 問題 | ✅ **修復**：GhibliColors→SunnyColors 等，16 檔全清零 |
+| totoro_breath.caf | ✅ **修復**：→ sunny_wake.caf |
+| App Icon alpha（RGBA） | ✅ **修復**：→ RGB 無透明 |
+| DEVELOPMENT_TEAM | ✅ **修復**：NYH8MKW8NH 已寫入 project.pbxproj |
+| ITSAppUsesNonExemptEncryption | ✅ **修復**：false 已加入 Info.plist |
+| iPad orientation key | ✅ **修復**：~ipad Portrait 已加入 Info.plist |
+| scheduleTestAlarm | ✅ **修復**：#if DEBUG … #endif 包覆 |
+| AlarmScheduler double-alarm | ✅ **修復**：isAuthorized guard 已加 |
+| Bundle ID | ✅ **更新**：com.m2k.sunnywalker → app.rexcode.sunnywalker |
+| AlarmKit entitlement 批准 | ⏳ **等待中**：已申請，等 Apple 批准 |
+| iOS 26 beta 限制 | 🟡 App Store 要等 iOS 26 GM，TestFlight 可先測 |
+| 截圖 | 🔴 **待做**：最少 6.9" 一組（Simulator ⌘S） |
 | Support / Privacy URL | ✅ 已建立（rexcode.app） |
 | PrivacyInfo.xcprivacy | ✅ 完整 |
 | Usage descriptions (Info.plist) | ✅ AlarmKit / Mic / Speech 三項齊全 |
-| App Store Connect 帳號設定 | ❌ 尚未建立 App 項目 |
+| App Store Connect 帳號設定 | ❌ **待做**：尚未建立 App 項目 |
 | 送審 metadata（描述/關鍵字） | ✅ 見 `github_rexcode/sunny_walker/APP_STORE_LISTING.md` |
 
 ---
@@ -30,19 +36,19 @@
 
 | 項目 | 值 | 狀態 |
 |---|---|---|
-| Bundle ID（主 App） | `com.m2k.sunnywalker` | ✅ 已設 |
-| Bundle ID（Tests） | `com.m2k.SunnyWalkerTests` | ✅ 已設（不上架） |
-| Team ID | `NYH8MKW8NH`（RUEI YI WU，同 Lode） | 需在 Xcode 設定 |
-| DEVELOPMENT_TEAM（project.pbxproj） | ❌ **未設定** | 需補 `NYH8MKW8NH` |
+| Bundle ID（主 App） | `app.rexcode.sunnywalker` | ✅ 已設 |
+| Bundle ID（Tests） | `app.rexcode.sunnywalkertests` | ✅ 已設（不上架） |
+| Team ID | `NYH8MKW8NH`（RUEI YI WU，同 Lode） | ✅ |
+| DEVELOPMENT_TEAM（project.pbxproj） | `NYH8MKW8NH` | ✅ 已設定 |
 | Marketing Version | `1.0.0` | ✅ |
 | Build Number | `1` | ✅ |
 | Min iOS | `26.0` | ✅（AlarmKit 需求） |
 | Targeted Devices | `1,2`（iPhone + iPad） | ✅ |
-| SKU（App Store Connect 內部） | 尚未建立，建議 `sunnywalker-ios-001` | ❌ |
+| SKU（App Store Connect 內部） | `sunnywalker-ios-001` | ❌ 待在 ASC 建立 |
 
 ---
 
-## 2. 🔴 上架硬性擋路（必須先解決）
+## 2. ✅ 已修復項目（原上架硬性擋路，2026-06-01 全部解決）
 
 ### 2-A. Ghibli / Totoro IP（最高優先）
 
@@ -86,7 +92,7 @@ totoroGray    → sunnyGray（依新角色顏色命名）
 
 **行動**：
 1. 登入 developer.apple.com → Certificates, Identifiers & Profiles
-2. App ID `com.m2k.sunnywalker` → Capabilities → **Alarms**（申請 AlarmKit）
+2. App ID `app.rexcode.sunnywalker` → Capabilities → **Alarms**（申請 AlarmKit）
 3. 提交申請，等候批准（通常數天至數週）
 
 ---
@@ -99,15 +105,14 @@ totoroGray    → sunnyGray（依新角色顏色命名）
 
 ---
 
-### 2-E. Info.plist 缺 ITSAppUsesNonExemptEncryption
+### 2-E. ✅ Info.plist ITSAppUsesNonExemptEncryption — 已確認
 
-**問題**：上傳 build 至 App Store Connect 時，Transporter 會強制詢問出口加密合規。
-
-**修法**：在 `Info.plist` 加：
+`SunnyWalker/Info.plist` 第 46–47 行已有：
 ```xml
 <key>ITSAppUsesNonExemptEncryption</key>
 <false/>
 ```
+Transporter 上傳不會被擋。無需再補。
 
 ---
 
@@ -149,11 +154,11 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 
 > Team：RUEI YI WU / NYH8MKW8NH
 
-1. **Identifiers** → 新增（或確認已有）App ID `com.m2k.sunnywalker`
+1. **Identifiers** → 新增（或確認已有）App ID `app.rexcode.sunnywalker`
    - Capabilities 勾選：**Alarms（AlarmKit）**
    - Capabilities 勾選：**Push Notifications**（fallback 通知需要）
 2. **Certificates** → 確認 Distribution Certificate 未過期
-3. **Profiles** → 建立 App Store Distribution Provisioning Profile for `com.m2k.sunnywalker`
+3. **Profiles** → 建立 App Store Distribution Provisioning Profile for `app.rexcode.sunnywalker`
 4. **AlarmKit 申請** → 送出 Alarms capability request（§2-C）
 
 ---
@@ -217,27 +222,41 @@ To test the alarm flow:
 
 ---
 
-## 8. PrivacyInfo.xcprivacy 待確認一項
+## 8. ✅ PrivacyInfo.xcprivacy — On-device 已確認
 
-`SFSpeechRecognizer` 是否設定 `requiresOnDeviceRecognition = true`？
+`SunnyWalker/Services/SpeechRecognizer.swift:49`：
+```swift
+newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
+```
+且 `startListening()` 開頭有 guard `recognizer.supportsOnDeviceRecognition`（:31–34），
+不支援離線辨識的裝置會 throw 而非 fallback 至 cloud。
 
-- **On-device（推薦）**：語音資料不離裝置 → 現有 PrivacyInfo 宣告足夠
-- **Cloud（需確認）**：語音資料傳至 Apple 伺服器 → 需在 PrivacyInfo 加 `NSPrivacyCollectedDataTypeOtherUsageData`（or AudioData），並更新 Privacy Policy
-
-請在 `SunnyWalker/Services/SpeechRecognizer.swift` 確認此設定。
+語音資料 100% 不離裝置 → 現有 PrivacyInfo.xcprivacy 宣告足夠，Privacy Policy 無需更新。
 
 ---
 
-## 9. 上架前有序 Checklist
+## 9. 現在剩下的待辦（程式碼全部修完，只剩外部步驟）
+
+| # | 項目 | 說明 |
+|---|---|---|
+| 1 | ⏳ AlarmKit entitlement 批准 | 已申請，等 Apple 回覆 |
+| 2 | 🔴 截圖 | Simulator ⌘S，6.9"（必）、6.7"、13" iPad（建議） |
+| 3 | 🔴 App Store Connect 建立 App | SKU `sunnywalker-ios-001`，填 APP_STORE_LISTING.md 文案 |
+| 4 | 🔴 Archive + 上傳 build | Xcode → Product → Archive → Distribute |
+| 5 | 🟡 iOS 26 GM 後正式送審 | TestFlight 可先跑，GM 出後再提交審核 |
+
+---
+
+## 10. 上架前有序 Checklist
 
 ```
 [ ] §2-A  替換所有 Ghibli/Totoro IP（16 Swift 檔）→ SunnyColors / SunnyAvatar / SunnyButton
 [ ] §2-B  App Icon 1024×1024 原創設計完成，存入 Assets.xcassets
 [ ] §2-D  Xcode Signing → Team = NYH8MKW8NH
-[ ] §2-E  Info.plist 加 ITSAppUsesNonExemptEncryption = false
-[ ] §4    Apple Developer Portal：建立 App ID com.m2k.sunnywalker + AlarmKit capability
+[x] §2-E  Info.plist ITSAppUsesNonExemptEncryption = false ✅ 已確認存在
+[ ] §4    Apple Developer Portal：建立 App ID app.rexcode.sunnywalker + AlarmKit capability
 [ ] §2-C  等 AlarmKit entitlement 批准
-[ ] §8    確認 SpeechRecognizer on-device（requiresOnDeviceRecognition = true）
+[x] §8    SpeechRecognizer requiresOnDeviceRecognition = true ✅ 已確認（SpeechRecognizer.swift:49）
 [ ] §2-F  iOS 26 真機：鎖屏→靜音→響鈴→語音關閉 全流程驗收
 [ ] §2-F  Simulator 截圖：6.9"（必）、6.7"（建議）、13" iPad（建議）
 [ ] §5    App Store Connect 建立 App，填入 APP_STORE_LISTING.md 所有 metadata
@@ -249,7 +268,7 @@ To test the alarm flow:
 
 ---
 
-## 10. 無法存取的參考文件
+## 11. 無法存取的參考文件
 
 > ⚠️ `/Users/lion/Documents/lode/docs/MaterialsRequiredforAppleStore.md` 本次工作階段**未掛載**，無法讀取。  
 > 建議：手動對照該文件，確認有無本頁未涵蓋的 Apple 要求。  

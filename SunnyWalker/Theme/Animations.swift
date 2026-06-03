@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-enum GhibliAnimations {
+enum SunnyAnimations {
     // Standard easing for interactive elements (button press, card toggle)
     static let snappy = Animation.spring(response: 0.35, dampingFraction: 0.7)
 
@@ -26,7 +26,7 @@ struct ButtonPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
-            .animation(GhibliAnimations.snappy, value: configuration.isPressed)
+            .animation(SunnyAnimations.snappy, value: configuration.isPressed)
     }
 }
 

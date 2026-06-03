@@ -4,6 +4,12 @@
     "·" : {
 
     },
+    "%@ s" : {
+
+    },
+    "%@ 分" : {
+
+    },
     "🌙" : {
 
     },
@@ -13,19 +19,120 @@
     "🔐" : {
 
     },
+    "12h_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12-hour  (2:05 PM)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 小時制  (2:05 PM)"
+          }
+        }
+      }
+    },
+    "24h_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24-hour  (14:05)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24 小時制  (14:05)"
+          }
+        }
+      }
+    },
     "attempt_counter %lld" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Say \"I'm awake!\" — try %lld/3"
+            "value" : "Say \"I'm awake!\""
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "第 %lld/3 次，說「我起床了」！"
+            "value" : "說「我起床了」！"
+          }
+        }
+      }
+    },
+    "bedside_lock_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All items below require parental verification — kids can't change them on their own."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "以下所有項目需家長驗證才能更改，小孩無法自行操作。"
+          }
+        }
+      }
+    },
+    "bedside_mode_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedside Mode"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "床邊模式"
+          }
+        }
+      }
+    },
+    "bedside_off" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OFF"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已關閉"
+          }
+        }
+      }
+    },
+    "bedside_on" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ON"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟中"
           }
         }
       }
@@ -99,7 +206,6 @@
       }
     },
     "language_section" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -116,7 +222,6 @@
       }
     },
     "language_setting" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -200,6 +305,22 @@
         }
       }
     },
+    "parental_section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parental"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "家長專區（兒童鎖 🔒）"
+          }
+        }
+      }
+    },
     "recording_failed %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -213,6 +334,55 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無法開始錄音：%@"
+          }
+        }
+      }
+    },
+    "recording_gap_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silence gap between recording loops — gives your child a moment to speak without the audio playing over them."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "兩次播放之間的靜音間隔，讓小孩有空間開口說話，不會被錄音蓋過去。"
+          }
+        }
+      }
+    },
+    "recording_gap_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause between plays"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放間隔"
+          }
+        }
+      }
+    },
+    "recording_gap_section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wake Recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起床錄音設定"
           }
         }
       }
@@ -268,6 +438,22 @@
         }
       }
     },
+    "settings_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
+        }
+      }
+    },
     "SunnyWalker 吉祥物" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -281,6 +467,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SunnyWalker 吉祥物"
+          }
+        }
+      }
+    },
+    "time_format_section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clock Format"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時鐘格式"
           }
         }
       }
@@ -1012,6 +1214,9 @@
         }
       }
     },
+    "背景聲控（實驗）" : {
+
+    },
     "覆蓋現有鬧鐘" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1528,6 +1733,9 @@
         }
       }
     },
+    "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。" : {
+
+    },
     "關閉" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1578,6 +1786,9 @@
         }
       }
     },
+    "響鈴時長" : {
+
+    },
     "鬧鐘" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1610,6 +1821,9 @@
           }
         }
       }
+    },
+    "鬧鐘響這麼久還沒被關掉，就自動停止並讓螢幕休眠，避免小孩不在時一直耗電。" : {
+
     },
     "點右下角的 + 來新增第一個吧！" : {
       "localizations" : {
