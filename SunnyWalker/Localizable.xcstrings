@@ -8,7 +8,37 @@
 
     },
     "%@ 分" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ min"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 分"
+          }
+        }
+      }
+    },
+    "%lld 分" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 分"
+          }
+        }
+      }
     },
     "🌙" : {
 
@@ -1214,8 +1244,55 @@
         }
       }
     },
+    "背景聆聽模式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Listening"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景聆聽模式"
+          }
+        }
+      }
+    },
     "背景聲控（實驗）" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background Voice Control (Experimental)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景聲控（實驗）"
+          }
+        }
+      }
+    },
+    "自動停止時間" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-stop after"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動停止時間"
+          }
+        }
+      }
     },
     "覆蓋現有鬧鐘" : {
       "extractionState" : "stale",
@@ -1734,7 +1811,20 @@
       }
     },
     "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When on, the app keeps the microphone running in the background (the orange dot stays lit at the top) so your child can stop the alarm by voice even with the screen off or locked. Uses more battery and keeps the mic on all night — only enable it if you need it."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。"
+          }
+        }
+      }
     },
     "關閉" : {
       "extractionState" : "stale",
@@ -1787,7 +1877,20 @@
       }
     },
     "響鈴時長" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarm Duration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "響鈴時長"
+          }
+        }
+      }
     },
     "鬧鐘" : {
       "extractionState" : "stale",
@@ -1823,7 +1926,20 @@
       }
     },
     "鬧鐘響這麼久還沒被關掉，就自動停止並讓螢幕休眠，避免小孩不在時一直耗電。" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If the alarm keeps ringing this long without being turned off, it stops automatically and lets the screen sleep — so it won't drain the battery while your child is away."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鬧鐘響這麼久還沒被關掉，就自動停止並讓螢幕休眠，避免小孩不在時一直耗電。"
+          }
+        }
+      }
     },
     "點右下角的 + 來新增第一個吧！" : {
       "localizations" : {

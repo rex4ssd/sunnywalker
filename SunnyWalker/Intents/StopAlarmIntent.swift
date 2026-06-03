@@ -29,6 +29,7 @@ struct StopAlarmIntent: LiveActivityIntent {
     init(alarmID: String) { self.alarmID = alarmID }
 
     func perform() async throws -> some IntentResult {
+        print("⏹️ StopAlarmIntent.perform (STRICT/貪睡) alarmID=\(alarmID.prefix(8))")
         guard let uuid = UUID(uuidString: alarmID) else {
             return .result()
         }
@@ -38,11 +39,51 @@ struct StopAlarmIntent: LiveActivityIntent {
         try? await AlarmManager.shared.stop(id: uuid)
 
         // ── Routing ──────────────────────────────────────────────────────────
+        // Strict (貪睡) alarms must open the app so the child completes the wake task.
         // Killed-state: AppDelegate reads this key in application(_:didFinishLaunchingWithOptions:)
         UserDefaults.standard.set(alarmID, forKey: "pendingAlarmKitAlarmID")
 
         // Foreground/background state: HomeView's .onReceive(.alarmFired) catches this
         NotificationCenter.default.post(name: .alarmFired, object: alarmID)
+        print("⏹️ StopAlarmIntent: strict → opening app + routing to AlarmRingView")
+
+        return .result()
+    }
+}
+
+/// Stop intent for NON-strict (貪睡 off) alarms.
+///
+/// Wired in for alarms whose `requireAppToStop == false`. Pressing the AlarmKit stop button just
+/// turns the alarm OFF — it runs in the BACKGROUND, so it does NOT open the app and does NOT route
+/// to the wake-up screen. (This is the AlarmKit-path equivalent of "✕ on the banner just closes the
+/// alarm"; the old UNNotification dismiss handler only runs when AlarmKit is unauthorized.)
+struct DismissAlarmIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "關閉鬧鐘"
+    static var description = IntentDescription("關掉 SunnyWalker 鬧鐘，不開啟 App。")
+
+    /// Background only — never bring the app to the foreground.
+    static var supportedModes: IntentModes { .background }
+
+    @Parameter(title: "鬧鐘 ID")
+    var alarmID: String
+
+    init() { alarmID = "" }
+    init(alarmID: String) { self.alarmID = alarmID }
+
+    func perform() async throws -> some IntentResult {
+        print("⏹️ DismissAlarmIntent.perform (NON-strict) alarmID=\(alarmID.prefix(8))")
+        guard let uuid = UUID(uuidString: alarmID) else { return .result() }
+
+        // Just stop the alarm. No app open, no ring screen.
+        try? await AlarmManager.shared.stop(id: uuid)
+
+        // Defensive: clear any stale routing marker and stamp the same short-lived suppression
+        // HomeView honours, so a racing .alarmFired / checkPendingAlarm can't re-open the ring.
+        let d = UserDefaults.standard
+        d.removeObject(forKey: "pendingAlarmKitAlarmID")
+        d.set(alarmID, forKey: "dismissedAlarmID")
+        d.set(Date().timeIntervalSince1970, forKey: "dismissedAlarmAt")
+        print("⏹️ DismissAlarmIntent: stopped \(alarmID.prefix(8)) — no app open, routing suppressed")
 
         return .result()
     }

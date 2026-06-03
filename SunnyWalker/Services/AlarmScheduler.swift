@@ -80,7 +80,12 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: using DEFAULT banner sound (custom=\(custom) recording=\(alarm.recordingName.isEmpty ? "none" : "yes"))")
         }
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
-        content.userInfo = ["alarmID": alarm.id.uuidString]
+        // requireAppToStop travels with the banner so the ✕ (dismiss) handler in AppDelegate knows
+        // whether this is strict mode. Non-strict → ✕ turns the alarm off; strict → nags persist.
+        content.userInfo = [
+            "alarmID": alarm.id.uuidString,
+            "requireAppToStop": alarm.effectiveRequireAppToStop
+        ]
 
         if alarm.weekdays.isEmpty {
             // One-shot: fire at the next occurrence of hour:minute (today or tomorrow).

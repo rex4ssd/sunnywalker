@@ -156,6 +156,11 @@ struct HomeView: View {
                 print("🏠 HomeView.onReceive: no matching alarm in \(alarms.count) loaded alarms — ignored")
                 return
             }
+            // If the user just turned this alarm off via the banner ✕, do NOT re-open the ring.
+            if wasRecentlyDismissed(uuid) {
+                print("🏠 HomeView.onReceive: alarm \(uuid.uuidString.prefix(8)) was just ✕-dismissed — NOT routing")
+                return
+            }
             // Consume the pending-alarm marker so a later background-resume doesn't re-trigger
             // the ring spuriously (the scenePhase/onAppear paths read the same marker).
             UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
@@ -190,8 +195,24 @@ struct HomeView: View {
             print("🏠 HomeView.checkPendingAlarm: pending=\(id.prefix(8)) but no matching alarm (alarms=\(alarms.count)) — will retry on next load")
             return
         }
+        // The user may have ✕-dismissed this exact fire — don't resurrect it on the next foreground.
+        if wasRecentlyDismissed(uuid) {
+            print("🏠 HomeView.checkPendingAlarm: alarm \(uuid.uuidString.prefix(8)) was just ✕-dismissed — NOT routing")
+            return
+        }
         print("🏠 HomeView.checkPendingAlarm: routing → AlarmRingView for \(uuid.uuidString.prefix(8))")
         firingAlarm = alarm
+    }
+
+    /// True if the user just turned this alarm off via the banner ✕ (within a short window).
+    /// Consumes the marker so it can never suppress a later, legitimate fire of the same alarm.
+    private func wasRecentlyDismissed(_ id: UUID) -> Bool {
+        let d = UserDefaults.standard
+        guard d.string(forKey: "dismissedAlarmID") == id.uuidString else { return false }
+        let elapsed = Date().timeIntervalSince1970 - d.double(forKey: "dismissedAlarmAt")
+        d.removeObject(forKey: "dismissedAlarmID")
+        d.removeObject(forKey: "dismissedAlarmAt")
+        return elapsed < 30   // fresh dismissal → suppress this one route
     }
 
     /// Push the current alarm list to the background-listening manager and start/stop it to match

@@ -6,6 +6,8 @@ import SwiftData
 struct AlarmEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var localization = LocalizationManager.shared
 
     /// Pass an existing alarm to enter edit mode; nil = create mode.
     var existingAlarm: Alarm? = nil
@@ -65,7 +67,6 @@ struct AlarmEditorView: View {
                             recordingRow
                         }
                         strictModeRow
-                        saveButton
                     }
                     .padding(24)
                 }
@@ -78,8 +79,25 @@ struct AlarmEditorView: View {
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
                 }
+                // Save lives in the top-right corner (opposite Cancel), iOS-standard sheet layout.
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isEditing ? "儲存修改" : "儲存鬧鐘") { saveAlarm() }
+                        .font(SunnyFonts.caption())
+                        .fontWeight(.semibold)
+                        .foregroundStyle(SunnyColors.lanternOrange)
+                        .disabled(isSaving)
+                }
             }
         }
+    }
+
+    /// Locale handed to the time wheel so it shows 12h/24h matching the app's clock setting,
+    /// not just whatever the UI-language locale defaults to. (use24HourClock lives in AppSettings
+    /// and is the same toggle HomeView / AlarmListView already obey.)
+    private var pickerLocale: Locale {
+        var components = Locale.Components(locale: localization.locale)
+        components.hourCycle = settings.use24HourClock ? .zeroToTwentyThree : .oneToTwelve
+        return Locale(components: components)
     }
 
     // MARK: - Subviews
@@ -94,6 +112,8 @@ struct AlarmEditorView: View {
                 // iOS 26 Liquid Glass adaptive color makes wheel text invisible on
                 // the light WatercolorCard background — force light scheme for dark text.
                 .colorScheme(.light)
+                // Force the wheel's hour cycle to follow the app's 12h/24h setting.
+                .environment(\.locale, pickerLocale)
         }
     }
 
@@ -215,13 +235,6 @@ struct AlarmEditorView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
         }
-    }
-
-    private var saveButton: some View {
-        SunnyButton(isEditing ? "儲存修改" : "儲存鬧鐘", color: SunnyColors.lanternOrange) {
-            saveAlarm()
-        }
-        .disabled(isSaving)
     }
 
     // MARK: - Save logic

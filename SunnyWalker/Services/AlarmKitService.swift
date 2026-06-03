@@ -293,25 +293,38 @@ final class AlarmKitService {
         // On Simulator: omit sound — .named() crashes Simulator ToneLibrary.
         // On real device: ring with the custom CAF (or fallback to default name).
         let soundName = alarm.soundFileName.isEmpty ? "sunny_wake.caf" : alarm.soundFileName
+        let idStr = alarm.id.uuidString
+
+        // Stop-button behaviour depends on 貪睡模式 (requireAppToStop):
+        //   • strict (true)  → StopAlarmIntent: opens the app + routes to AlarmRingView so the
+        //                       child completes the wake task.
+        //   • non-strict     → DismissAlarmIntent: background-only, just turns the alarm OFF with
+        //                       no app open and no ring screen ("✕ 直接關閉鬧鐘").
+        let strict = alarm.effectiveRequireAppToStop
+        print("AlarmKitService: scheduling \(idStr.prefix(8)) strict(requireAppToStop)=\(strict) → stopIntent=\(strict ? "StopAlarmIntent" : "DismissAlarmIntent")")
+
         #if targetEnvironment(simulator)
-        try await manager.schedule(
-            id: alarm.id,
-            configuration: .alarm(
-                schedule: schedule,
-                attributes: attrs,
-                stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString)
-            )
-        )
+        if strict {
+            try await manager.schedule(id: alarm.id, configuration: .alarm(
+                schedule: schedule, attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: idStr)))
+        } else {
+            try await manager.schedule(id: alarm.id, configuration: .alarm(
+                schedule: schedule, attributes: attrs,
+                stopIntent: DismissAlarmIntent(alarmID: idStr)))
+        }
         #else
-        try await manager.schedule(
-            id: alarm.id,
-            configuration: .alarm(
-                schedule: schedule,
-                attributes: attrs,
-                stopIntent: StopAlarmIntent(alarmID: alarm.id.uuidString),
-                sound: .named(soundName)
-            )
-        )
+        if strict {
+            try await manager.schedule(id: alarm.id, configuration: .alarm(
+                schedule: schedule, attributes: attrs,
+                stopIntent: StopAlarmIntent(alarmID: idStr),
+                sound: .named(soundName)))
+        } else {
+            try await manager.schedule(id: alarm.id, configuration: .alarm(
+                schedule: schedule, attributes: attrs,
+                stopIntent: DismissAlarmIntent(alarmID: idStr),
+                sound: .named(soundName)))
+        }
         #endif
         print("AlarmKitService: synced \(alarm.id) — \(alarm.hour):\(String(format: "%02d", alarm.minute)), weekdays=\(alarm.weekdays)")
     }
