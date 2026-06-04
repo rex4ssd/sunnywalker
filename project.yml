@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "5.9"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: 1
+    CURRENT_PROJECT_VERSION: 2   # bumped: App Store rejects duplicate build numbers on re-upload
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NYH8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
@@ -40,6 +40,10 @@ targets:
         NSSpeechRecognitionUsageDescription: "用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。"
         UIBackgroundModes:
           - audio
+        # iPad multitasking rule (App Store error 90474): a universal app must EITHER declare all
+        # four orientations OR require full screen. SunnyWalker is portrait-locked, so we require
+        # full screen (no iPad split-view) instead of adding landscape we don't support.
+        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     settings:
