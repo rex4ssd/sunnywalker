@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- xcodegen 會用 project.yml 的 info.properties 重新產生這個檔，手改的東西可能被覆蓋。
+     要長期生效的設定請寫在 project.yml。此檔僅作為初始 placeholder。 -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+</dict>
+</plist>

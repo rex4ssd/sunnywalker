@@ -1,0 +1,28 @@
+{
+  "sites": [
+    {
+      "name": "世界城市",
+      "url": "https://example.com/kid/l2-1",
+      "icon": "🌍",
+      "color": "#FFD8A8"
+    },
+    {
+      "name": "時間月份",
+      "url": "https://example.com/kid/l2-2",
+      "icon": "🕐",
+      "color": "#B2F2BB"
+    },
+    {
+      "name": "飲食文化",
+      "url": "https://example.com/kid/l2-3",
+      "icon": "🍜",
+      "color": "#A5D8FF"
+    },
+    {
+      "name": "動物昆蟲",
+      "url": "https://example.com/kid/l2-7",
+      "icon": "🐞",
+      "color": "#FFC9C9"
+    }
+  ]
+}

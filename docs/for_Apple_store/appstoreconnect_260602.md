@@ -6,7 +6,7 @@
 填表內容：
 - **App Name / Bundle ID**：
  Bundle ID：app.rexcode.sunnywalker
- Team ID：NYH8MKW8NH
+ Team ID：NHY8MKW8NH
 
 - **Use case**：「Children's alarm app that must fire at exact scheduled times even when app is in background. Using AlarmKit to guarantee delivery of wake-up alarms.」
 - **Expected usage volume**：估計每天觸發幾次 alarm

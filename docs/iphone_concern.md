@@ -15,7 +15,7 @@
 | Swift 原始碼 IP 問題 | ✅ **修復**：GhibliColors→SunnyColors 等，16 檔全清零 |
 | totoro_breath.caf | ✅ **修復**：→ sunny_wake.caf |
 | App Icon alpha（RGBA） | ✅ **修復**：→ RGB 無透明 |
-| DEVELOPMENT_TEAM | ✅ **修復**：NYH8MKW8NH 已寫入 project.pbxproj |
+| DEVELOPMENT_TEAM | ✅ **修復**：NHY8MKW8NH 已寫入 project.pbxproj |
 | ITSAppUsesNonExemptEncryption | ✅ **修復**：false 已加入 Info.plist |
 | iPad orientation key | ✅ **修復**：~ipad Portrait 已加入 Info.plist |
 | scheduleTestAlarm | ✅ **修復**：#if DEBUG … #endif 包覆 |
@@ -38,8 +38,8 @@
 |---|---|---|
 | Bundle ID（主 App） | `app.rexcode.sunnywalker` | ✅ 已設 |
 | Bundle ID（Tests） | `app.rexcode.sunnywalkertests` | ✅ 已設（不上架） |
-| Team ID | `NYH8MKW8NH`（RUEI YI WU，同 Lode） | ✅ |
-| DEVELOPMENT_TEAM（project.pbxproj） | `NYH8MKW8NH` | ✅ 已設定 |
+| Team ID | `NHY8MKW8NH`（RUEI YI WU，同 Lode） | ✅ |
+| DEVELOPMENT_TEAM（project.pbxproj） | `NHY8MKW8NH` | ✅ 已設定 |
 | Marketing Version | `1.0.0` | ✅ |
 | Build Number | `1` | ✅ |
 | Min iOS | `26.0` | ✅（AlarmKit 需求） |
@@ -101,7 +101,7 @@ totoroGray    → sunnyGray（依新角色顏色命名）
 
 **問題**：`project.pbxproj` 無 `DEVELOPMENT_TEAM`，Xcode 無法自動簽章，Archive 失敗。
 
-**修法**：Xcode → Target SunnyWalker → Signing & Capabilities → Team 選 **NYH8MKW8NH（RUEI YI WU）**，存檔後自動寫入 pbxproj。
+**修法**：Xcode → Target SunnyWalker → Signing & Capabilities → Team 選 **NHY8MKW8NH（RUEI YI WU）**，存檔後自動寫入 pbxproj。
 
 ---
 
@@ -152,7 +152,7 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 
 ## 4. Apple Developer Portal 待辦
 
-> Team：RUEI YI WU / NYH8MKW8NH
+> Team：RUEI YI WU / NHY8MKW8NH
 
 1. **Identifiers** → 新增（或確認已有）App ID `app.rexcode.sunnywalker`
    - Capabilities 勾選：**Alarms（AlarmKit）**
@@ -252,7 +252,7 @@ newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
 ```
 [ ] §2-A  替換所有 Ghibli/Totoro IP（16 Swift 檔）→ SunnyColors / SunnyAvatar / SunnyButton
 [ ] §2-B  App Icon 1024×1024 原創設計完成，存入 Assets.xcassets
-[ ] §2-D  Xcode Signing → Team = NYH8MKW8NH
+[ ] §2-D  Xcode Signing → Team = NHY8MKW8NH
 [x] §2-E  Info.plist ITSAppUsesNonExemptEncryption = false ✅ 已確認存在
 [ ] §4    Apple Developer Portal：建立 App ID app.rexcode.sunnywalker + AlarmKit capability
 [ ] §2-C  等 AlarmKit entitlement 批准

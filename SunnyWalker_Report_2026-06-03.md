@@ -170,8 +170,8 @@ AlarmKitService: synced C12E4278-… — 18:43, weekdays=[2, 3, 4, 5, 6]
 
 - **`Ambiguous use of 'init()'`（HomeView + SettingsView）** — 有兩個 `struct SettingsView`：舊的 standalone `Views/Settings/SettingsView.swift`（缺床邊/響鈴時長/背景聆聽）與現役內嵌在 `HomeView.swift` 的。xcodegen 重掃把 orphan 檔加回 target → 同名 type → `SettingsView()` ambiguous。**修法：刪除 standalone 檔。**
 - **ConfettiSwiftUI 一堆 `Undefined symbol` + Linker failed** — SPM 套件依賴原本只存在手改的 `.pbxproj`，`project.yml` 沒宣告 → xcodegen 重生時丟掉。**修法：`project.yml` 加 `packages: ConfettiSwiftUI {url, from: 1.1.0}` + target `dependencies: -package`。**（教訓：所有 SPM 依賴必須寫進 project.yml）
-- **Bundle ID `com.m2k.*` → 正式 `app.rexcode.*`** — 對照 `IDENTIFIERS.md` 改 `project.yml`：prefix `app.rexcode`、主 App `app.rexcode.sunnywalker`、測試 `app.rexcode.sunnywalkertests`、`DEVELOPMENT_TEAM NYH8MKW8NH`。
-- **`No Account for Team` / `No profiles`** — macOS 系統 Apple 帳號 ≠ Xcode 開發者帳號。解法：Xcode → Settings → Accounts 加入 **WU, RUEI-YI** 的 Apple ID（team RUEI YI WU / NYH8MKW8NH，Admin），自動簽署即可抓到 `app.rexcode.sunnywalker` 的 profile（App ID + AlarmKit entitlement 已註冊在此 team）。
+- **Bundle ID `com.m2k.*` → 正式 `app.rexcode.*`** — 對照 `IDENTIFIERS.md` 改 `project.yml`：prefix `app.rexcode`、主 App `app.rexcode.sunnywalker`、測試 `app.rexcode.sunnywalkertests`、`DEVELOPMENT_TEAM NHY8MKW8NH`。
+- **`No Account for Team` / `No profiles`** — macOS 系統 Apple 帳號 ≠ Xcode 開發者帳號。解法：Xcode → Settings → Accounts 加入 **WU, RUEI-YI** 的 Apple ID（team RUEI YI WU / NHY8MKW8NH，Admin），自動簽署即可抓到 `app.rexcode.sunnywalker` 的 profile（App ID + AlarmKit entitlement 已註冊在此 team）。
 
 **檔案：** `project.yml`、刪除 `Views/Settings/SettingsView.swift`
 
@@ -200,7 +200,7 @@ AlarmKitService: synced C12E4278-… — 18:43, weekdays=[2, 3, 4, 5, 6]
 - **跨環境一致性：** 行為取決於 AlarmKit 是否授權。授權 → AlarmKit（黑標=alert）+ 前景 watcher；未授權 → UNNotification fallback + 背景聆聽。改鬧鐘行為前先確認當下走哪條。
 - **AlarmKit 佔麥克風是硬限制：** 響鈴中無法做任何語音辨識（已用 `AVAudioSession interruption BEGAN` 證實）。聲控只能在 App 前景的 AlarmRingView 跑。
 - **前景 watcher 的 ≤1s 黑標閃爍：** 可接受；若要完全消除需研究能否 pre-empt AlarmKit 排程 fire。
-- **簽署只在有 WU RUEI-YI 帳號的 Xcode 上可簽** `app.rexcode.sunnywalker`（Bundle ID 全球唯一綁 team NYH8MKW8NH）。
+- **簽署只在有 WU RUEI-YI 帳號的 Xcode 上可簽** `app.rexcode.sunnywalker`（Bundle ID 全球唯一綁 team NHY8MKW8NH）。
 - **上架前：** `MARKETING_VERSION` 目前 `0.1.0`，IDENTIFIERS 寫上架版本 `1.0`，archive 前記得改。
 - **stop 按鈕文案：** AlarmKit alert 的「我起床了」鈕在非貪睡模式現在只是關閉，語意略有落差，未來可依模式給不同文案。
 

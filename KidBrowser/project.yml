@@ -1,0 +1,48 @@
+name: KidBrowser
+options:
+  bundleIdPrefix: app.rexcode
+  deploymentTarget:
+    iOS: "16.0"        # WKWebView + SwiftUI 用不到新 API，16 即可涵蓋大多數 iPhone/iPad
+  developmentLanguage: zh-Hant
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: 1
+    # 若要用自己的開發者帳號簽章，把下面這行的 team id 換成你的（SunnyWalker 用的是 NHY8MKW8NH）
+    DEVELOPMENT_TEAM: NHY8MKW8NH
+
+targets:
+  KidBrowser:
+    type: application
+    platform: iOS
+    sources:
+      - path: KidBrowser
+    info:
+      path: KidBrowser/Info.plist
+      properties:
+        CFBundleDisplayName: 小小瀏覽器
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen:
+          UIColorName: ""
+        # 讓家長能在「檔案 app」裡看到並編輯 sites.json
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        # iPad 多工：universal app 要嘛宣告四個方向、要嘛要求全螢幕。這裡用全螢幕最單純。
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.rexcode.kidbrowser
+        TARGETED_DEVICE_FAMILY: "1,2"   # 1=iPhone 2=iPad
+        GENERATE_INFOPLIST_FILE: NO

@@ -96,7 +96,7 @@ guard !AlarmKitService.shared.isAuthorized else { return }
 
 ### 🔴 DEVELOPMENT_TEAM 未設（無法 Archive）
 
-Xcode → Target SunnyWalker → Signing & Capabilities → Team = `NYH8MKW8NH`
+Xcode → Target SunnyWalker → Signing & Capabilities → Team = `NHY8MKW8NH`
 
 ### 🔴 Info.plist 缺 ITSAppUsesNonExemptEncryption
 
@@ -138,7 +138,7 @@ Xcode → Target SunnyWalker → Signing & Capabilities → Team = `NYH8MKW8NH`
 1. Swift IP 重命名（GhibliColors→SunnyColors 等，16 檔）
 2. totoro_breath.caf → sunny_wake.caf
 3. App Icon 重出 RGB 無 alpha
-4. Xcode Signing DEVELOPMENT_TEAM = NYH8MKW8NH
+4. Xcode Signing DEVELOPMENT_TEAM = NHY8MKW8NH
 5. Info.plist 補 ITSAppUsesNonExemptEncryption + iPad orientation
 6. scheduleTestAlarm() 用 #if DEBUG 包
 7. Apple Developer Portal 申請 AlarmKit entitlement

@@ -11,7 +11,7 @@
 | 項目 | 值 |
 |---|---|
 | Apple Developer 帳號 | RUEI YI WU |
-| Team ID 🔒 | `NYH8MKW8NH` |
+| Team ID 🔒 | `NHY8MKW8NH` |
 | 角色 | Admin |
 | 設定來源 | `project.pbxproj` → `DEVELOPMENT_TEAM` |
 
@@ -70,7 +70,7 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 
 AppleKit entitlement 申請資料：
 - Bundle ID：`app.rexcode.sunnywalker`
-- Team ID：`NYH8MKW8NH`
+- Team ID：`NHY8MKW8NH`
 - 用途：見 `docs/for_Apple_store/ALARMKIT_REQUEST.md`（或直接貼申請文字）
 
 ---
