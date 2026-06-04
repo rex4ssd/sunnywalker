@@ -33,6 +33,12 @@ targets:
       path: SunnyWalker/Info.plist
       properties:
         CFBundleDisplayName: SunnyWalker
+        # Version strings MUST live here — xcodegen regenerates Info.plist from info.properties and
+        # resets anything not listed to its own defaults (that's why a hand-edited CFBundleVersion
+        # kept reverting to "1"). Build number is driven by CURRENT_PROJECT_VERSION so re-uploads
+        # only need that one number bumped (App Store rejects duplicate build numbers).
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: ""
         NSAlarmKitUsageDescription: "SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。"
@@ -51,10 +57,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.rexcode.sunnywalker
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
-        # ★ Wire the entitlements file so com.apple.developer.alarmkit is actually signed into
-        # the binary. Without this, the file is just listed in the project and AlarmKit's
-        # requestAuthorization() fails with Code=1 (the "彈訊息但不響" / 關屏不響 root cause).
-        CODE_SIGN_ENTITLEMENTS: SunnyWalker/SunnyWalker.entitlements
+        # NOTE: AlarmKit needs NO entitlement — only NSAlarmKitUsageDescription (in info.properties).
+        # com.apple.developer.alarmkit is NOT a real/provisionable entitlement (absent from the
+        # Developer Portal); putting it in an entitlements file makes automatic signing fail with
+        # "Entitlement com.apple.developer.alarmkit not found and could not be included in profile".
+        # So we deliberately do NOT set CODE_SIGN_ENTITLEMENTS.
   SunnyWalkerTests:
     type: bundle.unit-test
     platform: iOS

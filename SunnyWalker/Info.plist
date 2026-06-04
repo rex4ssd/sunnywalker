@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。</string>
 	<key>NSMicrophoneUsageDescription</key>

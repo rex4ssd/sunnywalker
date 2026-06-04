@@ -137,11 +137,14 @@ private struct AlarmCard: View {
         .animation(.easeInOut(duration: 0.2), value: alarm.isEnabled)
         .onChange(of: alarm.isEnabled) { _, _ in
             Task {
-                // v1 path — keep until AlarmKit device-verified
+                // UNNotification fallback (no-op while AlarmKit is authorized — it stands down).
                 try? await AlarmScheduler.shared.syncWithModel(alarm: alarm)
-                // v2 path — sync or remove from AlarmKit
-                try? await AlarmKitService.shared.syncAlarm(alarm)
             }
+            // AlarmKit is NOT armed here on purpose: it is managed centrally by HomeView's
+            // foreground/background switch (enterForegroundAlarmMode / enterBackgroundAlarmMode),
+            // which re-arms from the current model whenever the app leaves the foreground. Arming
+            // here would put a system alarm back while the app is on-screen → banner + voice-stop
+            // breaks. The toggle just updates the SwiftData model.
         }
         .sheet(isPresented: $showingEditor, onDismiss: {
             // Re-sync after editing in case saveAlarm() had a timing issue.

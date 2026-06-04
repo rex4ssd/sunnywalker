@@ -305,8 +305,12 @@ struct AlarmEditorView: View {
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
 
         Task {
+            // UNNotification fallback (no-op while AlarmKit is authorized — it stands down).
             try? await AlarmScheduler.shared.schedule(alarm: tempAlarm)
-            try? await AlarmKitService.shared.syncAlarm(tempAlarm)
+            // AlarmKit is NOT armed here: it's managed by HomeView's foreground/background switch,
+            // which re-arms from the current model when the app leaves the foreground. Arming a
+            // system alarm while the editor (foreground) is open would make AlarmKit fire a banner
+            // and background the app at the alarm time instead of the in-app ring.
             await MainActor.run {
                 isSaving = false
                 dismiss()

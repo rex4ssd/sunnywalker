@@ -2,12 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- AlarmKit — the only App Store-compliant way to ring on the lock screen / through Silent
-	     mode without keeping a background audio session alive. Requires the App ID to have the
-	     AlarmKit capability enabled and the provisioning profile to include it (developer.apple.com
-	     → Identifiers → app.rexcode.sunnywalker). If signing fails or requestAuthorization() throws
-	     Code=1, the entitlement is not in the signed profile yet. -->
-	<key>com.apple.developer.alarmkit</key>
-	<true/>
+	<!-- Intentionally EMPTY. AlarmKit does NOT use an entitlement — it is gated only by the
+	     NSAlarmKitUsageDescription key in Info.plist plus runtime AlarmManager.requestAuthorization().
+	     `com.apple.developer.alarmkit` is NOT a real/provisionable entitlement (it does not exist in
+	     the Developer Portal). Adding it here breaks automatic signing with:
+	       "Entitlement com.apple.developer.alarmkit not found and could not be included in profile."
+	     This file is left empty (and unreferenced by CODE_SIGN_ENTITLEMENTS) on purpose. -->
 </dict>
 </plist>

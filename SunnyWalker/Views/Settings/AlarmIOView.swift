@@ -75,10 +75,10 @@ struct AlarmIOView: View {
             alarm.isEnabled = p.isEnabled
             modelContext.insert(alarm)
             if p.isEnabled {
-                // Sync both paths (v1 notifications + v2 AlarmKit) to match the rest of the app.
+                // UNNotification fallback only (no-op while AlarmKit authorized). AlarmKit is armed
+                // centrally by HomeView's foreground/background switch from the current model.
                 Task { [alarm] in
                     try? await AlarmScheduler.shared.schedule(alarm: alarm)
-                    try? await AlarmKitService.shared.syncAlarm(alarm)
                 }
             }
         }

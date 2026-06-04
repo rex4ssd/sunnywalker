@@ -120,11 +120,13 @@ struct HomeView: View {
         .task(id: alarms.count) {
             guard !alarms.isEmpty else { return }
             if AlarmKitService.shared.isAuthorized {
-                await AlarmKitService.shared.syncAllEnabled(alarms)
+                // We launched in the FOREGROUND → in-app ring mode: cancel AlarmKit so its system
+                // alarm UI can't appear (it would background the app and kill voice-stop). AlarmKit
+                // is re-armed the moment we leave the foreground (scenePhase handler) so the
+                // lock-screen / silent-mode alarm still works. See enterForegroundAlarmMode().
+                enterForegroundAlarmMode()
             } else {
-                // AlarmKit entitlement still pending → the UNNotification path is what actually
-                // fires. Re-arm it on every launch so (a) alarms stay scheduled and (b) the custom
-                // sound self-heal in AlarmScheduler.schedule applies to pre-existing recordings.
+                // AlarmKit unavailable → UNNotification fallback fires; re-arm on every launch.
                 print("🏠 HomeView.task: AlarmKit NOT authorized — re-arming \(alarms.count) alarms on UNNotification path")
                 for alarm in alarms {
                     try? await AlarmScheduler.shared.syncWithModel(alarm: alarm)
@@ -155,12 +157,18 @@ struct HomeView: View {
             if newPhase == .active {
                 print("🏠 HomeView.scenePhase → active; re-checking pending alarm")
                 checkPendingAlarm()
+                // Foreground = in-app ring. Cancel AlarmKit so it can't fire its system banner while
+                // we're on-screen (which would background us and break voice-stop). The 1s
+                // foregroundAlarmTick presents AlarmRingView when an alarm is due.
+                enterForegroundAlarmMode()
                 // Smart background-listening: only start mic when app is in foreground.
                 // If enabled AND no alarm is ringing, restart the session now.
                 if settings.backgroundListeningEnabled && firingAlarm == nil {
                     syncBackgroundListening()
                 }
             } else {
+                // Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm works.
+                enterBackgroundAlarmMode()
                 // Screen locked / app backgrounded → ALWAYS release the mic + audio session.
                 // Two reasons:
                 //   (1) Battery / App Store: no always-on orange mic dot overnight.
@@ -266,18 +274,52 @@ struct HomeView: View {
             guard firesToday else { continue }
             let key = "\(a.id.uuidString)-\(day)-\(h)-\(m)"
             guard key != lastForegroundFiredKey else { continue }   // fire once per minute
-            lastForegroundFiredKey = key
-            print("🏠 HomeView.checkForegroundAlarm: \(a.id.uuidString.prefix(8)) DUE & app on-screen → in-app AlarmRingView + stop AlarmKit (free the mic)")
-            // Stop the AlarmKit ring (frees the audio session for the in-app mic), then re-arm so the
-            // recurring alarm still fires next time the app is backgrounded.
-            let alarm = a
-            Task { @MainActor in
-                try? await AlarmKitService.shared.stop(id: alarm.id)
-                try? await AlarmKitService.shared.syncAlarm(alarm)
+            // If the user already ✕-dismissed this (non-strict) alarm on the Lock Screen via
+            // DismissAlarmIntent, DO NOT re-pop the in-app ring just because the app was opened
+            // during the same minute. Without this, dismissing on the lock screen and then opening
+            // SunnyWalker forces a second dismissal in-app. (checkPendingAlarm already honours this;
+            // the per-second foreground tick was the leak.)
+            if recentlyDismissedPeek(a.id) {
+                lastForegroundFiredKey = key   // mark this minute handled so we stop re-checking it
+                print("🏠 HomeView.checkForegroundAlarm: \(a.id.uuidString.prefix(8)) was ✕-dismissed — not opening ring")
+                continue
             }
+            lastForegroundFiredKey = key
+            print("🏠 HomeView.checkForegroundAlarm: \(a.id.uuidString.prefix(8)) DUE & app on-screen → in-app AlarmRingView")
+            // AlarmKit was already cancelled when we entered the foreground (enterForegroundAlarmMode),
+            // so there is no system alarm to stop here — just present the in-app ring. As a belt-and-
+            // braces guard against a race (alarm fired the instant we became active), stop it too.
+            let alarm = a
+            Task { @MainActor in try? await AlarmKitService.shared.stop(id: alarm.id) }
             bedSide.disable()      // restore brightness if bed-side dimmed the screen
             firingAlarm = alarm    // presents AlarmRingView (.fullScreenCover)
             break
+        }
+    }
+
+    /// Foreground = in-app ring. Cancel every AlarmKit alarm so its system UI can't appear while the
+    /// app is on-screen (AlarmKit always presents a banner AND backgrounds the app when it fires —
+    /// confirmed via scenePhase logs — which makes the in-app voice-stop impossible). The per-second
+    /// `foregroundAlarmTick` presents AlarmRingView when an alarm is due. AlarmKit is re-armed by
+    /// `enterBackgroundAlarmMode()` the moment we leave the foreground, so lock-screen / silent-mode
+    /// ringing is unaffected. (Trade-off: a force-quit straight from the foreground could leave a brief
+    /// window with AlarmKit unarmed; the normal "phone locked overnight" path always re-arms.)
+    private func enterForegroundAlarmMode() {
+        guard AlarmKitService.shared.isAuthorized else { return }
+        let snapshot = alarms
+        Task { @MainActor in
+            for a in snapshot { try? await AlarmKitService.shared.cancel(id: a.id) }
+            print("🏠 foreground mode: AlarmKit cancelled — in-app ring active for \(snapshot.count) alarms")
+        }
+    }
+
+    /// Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm fires.
+    private func enterBackgroundAlarmMode() {
+        guard AlarmKitService.shared.isAuthorized else { return }
+        let snapshot = alarms
+        Task { @MainActor in
+            await AlarmKitService.shared.syncAllEnabled(snapshot)
+            print("🏠 background mode: AlarmKit re-armed for lock/silent")
         }
     }
 
@@ -290,6 +332,15 @@ struct HomeView: View {
         d.removeObject(forKey: "dismissedAlarmID")
         d.removeObject(forKey: "dismissedAlarmAt")
         return elapsed < 30   // fresh dismissal → suppress this one route
+    }
+
+    /// Non-consuming peek of the ✕-dismiss marker — used by the per-second foreground tick.
+    /// (The consuming `wasRecentlyDismissed` would clear it on the first tick and let the next
+    /// tick re-open the ring.) 60s window comfortably covers the whole due-minute.
+    private func recentlyDismissedPeek(_ id: UUID) -> Bool {
+        let d = UserDefaults.standard
+        guard d.string(forKey: "dismissedAlarmID") == id.uuidString else { return false }
+        return Date().timeIntervalSince1970 - d.double(forKey: "dismissedAlarmAt") < 60
     }
 
     /// Push the current alarm list to the background-listening manager and start/stop it to match
