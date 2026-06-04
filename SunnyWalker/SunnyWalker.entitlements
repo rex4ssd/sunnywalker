@@ -2,14 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- AlarmKit entitlement — requires Apple Developer Portal approval before use.
-	     Steps to re-enable:
-	       1. Apply at developer.apple.com for com.apple.developer.alarmkit
-	       2. Wait for Apple approval (days to weeks)
-	       3. Uncomment the two lines below and rebuild
-	     Until approved, app uses UNNotification fallback (AlarmScheduler.swift).
+	<!-- AlarmKit — the only App Store-compliant way to ring on the lock screen / through Silent
+	     mode without keeping a background audio session alive. Requires the App ID to have the
+	     AlarmKit capability enabled and the provisioning profile to include it (developer.apple.com
+	     → Identifiers → app.rexcode.sunnywalker). If signing fails or requestAuthorization() throws
+	     Code=1, the entitlement is not in the signed profile yet. -->
 	<key>com.apple.developer.alarmkit</key>
 	<true/>
-	-->
 </dict>
 </plist>

@@ -51,7 +51,7 @@ struct AlarmRingView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                SunnyAvatar()
+                MascotView()
                     .rotationEffect(.degrees(reduceMotion ? 0 : (wiggle ? 10 : -10)), anchor: .bottom)
                     .animation(
                         reduceMotion ? .none : .easeInOut(duration: 0.35).repeatForever(autoreverses: true),
@@ -240,21 +240,27 @@ struct AlarmRingView: View {
     }
 
     private func handleAutoStop() {
-        print("⏰ AlarmRingView: ring duration reached — auto-stopping + releasing screen")
+        print("⏰ AlarmRingView: ring duration reached — gentle 'aww' then close")
         speechTask?.cancel()
         ringTimeoutTask?.cancel()
-        audioPlayer.stop()
         speechRecognizer.stop()
-        // Allow the device to sleep so the screen turns off and stops draining battery.
-        UIApplication.shared.isIdleTimerDisabled = false
-        dismiss()
+        // 😞 Didn't manage to wake in time → play the gentle sad chime (replaces the alarm loop),
+        // let it ring out, then release the screen and close.
+        playEffectOnce("timeout_sad.wav")
+        ringTimeoutTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.6))
+            audioPlayer.stop()
+            UIApplication.shared.isIdleTimerDisabled = false
+            dismiss()
+        }
     }
 
     private func handleWakeUp(dismissMethod: String = "voice") {
         speechTask?.cancel()
         ringTimeoutTask?.cancel()
-        audioPlayer.stop()
         speechRecognizer.stop()
+        // 🎉 Success! Celebrate with the cheer chime (this also stops the looping alarm audio).
+        playEffectOnce("success_cheer.wav")
         // Log wake record for parent history
         if let alarm {
             let record = WakeRecord(
@@ -270,6 +276,19 @@ struct AlarmRingView: View {
     }
 
     // MARK: - Audio
+
+    /// Play a one-shot sound effect (cheer / aww) through the alarm's AudioPlayer. Reusing the same
+    /// player automatically stops the looping alarm audio first. If the file is somehow missing we
+    /// still silence the alarm so it can't keep ringing after a success/timeout.
+    private func playEffectOnce(_ resource: String) {
+        guard let url = Bundle.main.url(forResource: resource, withExtension: nil) else {
+            print("🔊 AlarmRingView: effect \(resource) NOT FOUND in bundle — silencing alarm instead")
+            audioPlayer.stop()
+            return
+        }
+        print("🔊 AlarmRingView: playing effect \(resource)")
+        audioPlayer.play(url: url, loop: false, gapSeconds: 0)
+    }
 
     private func startAudio() {
         // Read gap from AppSettings here so AudioPlayer stays dependency-free.

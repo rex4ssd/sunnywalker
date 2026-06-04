@@ -5,6 +5,20 @@ import AVFoundation
 import Speech
 @testable import SunnyWalker
 
+private func withAppLanguage<T>(_ language: AppLanguage, _ body: () throws -> T) rethrows -> T {
+    let defaults = UserDefaults.standard
+    let previous = defaults.string(forKey: LocalizationManager.storageKey)
+    defaults.set(language.rawValue, forKey: LocalizationManager.storageKey)
+    defer {
+        if let previous {
+            defaults.set(previous, forKey: LocalizationManager.storageKey)
+        } else {
+            defaults.removeObject(forKey: LocalizationManager.storageKey)
+        }
+    }
+    return try body()
+}
+
 final class SunnyWalkerSmokeTests: XCTestCase {
     func testTrueIsTrue() {
         XCTAssertTrue(true, "bootstrap smoke test")
@@ -34,8 +48,10 @@ final class AlarmModelTests: XCTestCase {
     }
 
     func testWeekdaySymbolsMonToFri() {
-        let alarm = Alarm(label: "Test", hour: 7, minute: 30)
-        XCTAssertEqual(alarm.weekdaySymbols, ["一", "二", "三", "四", "五"])
+        withAppLanguage(.traditionalChinese) {
+            let alarm = Alarm(label: "Test", hour: 7, minute: 30)
+            XCTAssertEqual(alarm.weekdaySymbols, ["一", "二", "三", "四", "五"])
+        }
     }
 }
 
@@ -96,7 +112,7 @@ final class AlarmSoundTests: XCTestCase {
 
     func testSoundFileNameDefault() {
         let alarm = Alarm(label: "Morning", hour: 7, minute: 0)
-        XCTAssertEqual(alarm.soundFileName, "totoro_breath.caf")
+        XCTAssertEqual(alarm.soundFileName, "sunny_wake.caf")
     }
 
     func testSoundFileNameIsMutable() {
@@ -441,17 +457,21 @@ final class WakeRecordTests: XCTestCase {
     }
 
     func testWakeRecordResponseFormattedSeconds() {
-        let fired = Date()
-        let record = WakeRecord(alarmID: UUID(), alarmLabel: "A", firedAt: fired,
-                                wokeAt: fired.addingTimeInterval(30))
-        XCTAssertEqual(record.responseFormatted, "30 秒")
+        withAppLanguage(.traditionalChinese) {
+            let fired = Date()
+            let record = WakeRecord(alarmID: UUID(), alarmLabel: "A", firedAt: fired,
+                                    wokeAt: fired.addingTimeInterval(30))
+            XCTAssertEqual(record.responseFormatted, "30 秒")
+        }
     }
 
     func testWakeRecordResponseFormattedMinutes() {
-        let fired = Date()
-        let record = WakeRecord(alarmID: UUID(), alarmLabel: "B", firedAt: fired,
-                                wokeAt: fired.addingTimeInterval(90))
-        XCTAssertEqual(record.responseFormatted, "1 分 30 秒")
+        withAppLanguage(.traditionalChinese) {
+            let fired = Date()
+            let record = WakeRecord(alarmID: UUID(), alarmLabel: "B", firedAt: fired,
+                                    wokeAt: fired.addingTimeInterval(90))
+            XCTAssertEqual(record.responseFormatted, "1 分 30 秒")
+        }
     }
 
     func testWakeRecordDefaultDismissMethod() {

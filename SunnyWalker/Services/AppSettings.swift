@@ -3,6 +3,29 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Mascot theme
+
+enum MascotTheme: String, CaseIterable, Identifiable {
+    case sunny    = "sunny"
+    case giraffe  = "giraffe"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .sunny:   return "小晴（灰色精靈）"
+        case .giraffe: return "長頸鹿"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .sunny:   return "moon.stars.fill"
+        case .giraffe: return "pawprint.fill"
+        }
+    }
+}
+
 /// App-wide preferences stored in UserDefaults.
 /// Observed by views via @ObservedObject so UI reacts to changes live.
 @MainActor
@@ -23,6 +46,8 @@ final class AppSettings: ObservableObject {
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
         self.alarmRingDurationMinutes = UserDefaults.standard.object(forKey: "alarmRingDurationMinutes") as? Int ?? 5
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
+        let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
+        self.mascotTheme = MascotTheme(rawValue: raw) ?? .sunny
     }
 
     // MARK: - Time format
@@ -55,5 +80,11 @@ final class AppSettings: ObservableObject {
     /// ⚠️ Keeps the orange mic indicator lit and uses the mic continuously; off by default.
     @Published var backgroundListeningEnabled: Bool {
         didSet { UserDefaults.standard.set(backgroundListeningEnabled, forKey: "backgroundListeningEnabled") }
+    }
+
+    // MARK: - Mascot theme
+
+    @Published var mascotTheme: MascotTheme {
+        didSet { UserDefaults.standard.set(mascotTheme.rawValue, forKey: "mascotTheme") }
     }
 }

@@ -53,6 +53,7 @@ struct AlarmSnapshot {
     let isEnabled: Bool
     let recordingName: String
     let soundFileName: String
+    let requireAppToStop: Bool   // 貪睡模式: strict alarms must be completed in-app, not voice-stopped from background
 }
 
 /// Keeps a microphone session alive — started in the foreground — so the alarm can ring AND be
@@ -86,6 +87,9 @@ final class BackgroundListeningManager: ObservableObject {
 
     private var alarms: [AlarmSnapshot] = []
     private var lastFiredKey: String?
+    private var firingAlarmID: UUID?     // which alarm is currently ringing in the background
+    private var firingStrict = false     // is that alarm 貪睡(strict)? strict can't be voice-stopped here
+    private var interruptionObserver: NSObjectProtocol?   // diagnostic: catches AlarmKit seizing the audio session
 
     private var keywords: [String] {
         SunnyLocalization.code == "en"
@@ -104,6 +108,16 @@ final class BackgroundListeningManager: ObservableObject {
     func start() {
         guard AppSettings.shared.backgroundListeningEnabled else { return }
         guard !isActive else { return }
+        // Confirmed on-device: while an AlarmKit alarm rings it SEIZES the audio session
+        // (AVAudioSession interruption BEGAN), so background speech recognition gets no audio — and
+        // in the foreground we defer to AlarmRingView anyway. Keeping an always-on mic here would
+        // just drain battery (and keep the orange dot lit) for something that can never work.
+        // So only run on the UNNotification fallback path, where the app owns the session and CAN
+        // listen while ringing (AlarmKit unauthorized).
+        guard !AlarmKitService.shared.isAuthorized else {
+            print("🟠 BGListen: AlarmKit authorized — it owns the mic while ringing, so background voice-stop can't work; NOT starting (saves battery). Voice 'I'm awake' is foreground-only, inside AlarmRingView.")
+            return
+        }
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
@@ -124,6 +138,25 @@ final class BackgroundListeningManager: ObservableObject {
             try engine.start()
             isActive = true
             startTimer()
+
+            // DIAGNOSTIC: when an AlarmKit alarm rings it plays high-priority audio that typically
+            // interrupts our session — which would explain why background voice-stop never matches.
+            // Log began/ended so a real-device test can confirm; best-effort resume on .ended.
+            interruptionObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+            ) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt ?? 99
+                let type = AVAudioSession.InterruptionType(rawValue: raw)
+                if type == .began {
+                    print("🟠 BGListen: ⚠️ AVAudioSession interruption BEGAN — mic seized (likely AlarmKit alarm). Recognition gets NO audio until it ENDS.")
+                } else if type == .ended {
+                    print("🟠 BGListen: AVAudioSession interruption ENDED — attempting to resume mic")
+                    Task { @MainActor in self?.resumeAfterInterruption() }
+                } else {
+                    print("🟠 BGListen: AVAudioSession interruption (raw=\(raw))")
+                }
+            }
+
             print("🟠 BGListen: started — mic session kept alive (orange dot on)")
         } catch {
             print("🟠 BGListen: start FAILED — \(error.localizedDescription)")
@@ -135,11 +168,29 @@ final class BackgroundListeningManager: ObservableObject {
         guard isActive else { return }
         stopFiring(reason: "manager stop")
         tickTimer?.invalidate(); tickTimer = nil
+        if let obs = interruptionObserver {
+            NotificationCenter.default.removeObserver(obs)
+            interruptionObserver = nil
+        }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         isActive = false
         print("🟠 BGListen: stopped — mic released")
+    }
+
+    /// Best-effort recovery after an audio-session interruption (e.g. an AlarmKit alarm finishing).
+    /// Also diagnostic: the log tells us whether we ever get the session back while still firing.
+    private func resumeAfterInterruption() {
+        guard isActive else { return }
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            if !engine.isRunning { engine.prepare(); try engine.start() }
+            if isFiring { restartRecognition() }
+            print("🟠 BGListen: resumed after interruption (engineRunning=\(engine.isRunning), firing=\(isFiring))")
+        } catch {
+            print("🟠 BGListen: resume after interruption FAILED — \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Timer / due-alarm detection
@@ -183,8 +234,15 @@ final class BackgroundListeningManager: ObservableObject {
         }
         guard !isFiring else { return }
         isFiring = true
-        print("🟠 BGListen: FIRING \(a.id.uuidString.prefix(8)) in background — play sound + listen")
-        playAlarmSound(a)
+        firingAlarmID = a.id
+        firingStrict = a.requireAppToStop
+        // When AlarmKit is authorized it is ALREADY ringing this alarm (the black banner sound).
+        // Playing our own AVAudioPlayer on top would double the sound — so in that case we only
+        // LISTEN, and on a wake-word match we stop the AlarmKit alarm itself. We only play our own
+        // sound on the UNNotification fallback path (AlarmKit unauthorized).
+        let alarmKitRinging = AlarmKitService.shared.isAuthorized
+        print("🟠 BGListen: FIRING \(a.id.uuidString.prefix(8)) in background — strict=\(firingStrict) alarmKitRinging=\(alarmKitRinging) engineRunning=\(engine.isRunning) → \(alarmKitRinging ? "listen-only" : "play+listen")")
+        if !alarmKitRinging { playAlarmSound(a) }
         startRecognition()
         let minutes = max(1, min(10, AppSettings.shared.alarmRingDurationMinutes))
         autoStopTask = Task { [weak self] in
@@ -194,14 +252,33 @@ final class BackgroundListeningManager: ObservableObject {
         }
     }
 
-    private func stopFiring(reason: String) {
+    /// Stop the background ring.
+    /// - Parameter stopSystemAlarm: when true, ALSO stop the underlying AlarmKit alarm (and suppress
+    ///   the wake-screen route). Used when the child voice-stops or the ring times out. It is FALSE
+    ///   for the "manager stop" handoff, where AlarmRingView is taking over and owns the alarm.
+    private func stopFiring(reason: String, stopSystemAlarm: Bool = false) {
         guard isFiring else { return }
-        print("🟠 BGListen: stop firing (\(reason))")
+        print("🟠 BGListen: stop firing (\(reason)) stopSystemAlarm=\(stopSystemAlarm)")
         isFiring = false
         autoStopTask?.cancel(); autoStopTask = nil
         alarmPlayer?.stop(); alarmPlayer = nil
         recogTask?.cancel(); recogTask = nil
         request?.endAudio(); request = nil
+
+        if stopSystemAlarm, let id = firingAlarmID {
+            // ⚠️ This is the bridge that was missing: a wake-word match only silenced our own player
+            // and left the AlarmKit alarm (the black banner) ringing — so the child had to open the
+            // app for AlarmRingView to stop it. Now we stop the system alarm directly and stamp the
+            // same suppression HomeView honours, so opening the app later doesn't re-pop the ring.
+            Task { try? await AlarmKitService.shared.stop(id: id) }
+            let d = UserDefaults.standard
+            d.removeObject(forKey: "pendingAlarmKitAlarmID")
+            d.set(id.uuidString, forKey: "dismissedAlarmID")
+            d.set(Date().timeIntervalSince1970, forKey: "dismissedAlarmAt")
+            print("🟠 BGListen: stopped AlarmKit alarm \(id.uuidString.prefix(8)) + suppressed routing")
+        }
+        firingAlarmID = nil
+        firingStrict = false
         // Engine + session stay alive for the next alarm.
     }
 
@@ -245,15 +322,24 @@ final class BackgroundListeningManager: ObservableObject {
         recogTask = recognizer.recognitionTask(with: req) { [weak self] result, error in
             DispatchQueue.main.async {
                 guard let self, self.isFiring else { return }
-                if error != nil {
+                if let error {
                     // On-device recognition tops out around a minute — just restart while ringing.
+                    print("🟠 BGListen: recognition error — \(error.localizedDescription) → restart")
                     self.restartRecognition()
                     return
                 }
-                guard let text = result?.bestTranscription.formattedString else { return }
+                guard let text = result?.bestTranscription.formattedString, !text.isEmpty else { return }
+                // DIAGNOSTIC: proves the mic is actually delivering audio while firing. If this NEVER
+                // prints during an AlarmKit black banner but DOES print in-app, the session is seized.
+                print("🟠 BGListen: heard → \"\(text)\"")
                 if self.keywords.contains(where: { text.contains($0) }) {
-                    print("🟠 BGListen: MATCHED wake word in background → stopping alarm")
-                    self.stopFiring(reason: "voice match")
+                    if self.firingStrict {
+                        // 貪睡(strict): child must complete the task in-app — don't voice-stop here.
+                        print("🟠 BGListen: MATCHED but alarm is STRICT(貪睡) — ignoring; child must open app")
+                    } else {
+                        print("🟠 BGListen: MATCHED wake word in background → stopping AlarmKit alarm")
+                        self.stopFiring(reason: "voice match", stopSystemAlarm: true)
+                    }
                 }
             }
         }

@@ -25,6 +25,7 @@ struct AlarmEditorView: View {
     @State private var requireAppToStop = false
     @State private var isSaving = false
     @State private var showingRecording = false
+    @State private var showingRingtonePicker = false
 
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
@@ -63,6 +64,7 @@ struct AlarmEditorView: View {
                         labelField
                         weekdayPicker
                         taskTypePicker
+                        ringtoneRow
                         if selectedTaskType == .voice {
                             recordingRow
                         }
@@ -175,6 +177,51 @@ struct AlarmEditorView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+        }
+    }
+
+    /// Localized key for the currently selected ringtone file.
+    /// Returned as LocalizedStringKey so SwiftUI's Text() resolves via xcstrings.
+    private var ringtoneDisplayKey: LocalizedStringKey {
+        switch tempAlarm.soundFileName {
+        case "sunny_wake.caf":  return "☀️ 陽光起床"
+        case "leaf_rustle.caf": return "🍃 樹葉沙沙"
+        default:
+            if tempAlarm.soundFileName.hasPrefix("alarm_") { return "🎤 自錄鈴聲" }
+            return LocalizedStringKey(tempAlarm.soundFileName)
+        }
+    }
+
+    private var ringtoneRow: some View {
+        WatercolorCard {
+            Button { showingRingtonePicker = true } label: {
+                HStack(spacing: 14) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 20))
+                        .foregroundStyle(SunnyColors.wheatGold)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("鈴聲")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        Text(ringtoneDisplayKey)
+                            .font(SunnyFonts.caption(14))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showingRingtonePicker) {
+            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName) { chosen in
+                tempAlarm.soundFileName = chosen
+            }
         }
     }
 

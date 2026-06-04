@@ -129,7 +129,55 @@ AlarmKitService: synced C12E4278-… — 18:43, weekdays=[2, 3, 4, 5, 6]
 
 ---
 
-## 變更檔案清單
+## 5. 聲控停鬧鐘的最終解法（前景 in-app）
+
+**症狀演進：** 背景聲控（黑標時說話）一直無效，要進主 App 才停得了。
+
+**Root cause（真機 log 證實）：** AlarmKit 鬧鐘響鈴時會 **`AVAudioSession interruption BEGAN`**，把整個 App 的音訊 session 搶走——前景後景都收不到音，`SFSpeechRecognizer` 拿不到 buffer。所以「鬧鐘響的當下用聲音關掉它」在 AlarmKit 下根本做不到。舊版會成功是因為當時走 UNNotification、由 App 自己播聲音、App 握 session 才能邊響邊聽。
+
+**解法：app 在前景時，改由 App 自己叫起床畫面，不靠 AlarmKit 黑標。** `HomeView` 新增每秒前景 watcher `checkForegroundAlarm()`（`guard scenePhase == .active && firingAlarm == nil && AlarmKitService.isAuthorized`，`lastForegroundFiredKey` 防一分鐘內重複）。鬧鐘分鐘一到 → `firingAlarm = alarm` 直接叫 `AlarmRingView`（App 自己的 `AVAudioEngine`/`SpeechRecognizer` 握 session → 爸媽錄音播放 + 聲控都能跑），並 `AlarmKitService.stop(id:)` 停掉系統黑標、`syncAlarm` 重排下次。AlarmRingView 聲控有 5 秒暖機，剛好避開中斷窗口。**真機已驗證：前景說「我起床了」可成功停鬧鐘。**
+
+**Caveat：** AlarmKit 跟 watcher 瞄準同一分鐘，可能有 ≤1 秒黑標/聲音閃一下才被全螢幕蓋掉（無法真正 pre-empt AlarmKit 的排程 fire）。
+
+**檔案：** `Views/Home/HomeView.swift`
+
+---
+
+## 6. 背景聆聽：誠實化 + 省電關閉
+
+既然證實 AlarmKit 授權下背景聲控不可能（session 被搶 + 前景已交給 AlarmRingView），讓 `BackgroundListeningManager.start()` 在 `AlarmKitService.isAuthorized` 時**直接不啟動麥克風**——避免常亮橘點、整夜耗電、kids app 送審紅旗。背景聆聽只保留給 UNNotification fallback（App 自己握 session 才聽得到）。設定頁「背景聆聽模式」說明文案也改成誠實版：「聲控只在 App 起床畫面（前景）有效；系統鬧鐘響時佔麥克風，背景/黑標無法聲控，請按 ✕。」
+
+**定位調整：** 聲控「我起床了」自此定位為 **in-app 起床確認**（播慶祝、記 WakeRecord），不是停鬧鐘的手段。
+
+**檔案：** `Services/AudioRecorder.swift`、`Localizable.xcstrings`
+
+---
+
+## 7. 起床結果音效（慶祝 / 安慰）
+
+- **成功**（`handleWakeUp`，聲控／按鈕／fallback 皆會）→ 播 `success_cheer.wav`（🎉 上行 C 大調琶音 + shimmer + sparkle），接著跳獎勵畫面。
+- **逾時沒辨識成功**（`handleAutoStop`，響鈴到 `alarmRingDurationMinutes`）→ 播 `timeout_sad.wav`（😞 溫和下行 D-B-G，music-box 風、刻意不嚇小孩），響完約 1.6 秒再關畫面。
+
+共用 `playEffectOnce(_:)`：用既有 `audioPlayer.play(url:loop:false)` 一次性播放（reuse 同一 player 會自動停掉 looping 鬧鐘音）；找不到檔則 fallback `audioPlayer.stop()` 確保鬧鐘不會繼續響。音檔用 numpy 合成 44.1k/16-bit mono WAV，放 `SunnyWalker/Theme/Sounds/`。
+
+**檔案：** `Views/Alarm/AlarmRingView.swift`、新增 `Theme/Sounds/success_cheer.wav`、`Theme/Sounds/timeout_sad.wav`
+
+---
+
+## 8. Build / 簽署修復
+
+跑 `xcodegen generate`（為了把新音檔收進 bundle）後連環爆，逐一解決：
+
+- **`Ambiguous use of 'init()'`（HomeView + SettingsView）** — 有兩個 `struct SettingsView`：舊的 standalone `Views/Settings/SettingsView.swift`（缺床邊/響鈴時長/背景聆聽）與現役內嵌在 `HomeView.swift` 的。xcodegen 重掃把 orphan 檔加回 target → 同名 type → `SettingsView()` ambiguous。**修法：刪除 standalone 檔。**
+- **ConfettiSwiftUI 一堆 `Undefined symbol` + Linker failed** — SPM 套件依賴原本只存在手改的 `.pbxproj`，`project.yml` 沒宣告 → xcodegen 重生時丟掉。**修法：`project.yml` 加 `packages: ConfettiSwiftUI {url, from: 1.1.0}` + target `dependencies: -package`。**（教訓：所有 SPM 依賴必須寫進 project.yml）
+- **Bundle ID `com.m2k.*` → 正式 `app.rexcode.*`** — 對照 `IDENTIFIERS.md` 改 `project.yml`：prefix `app.rexcode`、主 App `app.rexcode.sunnywalker`、測試 `app.rexcode.sunnywalkertests`、`DEVELOPMENT_TEAM NYH8MKW8NH`。
+- **`No Account for Team` / `No profiles`** — macOS 系統 Apple 帳號 ≠ Xcode 開發者帳號。解法：Xcode → Settings → Accounts 加入 **WU, RUEI-YI** 的 Apple ID（team RUEI YI WU / NYH8MKW8NH，Admin），自動簽署即可抓到 `app.rexcode.sunnywalker` 的 profile（App ID + AlarmKit entitlement 已註冊在此 team）。
+
+**檔案：** `project.yml`、刪除 `Views/Settings/SettingsView.swift`
+
+---
+
+## 變更檔案清單（整輪）
 
 | 檔案 | 內容 |
 |---|---|
@@ -137,16 +185,24 @@ AlarmKitService: synced C12E4278-… — 18:43, weekdays=[2, 3, 4, 5, 6]
 | `Intents/StopAlarmIntent.swift` | StopAlarmIntent 加 log；新增背景型 `DismissAlarmIntent` |
 | `Services/AlarmKitService.swift` | `syncAlarm` 依貪睡模式擇一綁 stopIntent |
 | `SunnyWalkerApp.swift` | 註冊 `SUNNYWAKE_ALARM` category；`didReceive` 攔 ✕ + 主緒化 + log；`markAlarmDismissed` |
-| `Views/Home/HomeView.swift` | `wasRecentlyDismissed` 抑制；onReceive / checkPendingAlarm 路由前檢查 |
-| `Localizable.xcstrings` | 補 6 個 key 的英文翻譯 |
+| `Views/Home/HomeView.swift` | ✕ 抑制路由；**前景 watcher `checkForegroundAlarm`**；AlarmSnapshot 帶 strict |
+| `Services/AudioRecorder.swift` | AlarmKit 授權時不啟動背景麥克風；中斷 observer 診斷 log；strict 不背景聲控 |
+| `Views/Alarm/AlarmRingView.swift` | 成功 cheer / 逾時 sad 音效（`playEffectOnce`） |
+| `Localizable.xcstrings` | 補 6 個 key 英文翻譯；背景聆聽說明改誠實版 |
+| `Theme/Sounds/success_cheer.wav` ＋ `timeout_sad.wav` | 新增起床結果音效 |
+| `project.yml` | Bundle ID → app.rexcode；team；**宣告 ConfettiSwiftUI 套件** |
+| ~~`Views/Settings/SettingsView.swift`~~ | **已刪除**（重複 type） |
 
 ---
 
 ## 已知風險 / 後續
 
-- **跨環境一致性：** 行為現在取決於 AlarmKit 是否授權。授權 → 走 AlarmKit（黑標=alert，stopIntent 決定行為）；未授權 → 走 UNNotification fallback。改鬧鐘相關行為前，務必先確認當下走哪條路徑。
-- **`IntentModes.background` 待長期觀察：** 真機已驗證非貪睡 ✕ 不開 App，但 AlarmKit 對背景型 stopIntent 的行為仍建議持續關注（OS 版本更新時複測）。
-- **stop 按鈕文案：** AlarmKit alert 的 stop 鈕文字為「我起床了」，非貪睡模式現在只是關閉，文案語意略有落差，未來可考慮依模式給不同文案。
+- **跨環境一致性：** 行為取決於 AlarmKit 是否授權。授權 → AlarmKit（黑標=alert）+ 前景 watcher；未授權 → UNNotification fallback + 背景聆聽。改鬧鐘行為前先確認當下走哪條。
+- **AlarmKit 佔麥克風是硬限制：** 響鈴中無法做任何語音辨識（已用 `AVAudioSession interruption BEGAN` 證實）。聲控只能在 App 前景的 AlarmRingView 跑。
+- **前景 watcher 的 ≤1s 黑標閃爍：** 可接受；若要完全消除需研究能否 pre-empt AlarmKit 排程 fire。
+- **簽署只在有 WU RUEI-YI 帳號的 Xcode 上可簽** `app.rexcode.sunnywalker`（Bundle ID 全球唯一綁 team NYH8MKW8NH）。
+- **上架前：** `MARKETING_VERSION` 目前 `0.1.0`，IDENTIFIERS 寫上架版本 `1.0`，archive 前記得改。
+- **stop 按鈕文案：** AlarmKit alert 的「我起床了」鈕在非貪睡模式現在只是關閉，語意略有落差，未來可依模式給不同文案。
 
 ---
 

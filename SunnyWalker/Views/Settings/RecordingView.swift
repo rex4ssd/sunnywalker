@@ -42,7 +42,7 @@ struct RecordingView: View {
     // MARK: - Subviews
 
     private var totoroSection: some View {
-        SunnyAvatar()
+        MascotView()
     }
 
     private var statusSection: some View {

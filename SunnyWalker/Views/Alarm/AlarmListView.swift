@@ -97,7 +97,6 @@ struct AlarmListView: View {
 private struct AlarmCard: View {
     @Bindable var alarm: Alarm
     var onDelete: () -> Void = {}
-    @State private var showingRecording = false
     @State private var showingEditor = false
     @ObservedObject private var settings = AppSettings.shared
 
@@ -127,17 +126,6 @@ private struct AlarmCard: View {
                 .contentShape(Rectangle())
                 .onTapGesture { showingEditor = true }   // tap time/label → edit alarm
                 Spacer()
-                Button {
-                    showingRecording = true
-                } label: {
-                    Image(systemName: alarm.recordingName.isEmpty ? "mic" : "mic.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(alarm.recordingName.isEmpty
-                            ? SunnyColors.sunnyGray.opacity(0.6)
-                            : SunnyColors.leafFresh)
-                }
-                .padding(.trailing, 14)
-                .accessibilityLabel(alarm.recordingName.isEmpty ? "錄製起床音" : "已錄製起床音")
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
                     .labelsHidden()
@@ -154,9 +142,6 @@ private struct AlarmCard: View {
                 // v2 path — sync or remove from AlarmKit
                 try? await AlarmKitService.shared.syncAlarm(alarm)
             }
-        }
-        .sheet(isPresented: $showingRecording) {
-            RecordingView(alarm: alarm)
         }
         .sheet(isPresented: $showingEditor, onDismiss: {
             // Re-sync after editing in case saveAlarm() had a timing issue.

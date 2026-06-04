@@ -1,6 +1,6 @@
 name: SunnyWalker
 options:
-  bundleIdPrefix: com.m2k
+  bundleIdPrefix: app.rexcode   # App Store identity (team NYH8MKW8NH / WU RUEI-YI) — see docs/for_Apple_store/IDENTIFIERS.md
   deploymentTarget:
     iOS: "26.0"   # AlarmKit requires iOS 26 (pbxproj already targets 26.0; keep xcodegen in sync)
   developmentLanguage: zh-Hant
@@ -11,18 +11,31 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: 1
     ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEVELOPMENT_TEAM: NYH8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
+
+# Swift Package dependencies. MUST be declared here — otherwise `xcodegen generate`
+# regenerates the .pbxproj without them and the build fails with undefined symbols
+# (e.g. ConfettiSwiftUI's confettiCannon / ConfettiType).
+packages:
+  ConfettiSwiftUI:
+    url: https://github.com/simibac/ConfettiSwiftUI
+    from: 1.1.0
+
 targets:
   SunnyWalker:
     type: application
     platform: iOS
     sources:
       - path: SunnyWalker
+    dependencies:
+      - package: ConfettiSwiftUI
     info:
       path: SunnyWalker/Info.plist
       properties:
         CFBundleDisplayName: SunnyWalker
         UILaunchScreen:
           UIColorName: ""
+        NSAlarmKitUsageDescription: "SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。"
         NSMicrophoneUsageDescription: "鬧鐘需要聽你說「我起床了」才能關掉喔！聲音只留在這台 iPhone 裡，不會傳出去。"
         NSSpeechRecognitionUsageDescription: "用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。"
         UIBackgroundModes:
@@ -31,9 +44,13 @@ targets:
           - UIInterfaceOrientationPortrait
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.m2k.sunnywalker
+        PRODUCT_BUNDLE_IDENTIFIER: app.rexcode.sunnywalker
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
+        # ★ Wire the entitlements file so com.apple.developer.alarmkit is actually signed into
+        # the binary. Without this, the file is just listed in the project and AlarmKit's
+        # requestAuthorization() fails with Code=1 (the "彈訊息但不響" / 關屏不響 root cause).
+        CODE_SIGN_ENTITLEMENTS: SunnyWalker/SunnyWalker.entitlements
   SunnyWalkerTests:
     type: bundle.unit-test
     platform: iOS
@@ -44,3 +61,4 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.rexcode.sunnywalkertests

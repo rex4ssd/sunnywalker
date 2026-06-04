@@ -39,7 +39,7 @@ struct RewardView: View {
                     .opacity(textOpacity)
 
                 // Mascot: bounces in + perpetual happy wiggle (suppressed with reduceMotion)
-                SunnyAvatar()
+                MascotView()
                     .scaleEffect(reduceMotion ? 1.0 : totoroScale)
                     .rotationEffect(
                         .degrees(reduceMotion ? 0 : (wiggle ? 12 : -12)),

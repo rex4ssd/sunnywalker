@@ -4,6 +4,9 @@
     "·" : {
 
     },
+    "%@" : {
+
+    },
     "%@ s" : {
 
     },
@@ -40,10 +43,64 @@
         }
       }
     },
+    "☀️ 陽光起床" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "☀️ Sunny Wake"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "☀️ 陽光起床"
+          }
+        }
+      }
+    },
     "🌙" : {
 
     },
     "🌿" : {
+
+    },
+    "🍃 樹葉沙沙" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🍃 Rustling Leaves"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🍃 樹葉沙沙"
+          }
+        }
+      }
+    },
+    "🎤 自錄鈴聲" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎤 My Recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎤 自錄鈴聲"
+          }
+        }
+      }
+    },
+    "🎵" : {
 
     },
     "🔐" : {
@@ -167,6 +224,53 @@
         }
       }
     },
+    "clips_counter %@ %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "clips_counter %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "clips_counter %lld %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used %lld / %lld recordings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clips_counter %lld %lld"
+          }
+        }
+      }
+    },
+    "clips_limit_reached %@" : {
+
+    },
+    "clips_limit_reached %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limit reached (max %lld)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clips_limit_reached %lld"
+          }
+        }
+      }
+    },
     "import_result %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -236,6 +340,7 @@
       }
     },
     "language_section" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -417,6 +522,23 @@
         }
       }
     },
+    "recording_launch_failed %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to start: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "recording_launch_failed %@"
+          }
+        }
+      }
+    },
     "response_label %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -585,6 +707,39 @@
         }
       }
     },
+    "不打勾：在通知上按 ✕ 就能關掉鬧鐘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unchecked: tap ✕ on the notification to turn off the alarm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不打勾：在通知上按 ✕ 就能關掉鬧鐘"
+          }
+        }
+      }
+    },
+    "主題" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theme"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主題"
+          }
+        }
+      }
+    },
     "二" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -652,6 +807,23 @@
         }
       }
     },
+    "停止" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止"
+          }
+        }
+      }
+    },
     "停止錄音 ⏹" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -665,6 +837,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "停止錄音 ⏹"
+          }
+        }
+      }
+    },
+    "儲存" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存"
           }
         }
       }
@@ -699,6 +888,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存鬧鐘"
+          }
+        }
+      }
+    },
+    "內建音效" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in Sounds"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建音效"
           }
         }
       }
@@ -750,6 +955,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除"
+          }
+        }
+      }
+    },
+    "刪除這段錄音？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this recording?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除這段錄音？"
           }
         }
       }
@@ -856,6 +1078,23 @@
         }
       }
     },
+    "吉祥物" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mascot"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "吉祥物"
+          }
+        }
+      }
+    },
     "哪個選項的星期排列順序是正確的？" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -903,6 +1142,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "完成"
+          }
+        }
+      }
+    },
+    "小晴（吉祥物）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny (Mascot)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小晴（吉祥物）"
+          }
+        }
+      }
+    },
+    "小晴（灰色精靈）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny (Forest Spirit)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小晴（灰色精靈）"
           }
         }
       }
@@ -1008,6 +1281,23 @@
         }
       }
     },
+    "幫這段錄音取個名字" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name this recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幫這段錄音取個名字"
+          }
+        }
+      }
+    },
     "從剪貼簿貼上" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1021,6 +1311,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "從剪貼簿貼上"
+          }
+        }
+      }
+    },
+    "我的錄音" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Recordings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我的錄音"
           }
         }
       }
@@ -1059,6 +1365,23 @@
         }
       }
     },
+    "打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checked: the child must open the app and complete the wake task — dismissing the notification keeps the alarm going"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來"
+          }
+        }
+      }
+    },
     "按這裡起床 🌟" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1089,6 +1412,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按鈕關 👆"
+          }
+        }
+      }
+    },
+    "新增錄音" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增錄音"
+          }
+        }
+      }
+    },
+    "新增錄音 🎙️" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Recording 🎙️"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增錄音 🎙️"
           }
         }
       }
@@ -1160,6 +1516,23 @@
         }
       }
     },
+    "樹葉沙沙" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rustling Leaves"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "樹葉沙沙"
+          }
+        }
+      }
+    },
     "正在聆聽" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1210,6 +1583,22 @@
         }
       }
     },
+    "準備好了嗎？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready to record?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "準備好了嗎？"
+          }
+        }
+      }
+    },
     "編輯" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1244,6 +1633,39 @@
         }
       }
     },
+    "聲控模式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice Control"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聲控模式"
+          }
+        }
+      }
+    },
+    "聲控關鬧鐘（實驗）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice Control (Experimental)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聲控關鬧鐘（實驗）"
+          }
+        }
+      }
+    },
     "背景聆聽模式" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1262,6 +1684,7 @@
       }
     },
     "背景聲控（實驗）" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1307,6 +1730,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "覆蓋現有鬧鐘"
+          }
+        }
+      }
+    },
+    "試聽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試聽"
           }
         }
       }
@@ -1438,6 +1878,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請說一段起床的話給孩子聽"
+          }
+        }
+      }
+    },
+    "貪睡模式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snooze Mode"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "貪睡模式"
           }
         }
       }
@@ -1646,6 +2103,23 @@
         }
       }
     },
+    "選擇鈴聲 🎵" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Ringtone 🎵"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇鈴聲 🎵"
+          }
+        }
+      }
+    },
     "還沒有起床紀錄" : {
       "localizations" : {
         "en" : {
@@ -1658,6 +2132,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "還沒有起床紀錄"
+          }
+        }
+      }
+    },
+    "還沒有錄音\n點下面的按鈕錄一段吧！" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No recordings yet\nTap the button below to add one!"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有錄音\n點下面的按鈕錄一段吧！"
           }
         }
       }
@@ -1711,6 +2201,38 @@
         }
       }
     },
+    "鈴聲" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ringtone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鈴聲"
+          }
+        }
+      }
+    },
+    "錄好了！✅" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded! ✅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄好了！✅"
+          }
+        }
+      }
+    },
     "錄製起床音" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1744,6 +2266,23 @@
         }
       }
     },
+    "錄音中（實驗）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording (Experimental)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄音中（實驗）"
+          }
+        }
+      }
+    },
     "錄音喚醒語" : {
       "localizations" : {
         "en" : {
@@ -1772,6 +2311,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錄音完成 ✅"
+          }
+        }
+      }
+    },
+    "錄音管理" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordings"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄音管理"
+          }
+        }
+      }
+    },
+    "錄音管理 🎙️" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordings 🎙️"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄音管理 🎙️"
+          }
+        }
+      }
+    },
+    "長頸鹿" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giraffe"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長頸鹿"
+          }
+        }
+      }
+    },
+    "長頸鹿（吉祥物）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giraffe (Mascot)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長頸鹿（吉祥物）"
           }
         }
       }
@@ -1810,18 +2417,39 @@
         }
       }
     },
-    "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。" : {
+    "開啟後，App 在前台時保持麥克風（橘點亮），可說「我起床了」關鬧鐘。切到背景或螢幕關閉會自動停止麥克風，不整夜佔用；此時鬧鐘改由系統通知橫幅發出鈴聲。" : {
+
+    },
+    "開啟後，App 在畫面最前台時保持麥克風（橘點亮），說「我起床了」就能關鬧鐘。切到背景或螢幕關閉，麥克風會自動停止，不會整夜佔用。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When on, the app keeps the microphone running in the background (the orange dot stays lit at the top) so your child can stop the alarm by voice even with the screen off or locked. Uses more battery and keeps the mic on all night — only enable it if you need it."
+            "value" : "When on, the app keeps the mic open (orange dot) while in the foreground — say \"I'm awake\" to dismiss the alarm. The mic stops automatically when backgrounded or the screen turns off."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。"
+            "value" : "開啟後，App 在畫面最前台時保持麥克風（橘點亮），說「我起床了」就能關鬧鐘。切到背景或螢幕關閉，麥克風會自動停止，不會整夜佔用。"
+          }
+        }
+      }
+    },
+    "開啟後，App 會在背景持續開著麥克風（螢幕上方橘點長亮），讓小孩在關螢幕/鎖屏時也能用聲音關鬧鐘。較耗電，且整夜使用麥克風——確定需要再開。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice \"I'm awake\" only works inside the in-app wake screen (foreground). While the system alarm is ringing it holds the microphone, so the alarm can't be voice-stopped in the background or from the banner — use the ✕ to dismiss. The mic stays off while the system alarm handles alarms, to save battery."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聲控「我起床了」只在打開 App 的起床畫面（前景）才有效。系統鬧鐘響鈴時會佔用麥克風，無法在背景或黑標通知上用聲音關鬧鐘——請按 ✕ 關閉。系統鬧鐘啟用時本功能不會開啟麥克風，以節省電力。"
           }
         }
       }
@@ -1872,6 +2500,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關鬧鐘方式"
+          }
+        }
+      }
+    },
+    "陽光起床" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny Wake"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "陽光起床"
           }
         }
       }
