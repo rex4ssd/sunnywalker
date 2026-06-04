@@ -25,22 +25,40 @@ final class AudioPlayer: NSObject, ObservableObject {
         looping         = loop
         self.gapSeconds = gapSeconds
         currentVolume   = 1.0
+        activateSessionAndStart(url: url, attempt: 0)
+    }
 
-        // ⚠️ Configure the shared audio session ONCE here — never in the per-loop restart.
-        // The old code re-set .playback + setActive(true) inside startOnce on EVERY loop, which
-        // clobbered the .playAndRecord session SpeechRecognizer installs → the mic was silently
-        // torn down the instant the recording looped, so voice-stop stopped working a few seconds
-        // in. The loop now only re-creates the AVAudioPlayer and never touches the session, so the
-        // .playback → .playAndRecord transition (when speech starts) happens once and sticks.
+    /// Configure the .playback session and start playing — with retry.
+    /// ⚠️ Why retry: when the in-app alarm screen opens from a foreground AlarmKit alarm,
+    /// HomeView.checkForegroundAlarm stops the AlarmKit alarm and immediately calls play(). AlarmKit
+    /// releases its audio session ASYNCHRONOUSLY, so the first setActive(true) loses the race and
+    /// throws "Session activation failed" (status 560557684) → the ring would play for ~0 s and go
+    /// silent (only the visual prompt remains). Retrying ~every 0.3 s grabs the session the instant
+    /// AlarmKit lets go, so the ring keeps sounding.
+    /// We configure the session ONCE (not per loop): the per-loop restart in startOnce never touches
+    /// the session, so SpeechRecognizer's later switch to .playAndRecord (for "我起床了") sticks.
+    private func activateSessionAndStart(url: URL, attempt: Int) {
+        guard currentURL == url else { return }   // a newer play()/stop() superseded this request
+        let session = AVAudioSession.sharedInstance()
         do {
-            let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default, options: [])
             try session.setActive(true)
-            print("🔊 AudioPlayer.play: session=.playback active, url=\(url.lastPathComponent) loop=\(loop) gap=\(gapSeconds)s")
+            print("🔊 AudioPlayer.play: session=.playback active (attempt \(attempt)), url=\(url.lastPathComponent) loop=\(looping) gap=\(gapSeconds)s")
+            startOnce(url: url)
         } catch {
-            print("🔊 AudioPlayer.play: session setup FAILED — \(error.localizedDescription)")
+            print("🔊 AudioPlayer.play: session activation FAILED (attempt \(attempt)) — \(error.localizedDescription)")
+            if attempt < 8 {
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .milliseconds(300))
+                    self?.activateSessionAndStart(url: url, attempt: attempt + 1)
+                }
+            } else {
+                // Last resort: try to play anyway — the session is often usable even when activation
+                // reported an error, and a silent alarm is worse than a best-effort one.
+                print("🔊 AudioPlayer.play: activation still failing after \(attempt) tries — playing anyway")
+                startOnce(url: url)
+            }
         }
-        startOnce(url: url)
     }
 
     /// Duck volume to `fraction` (0–1) while speech recognition listens.

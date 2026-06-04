@@ -51,6 +51,14 @@ final class AlarmKitService {
             let state = try await manager.requestAuthorization()
             _isAuthorized = state == .authorized
             print("AlarmKitService: authorization → \(state), isAuthorized=\(_isAuthorized)")
+            if _isAuthorized {
+                // AlarmKit now owns ringing. The always-on keep-alive mic (BackgroundListeningManager)
+                // is both redundant and keeps the orange mic dot lit all the time. Kill it — from here
+                // the ONLY mic we open is inside AlarmRingView during an actual ring (foreground
+                // voice-stop). This also closes the cold-launch window where BGListen started before
+                // authorization resolved (isAuthorized was still false in HomeView.task).
+                BackgroundListeningManager.shared.stop()
+            }
             return _isAuthorized
         } catch {
             _isAuthorized = false

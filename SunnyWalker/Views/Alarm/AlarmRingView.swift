@@ -306,12 +306,37 @@ struct AlarmRingView: View {
             print("🎬 AlarmRingView.startAudio: recording \(recordingName).m4a MISSING — falling back")
         }
 
-        let soundName = alarm?.soundFileName ?? "sunny_wake.caf"
-        if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) {
-            print("🎬 AlarmRingView.startAudio: playing bundled \(soundName)")
-            audioPlayer.play(url: bundleURL, loop: true, gapSeconds: gap)
+        // The alarm's chosen sound CAF. Exported custom alarm sounds live in Library/Sounds
+        // (that's where AlarmSoundExporter writes them for the notification path) — NOT the bundle.
+        // startAudio used to only check the bundle, so a custom CAF was never found and the ring
+        // screen fell through to "skipping playback" → SILENT wake screen (the child has no idea
+        // the alarm went off). Check Library/Sounds first, then the bundle.
+        let soundName = alarm?.soundFileName ?? ""
+        if !soundName.isEmpty {
+            let soundsDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Sounds", isDirectory: true)
+            let cafURL = soundsDir.appendingPathComponent(soundName)
+            if FileManager.default.fileExists(atPath: cafURL.path) {
+                print("🎬 AlarmRingView.startAudio: playing Library/Sounds \(soundName)")
+                audioPlayer.play(url: cafURL, loop: true, gapSeconds: gap)
+                return
+            }
+            if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) {
+                print("🎬 AlarmRingView.startAudio: playing bundled \(soundName)")
+                audioPlayer.play(url: bundleURL, loop: true, gapSeconds: gap)
+                return
+            }
+            print("🎬 AlarmRingView.startAudio: \(soundName) not in Library/Sounds or bundle — using default tone")
+        }
+
+        // Guaranteed fallback: the bundled default alarm tone. NEVER leave the wake screen silent —
+        // the child must hear the alarm. It loops with `gap` seconds of silence between plays, and
+        // the speech cycle ducks it to 0.12 while listening, so "我起床了" recognition still works.
+        if let defaultURL = Bundle.main.url(forResource: "sunny_wake.caf", withExtension: nil) {
+            print("🎬 AlarmRingView.startAudio: playing DEFAULT sunny_wake.caf")
+            audioPlayer.play(url: defaultURL, loop: true, gapSeconds: gap)
         } else {
-            print("🎬 AlarmRingView.startAudio: no recording and no bundled sound — skipping playback")
+            print("🎬 AlarmRingView.startAudio: ⚠️ default sunny_wake.caf missing from bundle — no audio")
         }
     }
 }

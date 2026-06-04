@@ -1,3 +1,7 @@
+> ⚠️ **2026-06-04 已更新 — 結論已改採 AlarmKit。** 下方分析（Tier 1/2、Apple 限制）仍正確，但「已實作：背景聆聽常駐」一節的方向已**不採用於 shipping**：AlarmKit 啟用授權後，`BackgroundListeningManager` 會被完全停用（麥克風只在前景 `AlarmRingView` 響鈴時開）。因此「雙重響鈴」「橘點整夜長亮的 App Review 風險」等 caveat 在 AlarmKit shipping 設定下**已不成立**。另注意：`UIBackgroundModes: audio` 在 AlarmKit 設定下已無用途，建議移除以免 2.5.4 退件。現況詳見 `fix_report_2026-06-04_enable_alarmkit.md`。
+
+---
+
 # 設計筆記：背景/鎖屏聲控停鬧鐘可行性
 
 **日期：** 2026-06-03

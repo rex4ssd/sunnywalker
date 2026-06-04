@@ -303,7 +303,10 @@ struct HomeView: View {
             )
         }
         BackgroundListeningManager.shared.updateAlarms(snaps)
-        if settings.backgroundListeningEnabled {
+        // The keep-alive mic is ONLY a fallback for when AlarmKit is unauthorized. When AlarmKit
+        // owns the alarms (normal state), never run it — the mic must open only during an actual
+        // ring (inside AlarmRingView), not sit on all the time (橘點長亮 / App Store reject).
+        if settings.backgroundListeningEnabled && !AlarmKitService.shared.isAuthorized {
             if firingAlarm == nil { BackgroundListeningManager.shared.start() }
         } else {
             BackgroundListeningManager.shared.stop()
