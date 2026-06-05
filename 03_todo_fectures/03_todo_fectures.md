@@ -1,17 +1,21 @@
+# 03_todo_fectures，完成後加 `done-YYYYMMDD_HHMM` 搬到 ## complete, fetures。
 
-# 03_todo_fectures 
-
-> 新功能 / UX polish 收件匣。完成後加 `done-YYYYMMDD_HHMM` 搬到
-> `03_todo_fectures_done.md`。
-
-
-## setting中的Language刪除(首頁已有)
-
-## 家長識別在按setting時出現就好，setting中的所有選項，不需要再出現 
+#bug, setting中，自動停止的時間無效
+![](20260605_225702_9268.png)
 
 
-## 移除app主頁上鬧鐘的麥克風錄音(用 setting中的管理就好)
-![](20260603_232633_2858.png)
+#優化讓錄音檔頁
+ - 錄音檔頁畫，每個檔案，點進取，可重新命名、刪除音檔、看檔案長度 、size、分享到其它app(line之類、或之後的lodeiphone)
+ - 能再加上音檔剪裁嗎，像下圖，支援裁左、裁右，再存檔
+ ![](20260605_163857_0e31.png)
 
 
-## 能再做一個長頸鹿的主題嗎(可以的話在setting中允許設定 )
+
+#再設計幾款可選的style如下:
+![](20260604_174948_85f9.png)
+![](20260604_175100_e540.png)
+
+
+----
+----
+## complete, fetures
