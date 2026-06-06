@@ -137,6 +137,7 @@ struct AlarmRingView: View {
             wiggle = true
             // App is now open for this alarm → stop the strict-mode "貪睡模式" nag notifications.
             if let alarm { AlarmScheduler.shared.cancelNags(alarm.id) }
+            handoffSystemAlarmIfNeeded()
             // Keep the screen awake while the alarm is actively ringing.
             UIApplication.shared.isIdleTimerDisabled = true
             startAudio()
@@ -252,6 +253,13 @@ struct AlarmRingView: View {
             audioPlayer.stop()
             UIApplication.shared.isIdleTimerDisabled = false
             dismiss()
+        }
+    }
+
+    private func handoffSystemAlarmIfNeeded() {
+        guard let alarm else { return }
+        Task { @MainActor in
+            try? await AlarmKitService.shared.stop(id: alarm.id)
         }
     }
 

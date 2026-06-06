@@ -5,13 +5,50 @@ import SwiftData
 
 struct RecordingView: View {
     @Bindable var alarm: Alarm
+    let title: LocalizedStringKey
+    let prompt: LocalizedStringKey
+    let suggestedDisplayName: String
     @Environment(\.dismiss) private var dismiss
     @StateObject private var audioRecorder = AudioRecorder()
     @StateObject private var audioPlayer = AudioPlayer()
     @State private var recordingError: String?
+    @State private var draftDisplayName: String
+
+    init(
+        alarm: Alarm,
+        title: LocalizedStringKey = "錄製自錄鈴聲",
+        prompt: LocalizedStringKey = "請錄一段要播放給孩子聽的鈴聲",
+        suggestedDisplayName: String = "起床囉"
+    ) {
+        self.alarm = alarm
+        self.title = title
+        self.prompt = prompt
+        self.suggestedDisplayName = suggestedDisplayName
+        _draftDisplayName = State(initialValue: alarm.recordingDisplayName ?? suggestedDisplayName)
+    }
 
     private var hasRecording: Bool {
         audioRecorder.currentURL != nil || !alarm.recordingName.isEmpty
+    }
+
+    private var recordingStorageName: String {
+        if !alarm.recordingName.isEmpty { return alarm.recordingName }
+        let cleaned = displayNameForStorage
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .map { char -> Character in
+                if char.isLetter || char.isNumber { return char }
+                return "-"
+            }
+        let collapsed = String(cleaned)
+            .replacingOccurrences(of: "-+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let fallback = collapsed.isEmpty ? "alarm" : collapsed
+        return "\(fallback)-\(alarm.id.uuidString.prefix(8))"
+    }
+
+    private var displayNameForStorage: String {
+        let trimmed = draftDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? suggestedDisplayName : trimmed
     }
 
     var body: some View {
@@ -27,7 +64,7 @@ struct RecordingView: View {
                 }
                 .padding(.horizontal, 32)
             }
-            .navigationTitle("錄製起床音")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -56,11 +93,25 @@ struct RecordingView: View {
                     .font(SunnyFonts.title(24))
                     .foregroundStyle(SunnyColors.forestDeep)
             } else {
-                Text("請說一段起床的話給孩子聽")
+                Text(prompt)
                     .font(SunnyFonts.title(22))
                     .foregroundStyle(SunnyColors.nightIndigo)
                     .multilineTextAlignment(.center)
             }
+            Text(L("預設檔名：%@", suggestedDisplayName))
+                .font(SunnyFonts.caption(13))
+                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                .multilineTextAlignment(.center)
+            TextField("自錄鈴聲名稱", text: $draftDisplayName)
+                .font(SunnyFonts.caption(15))
+                .foregroundStyle(SunnyColors.nightIndigo)
+                .tint(SunnyColors.leafFresh)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.82))
+                )
             if let error = recordingError {
                 Text(error)
                     .font(SunnyFonts.caption())
@@ -96,7 +147,7 @@ struct RecordingView: View {
         recordingError = nil
         audioPlayer.stop()
         do {
-            try audioRecorder.start(named: alarm.id.uuidString)
+            try audioRecorder.start(named: recordingStorageName)
         } catch {
             recordingError = L("recording_failed %@", error.localizedDescription)
         }
@@ -104,12 +155,13 @@ struct RecordingView: View {
 
     private func stopRecording() {
         audioRecorder.stop()
-        alarm.recordingName = alarm.id.uuidString
+        alarm.recordingName = recordingStorageName
+        alarm.recordingDisplayName = displayNameForStorage
         // Export a lock-screen-playable CAF and point the alarm's sound at it, so AlarmKit
         // rings the parent's custom recording immediately — instead of the bundled default
         // tone that only switched to the recording after the app was opened.
         // (Re-scheduling happens in AlarmEditorView.saveAlarm, which reads soundFileName.)
-        if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.id.uuidString) {
+        if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: recordingStorageName) {
             alarm.soundFileName = caf
         }
     }
@@ -127,6 +179,6 @@ struct RecordingView: View {
 }
 
 #Preview {
-    RecordingView(alarm: Alarm(label: "上學囉", hour: 7, minute: 30))
+    RecordingView(alarm: Alarm(label: "上學囉", hour: 7, minute: 30), suggestedDisplayName: "上學囉")
         .modelContainer(for: Alarm.self, inMemory: true)
 }

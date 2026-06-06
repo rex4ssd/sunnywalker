@@ -21,10 +21,9 @@ struct AlarmEditorView: View {
     @State private var selectedTime = Date()
     @State private var label = "起床囉"
     @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]
-    @State private var selectedTaskType: AlarmTaskType = .voice
+    @State private var selectedTaskType: AlarmTaskType = .button
     @State private var requireAppToStop = false
     @State private var isSaving = false
-    @State private var showingRecording = false
     @State private var showingRingtonePicker = false
 
     private let weekdayLabels: [(Int, String)] = [
@@ -42,15 +41,15 @@ struct AlarmEditorView: View {
             _selectedTime    = State(initialValue: t)
             _label           = State(initialValue: a.label)
             _selectedWeekdays = State(initialValue: Set(a.weekdays))
-            _selectedTaskType = State(initialValue: a.effectiveTaskType)
+            _selectedTaskType = State(initialValue: a.recordingName.isEmpty ? .button : a.effectiveTaskType)
             _requireAppToStop = State(initialValue: a.effectiveRequireAppToStop)
         } else {
             // Create mode
-            _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0))
+            _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
             _selectedTime     = State(initialValue: Date())
             _label            = State(initialValue: "起床囉")
             _selectedWeekdays = State(initialValue: [2, 3, 4, 5, 6])
-            _selectedTaskType = State(initialValue: .voice)
+            _selectedTaskType = State(initialValue: .button)
         }
     }
 
@@ -63,14 +62,15 @@ struct AlarmEditorView: View {
                         timePicker
                         labelField
                         weekdayPicker
-                        taskTypePicker
-                        ringtoneRow
-                        if selectedTaskType == .voice {
-                            recordingRow
-                        }
-                        strictModeRow
+                        dismissMethodCard
+                        ringtoneCard
                     }
                     .padding(24)
+                }
+            }
+            .onChange(of: tempAlarm.recordingName) { _, newValue in
+                if newValue.isEmpty, selectedTaskType == .voice {
+                    selectedTaskType = .button
                 }
             }
             .navigationTitle(isEditing ? "編輯鬧鐘" : "新增鬧鐘")
@@ -158,129 +158,113 @@ struct AlarmEditorView: View {
         }
     }
 
-    private var taskTypePicker: some View {
+    private var voiceDismissAvailable: Bool {
+        !tempAlarm.recordingName.isEmpty
+    }
+
+    private var isVoiceDismissEnabled: Bool {
+        voiceDismissAvailable && selectedTaskType == .voice
+    }
+
+    private var voiceDismissBinding: Binding<Bool> {
+        Binding(
+            get: { isVoiceDismissEnabled },
+            set: { selectedTaskType = $0 ? .voice : .button }
+        )
+    }
+
+    private var dismissMethodCard: some View {
         WatercolorCard {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text("關鬧鐘方式")
                     .font(SunnyFonts.caption())
                     .foregroundStyle(SunnyColors.sunnyGray)
-                Picker("", selection: $selectedTaskType) {
-                    Label("說話關 🎤", systemImage: "mic.fill").tag(AlarmTaskType.voice)
-                    Label("按鈕關 👆", systemImage: "hand.tap.fill").tag(AlarmTaskType.button)
-                }
-                .pickerStyle(.segmented)
-                Text(selectedTaskType == .voice
-                     ? LocalizedStringKey("小朋友說出喚醒語才能關掉鬧鐘")
-                     : LocalizedStringKey("小朋友按按鈕就能關掉鬧鐘，適合年幼寶寶"))
-                    .font(SunnyFonts.caption(13))
-                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-        }
-    }
 
-    /// Localized key for the currently selected ringtone file.
-    /// Returned as LocalizedStringKey so SwiftUI's Text() resolves via xcstrings.
-    private var ringtoneDisplayKey: LocalizedStringKey {
-        switch tempAlarm.soundFileName {
-        case "sunny_wake.caf":  return "☀️ 陽光起床"
-        case "leaf_rustle.caf": return "🍃 樹葉沙沙"
-        default:
-            if tempAlarm.soundFileName.hasPrefix("alarm_") { return "🎤 自錄鈴聲" }
-            return LocalizedStringKey(tempAlarm.soundFileName)
-        }
-    }
-
-    private var ringtoneRow: some View {
-        WatercolorCard {
-            Button { showingRingtonePicker = true } label: {
-                HStack(spacing: 14) {
-                    Image(systemName: "music.note")
-                        .font(.system(size: 20))
-                        .foregroundStyle(SunnyColors.wheatGold)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("鈴聲")
+                Toggle(isOn: voiceDismissBinding) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label("啟用口令關閉", systemImage: "mic.badge.checkmark")
                             .font(SunnyFonts.caption())
-                            .foregroundStyle(SunnyColors.nightIndigo)
-                        Text(ringtoneDisplayKey)
-                            .font(SunnyFonts.caption(14))
-                            .foregroundStyle(SunnyColors.sunnyGray)
+                            .foregroundStyle(voiceDismissAvailable ? SunnyColors.nightIndigo : SunnyColors.sunnyGray)
+                        Text(voiceDismissAvailable
+                             ? LocalizedStringKey("已選自錄鈴聲，可以開啟口令關閉。")
+                             : LocalizedStringKey("先選一個自錄鈴聲，才能開啟口令關閉。"))
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                     }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
-            }
-            .buttonStyle(.plain)
-        }
-        .sheet(isPresented: $showingRingtonePicker) {
-            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName) { chosen in
-                tempAlarm.soundFileName = chosen
-            }
-        }
-    }
-
-    private var recordingRow: some View {
-        WatercolorCard {
-            Button { showingRecording = true } label: {
-                HStack(spacing: 14) {
-                    Image(systemName: tempAlarm.recordingName.isEmpty ? "mic" : "mic.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(
-                            tempAlarm.recordingName.isEmpty
-                                ? SunnyColors.sunnyGray.opacity(0.6)
-                                : SunnyColors.leafFresh
-                        )
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("錄音喚醒語")
-                            .font(SunnyFonts.caption())
-                            .foregroundStyle(SunnyColors.nightIndigo)
-                        Text(tempAlarm.recordingName.isEmpty ? LocalizedStringKey("尚未錄音") : LocalizedStringKey("已錄音 ✅"))
-                            .font(SunnyFonts.caption(14))
-                            .foregroundStyle(
-                                tempAlarm.recordingName.isEmpty
-                                    ? SunnyColors.sunnyGray
-                                    : SunnyColors.forestDeep
-                            )
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
-            }
-            .buttonStyle(.plain)
-        }
-        .sheet(isPresented: $showingRecording) {
-            RecordingView(alarm: tempAlarm)
-        }
-    }
-
-    private var strictModeRow: some View {
-        WatercolorCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Toggle(isOn: $requireAppToStop) {
-                    Label("貪睡模式", systemImage: requireAppToStop ? "bed.double.fill" : "bed.double")
-                        .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.nightIndigo)
                 }
                 .tint(SunnyColors.lanternOrange)
-                Text(requireAppToStop
-                     ? LocalizedStringKey("打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來")
-                     : LocalizedStringKey("不打勾：在通知上按 ✕ 就能關掉鬧鐘"))
-                    .font(SunnyFonts.caption(13))
-                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+                .disabled(!voiceDismissAvailable)
+
+                Divider()
+
+                Toggle(isOn: $requireAppToStop) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label("貪睡模式", systemImage: requireAppToStop ? "bed.double.fill" : "bed.double")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        Text(requireAppToStop
+                             ? LocalizedStringKey("打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來")
+                             : LocalizedStringKey("不打勾：在通知上按 ✕ 就能關掉鬧鐘"))
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                    }
+                }
+                .tint(SunnyColors.lanternOrange)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+        }
+    }
+
+    private var ringtoneDisplayText: Text {
+        switch tempAlarm.soundFileName {
+        case "sunny_wake.caf":
+            return Text("☀️ 陽光起床")
+        case "leaf_rustle.caf":
+            return Text("🍃 樹葉沙沙")
+        default:
+            if tempAlarm.soundFileName.hasPrefix("alarm_"), voiceDismissAvailable {
+                return Text(verbatim: tempAlarm.effectiveRecordingDisplayName)
+            }
+            if tempAlarm.soundFileName.hasPrefix("alarm_") {
+                return Text("🎤 自錄鈴聲")
+            }
+            return Text(LocalizedStringKey(tempAlarm.soundFileName))
+        }
+    }
+
+    private var ringtoneCard: some View {
+        WatercolorCard {
+            VStack(spacing: 0) {
+                Button { showingRingtonePicker = true } label: {
+                    HStack(spacing: 14) {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 20))
+                            .foregroundStyle(SunnyColors.wheatGold)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("鈴聲")
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(SunnyColors.nightIndigo)
+                            ringtoneDisplayText
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                        }
+                        Spacer()
+                        NavigationChevron()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .sheet(isPresented: $showingRingtonePicker) {
+            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName) { chosenSoundFile, chosenRecording in
+                tempAlarm.soundFileName = chosenSoundFile
+                tempAlarm.recordingName = chosenRecording?.baseName ?? ""
+                tempAlarm.recordingDisplayName = chosenRecording?.displayName
+            }
         }
     }
 
@@ -296,7 +280,7 @@ struct AlarmEditorView: View {
         tempAlarm.hour     = comps.hour ?? 7
         tempAlarm.minute   = comps.minute ?? 0
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
-        tempAlarm.taskType = selectedTaskType
+        tempAlarm.taskType = isVoiceDismissEnabled ? .voice : .button
         tempAlarm.requireAppToStop = requireAppToStop
 
         if !isEditing {

@@ -26,6 +26,16 @@ final class VoiceClip {
             .appendingPathComponent(fileName)
     }
 
+    var fileSizeBytes: Int64 {
+        let values = try? recordingsURL.resourceValues(forKeys: [.fileSizeKey])
+        let size = values?.fileSize ?? 0
+        return Int64(size)
+    }
+
+    var formattedFileSize: String {
+        ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
+    }
+
     var formattedDuration: String {
         guard duration > 0 else { return "--:--" }
         let s = Int(duration)

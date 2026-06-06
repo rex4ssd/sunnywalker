@@ -25,6 +25,7 @@ struct VoiceLibraryView: View {
     @StateObject private var player = AudioPlayer()
     @State private var playingID: UUID?
     @State private var showingRecorder = false
+    @State private var selectedClip: VoiceClip?
     @State private var deleteTarget: VoiceClip?
     @State private var showDeleteConfirm = false
 
@@ -83,6 +84,12 @@ struct VoiceLibraryView: View {
                 modelContext.insert(clip)
             }
         }
+        .sheet(item: $selectedClip) { clip in
+            VoiceClipDetailSheet(clip: clip) {
+                deleteClip(clip)
+                selectedClip = nil
+            }
+        }
         .confirmationDialog(
             "刪除這段錄音？",
             isPresented: $showDeleteConfirm,
@@ -117,6 +124,11 @@ struct VoiceLibraryView: View {
                     clip: clip,
                     isPlaying: playingID == clip.id,
                     onPlay: { togglePlay(clip) },
+                    onSelect: {
+                        player.stop()
+                        playingID = nil
+                        selectedClip = clip
+                    },
                     onDelete: { deleteTarget = clip; showDeleteConfirm = true }
                 )
                 .listRowBackground(Color.white.opacity(0.75))
@@ -183,6 +195,7 @@ private struct VoiceClipRow: View {
     let clip: VoiceClip
     let isPlaying: Bool
     let onPlay: () -> Void
+    let onSelect: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -197,31 +210,39 @@ private struct VoiceClipRow: View {
             .buttonStyle(.plain)
 
             // Name + meta
-            VStack(alignment: .leading, spacing: 5) {
-                Text(clip.name)
-                    .font(SunnyFonts.title(16))
-                    .foregroundStyle(SunnyColors.nightIndigo)
-                    .lineLimit(1)
+            Button(action: onSelect) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(clip.name)
+                        .font(SunnyFonts.title(16))
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                        .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    Label(clip.formattedDuration, systemImage: "clock")
-                        .font(SunnyFonts.caption(12))
-                        .foregroundStyle(SunnyColors.sunnyGray)
-                    Text(clip.createdAt, style: .date)
-                        .font(SunnyFonts.caption(12))
-                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
+                    HStack(spacing: 8) {
+                        Label(clip.formattedDuration, systemImage: "clock")
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                        Label(clip.formattedFileSize, systemImage: "externaldrive")
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.78))
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             Spacer()
 
-            // Delete
-            Button(action: onDelete) {
-                Image(systemName: "trash.circle")
-                    .font(.system(size: 26))
-                    .foregroundStyle(SunnyColors.lanternOrange.opacity(0.75))
+            VStack(spacing: 10) {
+                Button(action: onDelete) {
+                    Image(systemName: "trash.circle")
+                        .font(.system(size: 26))
+                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.75))
+                }
+                .buttonStyle(.plain)
+
+                NavigationChevron()
             }
-            .buttonStyle(.plain)
         }
         .padding(.vertical, 6)
     }
@@ -495,6 +516,510 @@ struct VoiceClipRecorderSheet: View {
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Recordings/\(base).m4a")
     }
+}
+
+// MARK: - VoiceClipDetailSheet
+
+private struct VoiceClipDetailSheet: View {
+    @Bindable var clip: VoiceClip
+    let onDelete: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @StateObject private var player = AudioPlayer()
+    @State private var draftName = ""
+    @State private var showingTrimEditor = false
+    @State private var showingDeleteConfirm = false
+
+    private var trimmedName: String {
+        draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var clipExists: Bool {
+        FileManager.default.fileExists(atPath: clip.recordingsURL.path)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                SunnyColors.cloudWhite.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 16) {
+                        WatercolorCard {
+                            VStack(alignment: .leading, spacing: 14) {
+                                Label("錄音名稱", systemImage: "pencil.line")
+                                    .font(SunnyFonts.caption(14))
+                                    .foregroundStyle(SunnyColors.sunnyGray)
+
+                                TextField("幫這段錄音取個名字", text: $draftName)
+                                    .font(SunnyFonts.title(18))
+                                    .foregroundStyle(SunnyColors.nightIndigo)
+                                    .padding(14)
+                                    .background(Color.white.opacity(0.92))
+                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                                Button("儲存名稱") {
+                                    clip.name = trimmedName
+                                    try? modelContext.save()
+                                }
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(trimmedName.isEmpty || trimmedName == clip.name
+                                              ? SunnyColors.sunnyGray
+                                              : SunnyColors.forestDeep)
+                                )
+                                .disabled(trimmedName.isEmpty || trimmedName == clip.name)
+                            }
+                            .padding(18)
+                        }
+
+                        WatercolorCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                detailRow("長度", value: clip.formattedDuration, icon: "clock")
+                                detailRow("大小", value: clip.formattedFileSize, icon: "externaldrive")
+                                detailRow(
+                                    "建立時間",
+                                    value: clip.createdAt.formatted(date: .abbreviated, time: .shortened),
+                                    icon: "calendar"
+                                )
+                                if !clipExists {
+                                    Label("找不到原始音檔", systemImage: "exclamationmark.triangle.fill")
+                                        .font(SunnyFonts.caption(13))
+                                        .foregroundStyle(SunnyColors.lanternOrange)
+                                }
+                            }
+                            .padding(18)
+                        }
+
+                        WatercolorCard {
+                            VStack(spacing: 12) {
+                                Button {
+                                    if player.isPlaying {
+                                        player.stop()
+                                    } else if clipExists {
+                                        player.play(url: clip.recordingsURL, loop: false)
+                                    }
+                                } label: {
+                                    Label(player.isPlaying ? "停止試聽" : "播放錄音", systemImage: player.isPlaying ? "pause.fill" : "play.fill")
+                                        .font(SunnyFonts.caption())
+                                        .foregroundStyle(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(RoundedRectangle(cornerRadius: 16).fill(SunnyColors.skyBlue))
+                                }
+                                .disabled(!clipExists)
+
+                                ShareLink(item: clip.recordingsURL, preview: SharePreview(clip.name)) {
+                                    Label("分享到其他 App", systemImage: "square.and.arrow.up")
+                                        .font(SunnyFonts.caption())
+                                        .foregroundStyle(SunnyColors.nightIndigo)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.84)))
+                                }
+                                .disabled(!clipExists)
+
+                                Button {
+                                    showingTrimEditor = true
+                                } label: {
+                                    Label("裁左 / 裁右", systemImage: "timeline.selection")
+                                        .font(SunnyFonts.caption())
+                                        .foregroundStyle(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(RoundedRectangle(cornerRadius: 16).fill(SunnyColors.lanternOrange))
+                                }
+                                .disabled(!clipExists)
+                            }
+                            .padding(18)
+                        }
+
+                        Button(role: .destructive) {
+                            showingDeleteConfirm = true
+                        } label: {
+                            Label("刪除這段錄音", systemImage: "trash")
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 15)
+                                .background(RoundedRectangle(cornerRadius: 16).fill(SunnyColors.lanternOrange))
+                        }
+                    }
+                    .padding(20)
+                    .padding(.bottom, 24)
+                }
+            }
+            .navigationTitle("錄音詳情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完成") { dismiss() }
+                        .font(SunnyFonts.caption())
+                }
+            }
+        }
+        .onAppear { draftName = clip.name }
+        .onDisappear { player.stop() }
+        .sheet(isPresented: $showingTrimEditor) {
+            VoiceClipTrimSheet(clip: clip)
+        }
+        .confirmationDialog("刪除這段錄音？", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+            Button("刪除", role: .destructive) {
+                player.stop()
+                onDelete()
+                dismiss()
+            }
+            Button("取消", role: .cancel) {}
+        }
+    }
+
+    private func detailRow(_ title: String, value: String, icon: String) -> some View {
+        HStack {
+            Label(title, systemImage: icon)
+                .font(SunnyFonts.caption(14))
+                .foregroundStyle(SunnyColors.sunnyGray)
+            Spacer()
+            Text(value)
+                .font(SunnyFonts.caption(14))
+                .foregroundStyle(SunnyColors.nightIndigo)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+// MARK: - VoiceClipTrimSheet
+
+private struct VoiceClipTrimSheet: View {
+    @Bindable var clip: VoiceClip
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var startTime = 0.0
+    @State private var endTime = 0.0
+    @State private var sourceDuration = 0.0
+    @State private var errorMessage: String?
+    @State private var isSaving = false
+    @State private var previewPlayer: AVAudioPlayer?
+    @State private var previewDebounceTask: Task<Void, Never>?
+    @State private var previewStopTask: Task<Void, Never>?
+    @State private var isPreviewingSelection = false
+
+    private let minimumDuration = 0.5
+
+    private var preservedDuration: Double {
+        max(0, endTime - startTime)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                SunnyColors.cloudWhite.ignoresSafeArea()
+
+                VStack(spacing: 18) {
+                    WatercolorCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Label("保留片段", systemImage: "scissors")
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+
+                            Text("\(formatSeconds(startTime)) - \(formatSeconds(endTime))")
+                                .font(SunnyFonts.title(22))
+                                .foregroundStyle(SunnyColors.nightIndigo)
+
+                            Text("保留長度 \(formatSeconds(preservedDuration))")
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+
+                            Text("調整左右時會自動播放目前保留片段")
+                                .font(SunnyFonts.caption(13))
+                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.85))
+                        }
+                        .padding(18)
+                    }
+
+                    WatercolorCard {
+                        VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("左側裁掉")
+                                        .font(SunnyFonts.caption(14))
+                                    Spacer()
+                                    Text(formatSeconds(startTime))
+                                        .font(SunnyFonts.caption(14))
+                                        .foregroundStyle(SunnyColors.sunnyGray)
+                                }
+                                Slider(
+                                    value: Binding(
+                                        get: { startTime },
+                                        set: { newValue in
+                                            startTime = min(newValue, endTime - minimumDuration)
+                                        }
+                                    ),
+                                    in: 0...max(0, sourceDuration - minimumDuration)
+                                )
+                                .tint(SunnyColors.lanternOrange)
+                            }
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Text("右側保留到")
+                                        .font(SunnyFonts.caption(14))
+                                    Spacer()
+                                    Text(formatSeconds(endTime))
+                                        .font(SunnyFonts.caption(14))
+                                        .foregroundStyle(SunnyColors.sunnyGray)
+                                }
+                                Slider(
+                                    value: Binding(
+                                        get: { endTime },
+                                        set: { newValue in
+                                            endTime = max(newValue, startTime + minimumDuration)
+                                        }
+                                    ),
+                                    in: minimumDuration...max(minimumDuration, sourceDuration)
+                                )
+                                .tint(SunnyColors.forestDeep)
+                            }
+                        }
+                        .padding(18)
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.lanternOrange)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    Button {
+                        if isPreviewingSelection {
+                            stopPreviewPlayback()
+                        } else {
+                            playSelectionPreview()
+                        }
+                    } label: {
+                        Label(isPreviewingSelection ? "停止預聽" : "重播保留片段", systemImage: isPreviewingSelection ? "stop.fill" : "play.fill")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(SunnyColors.skyBlue)
+                            )
+                    }
+
+                    Button {
+                        Task { await saveTrim() }
+                    } label: {
+                        HStack {
+                            if isSaving { ProgressView() }
+                            Text(isSaving ? "存檔中…" : "儲存裁剪結果")
+                        }
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(SunnyColors.lanternOrange)
+                        )
+                    }
+                    .disabled(isSaving || sourceDuration <= minimumDuration)
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle("裁剪錄音")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") { dismiss() }
+                        .font(SunnyFonts.caption())
+                }
+            }
+        }
+        .task { loadDuration() }
+        .onChange(of: startTime) { _, _ in
+            scheduleSelectionPreview()
+        }
+        .onChange(of: endTime) { _, _ in
+            scheduleSelectionPreview()
+        }
+        .onDisappear {
+            previewDebounceTask?.cancel()
+            previewDebounceTask = nil
+            stopPreviewPlayback()
+        }
+    }
+
+    private func loadDuration() {
+        let measured = VoiceClipAudioEditor.measuredDuration(at: clip.recordingsURL)
+        sourceDuration = max(measured, clip.duration, minimumDuration)
+        startTime = 0
+        endTime = sourceDuration
+    }
+
+    @MainActor
+    private func saveTrim() async {
+        guard !isSaving else { return }
+        isSaving = true
+        errorMessage = nil
+        previewDebounceTask?.cancel()
+        previewDebounceTask = nil
+        stopPreviewPlayback()
+        do {
+            let newDuration = try await VoiceClipAudioEditor.trim(
+                url: clip.recordingsURL,
+                startTime: startTime,
+                endTime: endTime
+            )
+            clip.duration = newDuration
+            try? modelContext.save()
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
+    }
+
+    private func scheduleSelectionPreview() {
+        previewDebounceTask?.cancel()
+        previewDebounceTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            guard !Task.isCancelled else { return }
+            playSelectionPreview()
+        }
+    }
+
+    @MainActor
+    private func playSelectionPreview() {
+        guard FileManager.default.fileExists(atPath: clip.recordingsURL.path) else { return }
+        stopPreviewPlayback()
+        errorMessage = nil
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: clip.recordingsURL)
+            player.prepareToPlay()
+            player.currentTime = min(max(0, startTime), max(0, player.duration - minimumDuration))
+            player.play()
+            previewPlayer = player
+            isPreviewingSelection = true
+
+            let duration = min(max(preservedDuration, minimumDuration), max(minimumDuration, player.duration - player.currentTime))
+            previewStopTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(duration))
+                guard !Task.isCancelled else { return }
+                stopPreviewPlayback()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func stopPreviewPlayback() {
+        previewStopTask?.cancel()
+        previewStopTask = nil
+        previewPlayer?.stop()
+        previewPlayer = nil
+        isPreviewingSelection = false
+    }
+}
+
+// MARK: - Helpers
+
+private enum VoiceClipAudioEditor {
+    static func measuredDuration(at url: URL) -> TimeInterval {
+        guard let file = try? AVAudioFile(forReading: url) else { return 0 }
+        let sampleRate = file.processingFormat.sampleRate
+        guard sampleRate > 0 else { return 0 }
+        return Double(file.length) / sampleRate
+    }
+
+    static func trim(url: URL, startTime: TimeInterval, endTime: TimeInterval) async throws -> TimeInterval {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw VoiceClipAudioEditorError.fileMissing
+        }
+
+        let asset = AVURLAsset(url: url)
+        let sourceDuration = measuredDuration(at: url)
+        let safeStart = max(0, min(startTime, max(0, sourceDuration - 0.5)))
+        let safeEnd = min(max(endTime, safeStart + 0.5), sourceDuration)
+        guard safeEnd - safeStart >= 0.5 else {
+            throw VoiceClipAudioEditorError.invalidRange
+        }
+        guard let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            throw VoiceClipAudioEditorError.exportUnavailable
+        }
+
+        let tempURL = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".m4a")
+        exporter.outputURL = tempURL
+        exporter.outputFileType = .m4a
+        exporter.timeRange = CMTimeRange(
+            start: CMTime(seconds: safeStart, preferredTimescale: 600),
+            end: CMTime(seconds: safeEnd, preferredTimescale: 600)
+        )
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            exporter.exportAsynchronously {
+                switch exporter.status {
+                case .completed:
+                    continuation.resume(returning: ())
+                case .failed:
+                    continuation.resume(throwing: exporter.error ?? VoiceClipAudioEditorError.exportFailed)
+                case .cancelled:
+                    continuation.resume(throwing: VoiceClipAudioEditorError.cancelled)
+                default:
+                    continuation.resume(throwing: VoiceClipAudioEditorError.exportFailed)
+                }
+            }
+        }
+
+        let fm = FileManager.default
+        do {
+            _ = try fm.replaceItemAt(url, withItemAt: tempURL)
+        } catch {
+            try? fm.removeItem(at: tempURL)
+            throw error
+        }
+        return measuredDuration(at: url)
+    }
+}
+
+private enum VoiceClipAudioEditorError: LocalizedError {
+    case fileMissing
+    case invalidRange
+    case exportUnavailable
+    case exportFailed
+    case cancelled
+
+    var errorDescription: String? {
+        switch self {
+        case .fileMissing:
+            return "找不到要裁剪的錄音檔。"
+        case .invalidRange:
+            return "裁剪範圍太短，請至少保留 0.5 秒。"
+        case .exportUnavailable:
+            return "這台裝置目前無法裁剪這個錄音。"
+        case .exportFailed:
+            return "裁剪失敗，請再試一次。"
+        case .cancelled:
+            return "裁剪已取消。"
+        }
+    }
+}
+
+private func formatSeconds(_ seconds: Double) -> String {
+    let clamped = max(0, seconds)
+    let total = Int(clamped.rounded())
+    return String(format: "%d:%02d", total / 60, total % 60)
 }
 
 // MARK: - Previews

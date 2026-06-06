@@ -8,6 +8,8 @@ import SwiftUI
 enum MascotTheme: String, CaseIterable, Identifiable {
     case sunny    = "sunny"
     case giraffe  = "giraffe"
+    case bunny    = "bunny"
+    case bear     = "bear"
 
     var id: String { rawValue }
 
@@ -15,6 +17,8 @@ enum MascotTheme: String, CaseIterable, Identifiable {
         switch self {
         case .sunny:   return "小晴（灰色精靈）"
         case .giraffe: return "長頸鹿"
+        case .bunny:   return "小兔子"
+        case .bear:    return "小熊"
         }
     }
 
@@ -22,6 +26,8 @@ enum MascotTheme: String, CaseIterable, Identifiable {
         switch self {
         case .sunny:   return "moon.stars.fill"
         case .giraffe: return "pawprint.fill"
+        case .bunny:   return "hare.fill"
+        case .bear:    return "teddybear.fill"
         }
     }
 }
@@ -48,6 +54,13 @@ final class AppSettings: ObservableObject {
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
         let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
         self.mascotTheme = MascotTheme(rawValue: raw) ?? .sunny
+        self.parentalUnlockDurationMinutes = UserDefaults.standard.object(forKey: "parentalUnlockDurationMinutes") as? Int ?? 5
+        let unlockedUntil = UserDefaults.standard.double(forKey: "parentalUnlockUntil")
+        if unlockedUntil > Date().timeIntervalSince1970 {
+            self.parentalUnlockUntil = Date(timeIntervalSince1970: unlockedUntil)
+        } else {
+            self.parentalUnlockUntil = nil
+        }
     }
 
     // MARK: - Time format
@@ -86,5 +99,36 @@ final class AppSettings: ObservableObject {
 
     @Published var mascotTheme: MascotTheme {
         didSet { UserDefaults.standard.set(mascotTheme.rawValue, forKey: "mascotTheme") }
+    }
+
+    @Published var parentalUnlockDurationMinutes: Int {
+        didSet { UserDefaults.standard.set(parentalUnlockDurationMinutes, forKey: "parentalUnlockDurationMinutes") }
+    }
+
+    @Published private(set) var parentalUnlockUntil: Date? {
+        didSet {
+            let timestamp = parentalUnlockUntil?.timeIntervalSince1970 ?? 0
+            UserDefaults.standard.set(timestamp, forKey: "parentalUnlockUntil")
+        }
+    }
+
+    func beginParentalUnlockWindow() {
+        parentalUnlockUntil = Date().addingTimeInterval(Double(parentalUnlockDurationMinutes * 60))
+    }
+
+    func clearExpiredParentalUnlockIfNeeded(referenceDate: Date = .now) {
+        if let unlockedUntil = parentalUnlockUntil, unlockedUntil <= referenceDate {
+            parentalUnlockUntil = nil
+        }
+    }
+
+    func isParentalGateUnlocked(referenceDate: Date = .now) -> Bool {
+        clearExpiredParentalUnlockIfNeeded(referenceDate: referenceDate)
+        return remainingParentalUnlockSeconds(referenceDate: referenceDate) > 0
+    }
+
+    func remainingParentalUnlockSeconds(referenceDate: Date = .now) -> Int {
+        guard let unlockedUntil = parentalUnlockUntil else { return 0 }
+        return max(0, Int(unlockedUntil.timeIntervalSince(referenceDate)))
     }
 }

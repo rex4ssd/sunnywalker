@@ -248,7 +248,7 @@ final class BackgroundListeningManager: ObservableObject {
         autoStopTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(Double(minutes * 60)))
             guard !Task.isCancelled else { return }
-            self?.stopFiring(reason: "ring-duration timeout")
+            self?.stopFiring(reason: "ring-duration timeout", stopSystemAlarm: true)
         }
     }
 

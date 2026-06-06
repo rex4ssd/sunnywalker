@@ -21,6 +21,20 @@ struct WatercolorCard<Content: View>: View {
     }
 }
 
+struct NavigationChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.55))
+            .frame(width: 36, height: 36)
+            .background(
+                Circle()
+                    .fill(SunnyColors.sunnyGray.opacity(0.12))
+            )
+            .contentShape(Circle())
+    }
+}
+
 #Preview {
     WatercolorCard {
         VStack(spacing: 8) {

@@ -421,7 +421,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 fabLabel("settings_label")
                 Button {
-                    showingParentalForSettings = true
+                    openSettingsFlow()
                 } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.title3.bold())
@@ -438,7 +438,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 fabLabel("新增鬧鐘")
                 Button {
-                    showingParentalGate = true
+                    openAddAlarmFlow()
                 } label: {
                     Image(systemName: "plus")
                         .font(.title2.bold())
@@ -471,6 +471,24 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
+        }
+    }
+
+    private func openAddAlarmFlow() {
+        settings.clearExpiredParentalUnlockIfNeeded()
+        if settings.isParentalGateUnlocked() {
+            showingAddAlarm = true
+        } else {
+            showingParentalGate = true
+        }
+    }
+
+    private func openSettingsFlow() {
+        settings.clearExpiredParentalUnlockIfNeeded()
+        if settings.isParentalGateUnlocked() {
+            showingSettings = true
+        } else {
+            showingParentalForSettings = true
         }
     }
 }
@@ -532,6 +550,8 @@ struct SettingsView: View {
     @State private var showingVoiceLib  = false
     @State private var showingHistory   = false
     @State private var showingIO        = false
+    @State private var unlockNow = Date()
+    private let unlockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
@@ -544,9 +564,7 @@ struct SettingsView: View {
                                 .foregroundStyle(SunnyColors.skyBlue)
                                 .font(SunnyFonts.caption())
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.4))
+                            NavigationChevron()
                         }
                     }
                 }
@@ -661,6 +679,46 @@ struct SettingsView: View {
                             .foregroundStyle(SunnyColors.leafFresh)
                     }
                 }
+
+                Section(
+                    header: Text("temporary_unlock_section"),
+                    footer: Text(isTemporarilyUnlocked
+                                 ? LocalizedStringKey("temporary_unlock_active_footer")
+                                 : LocalizedStringKey("temporary_unlock_footer"))
+                ) {
+                    Stepper(value: $settings.parentalUnlockDurationMinutes, in: 5...60, step: 5) {
+                        HStack {
+                            Label("temporary_unlock_duration", systemImage: "lock.open")
+                            Spacer()
+                            Text(L("temporary_unlock_minutes %lld", settings.parentalUnlockDurationMinutes))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                                .monospacedDigit()
+                        }
+                    }
+
+                    Button {
+                        settings.beginParentalUnlockWindow()
+                        unlockNow = Date()
+                    } label: {
+                        HStack {
+                            Label("temporary_unlock_start", systemImage: "timer")
+                            Spacer()
+                            Text(L("temporary_unlock_minutes %lld", settings.parentalUnlockDurationMinutes))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                                .monospacedDigit()
+                        }
+                    }
+
+                    if isTemporarilyUnlocked {
+                        HStack {
+                            Label("temporary_unlock_remaining_label", systemImage: "checkmark.shield")
+                            Spacer()
+                            Text(remainingUnlockText)
+                                .foregroundStyle(SunnyColors.forestDeep)
+                                .monospacedDigit()
+                        }
+                    }
+                }
             }
             .navigationTitle(Text("settings_label"))
             .navigationBarTitleDisplayMode(.inline)
@@ -671,9 +729,26 @@ struct SettingsView: View {
                 }
             }
         }
+        .onAppear {
+            settings.clearExpiredParentalUnlockIfNeeded()
+            unlockNow = Date()
+        }
+        .onReceive(unlockTick) { now in
+            unlockNow = now
+            settings.clearExpiredParentalUnlockIfNeeded(referenceDate: now)
+        }
         .sheet(isPresented: $showingVoiceLib)  { VoiceLibraryView() }
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
+    }
+
+    private var isTemporarilyUnlocked: Bool {
+        settings.remainingParentalUnlockSeconds(referenceDate: unlockNow) > 0
+    }
+
+    private var remainingUnlockText: String {
+        let seconds = settings.remainingParentalUnlockSeconds(referenceDate: unlockNow)
+        return L("temporary_unlock_remaining %lld %lld", seconds / 60, seconds % 60)
     }
 }
 

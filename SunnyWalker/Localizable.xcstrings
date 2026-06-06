@@ -7,6 +7,16 @@
     "%@" : {
 
     },
+    "%@ - %@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ - %2$@"
+          }
+        }
+      }
+    },
     "%@ s" : {
 
     },
@@ -44,7 +54,6 @@
       }
     },
     "☀️ 陽光起床" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -67,7 +76,6 @@
 
     },
     "🍃 樹葉沙沙" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -84,7 +92,6 @@
       }
     },
     "🎤 自錄鈴聲" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -429,13 +436,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voice"
+            "value" : "Phrase"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "說話關"
+            "value" : "口令關"
           }
         }
       }
@@ -619,6 +626,141 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "SunnyWalker 吉祥物"
+          }
+        }
+      }
+    },
+    "temporary_unlock_active_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings and New Alarm are temporarily unlocked right now."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前設定與新增鬧鐘都暫時免檢核。"
+          }
+        }
+      }
+    },
+    "temporary_unlock_duration" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock duration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解鎖時長"
+          }
+        }
+      }
+    },
+    "temporary_unlock_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Within the unlocked window, tapping Settings or New Alarm won't show the parental check."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解鎖期間內，按設定與新增鬧鐘都不會跳出檢核視窗。"
+          }
+        }
+      }
+    },
+    "temporary_unlock_minutes %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 分"
+          }
+        }
+      }
+    },
+    "temporary_unlock_remaining %lld %lld" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld:%2$02lld left"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "剩餘 %1$lld:%2$02lld"
+          }
+        }
+      }
+    },
+    "temporary_unlock_remaining_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlocked"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前狀態"
+          }
+        }
+      }
+    },
+    "temporary_unlock_section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temporary unlock"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時解鎖"
+          }
+        }
+      }
+    },
+    "temporary_unlock_start" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock now"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即解鎖"
           }
         }
       }
@@ -807,6 +949,9 @@
         }
       }
     },
+    "保留長度 %@" : {
+
+    },
     "停止" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -837,6 +982,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "停止錄音 ⏹"
+          }
+        }
+      }
+    },
+    "停止預聽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop preview"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止預聽"
           }
         }
       }
@@ -888,6 +1050,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存鬧鐘"
+          }
+        }
+      }
+    },
+    "先選一個自錄鈴聲，才能開啟口令關閉。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a custom ringtone first before enabling phrase dismiss."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先選一個自錄鈴聲，才能開啟口令關閉。"
+          }
+        }
+      }
+    },
+    "先錄一段自錄鈴聲，才能開啟說話關。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record a custom ringtone first before enabling voice dismiss."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先錄一段自錄鈴聲，才能開啟說話關。"
+          }
+        }
+      }
+    },
+    "先錄一段起床錄音，才能開啟說話關。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record a wake recording first before enabling voice dismiss."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "先錄一段起床錄音，才能開啟說話關。"
           }
         }
       }
@@ -1078,6 +1291,9 @@
         }
       }
     },
+    "右側保留到" : {
+
+    },
     "吉祥物" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1142,6 +1358,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "完成"
+          }
+        }
+      }
+    },
+    "小兔子" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunny"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小兔子"
           }
         }
       }
@@ -1213,19 +1446,36 @@
         }
       }
     },
-    "小朋友說出喚醒語才能關掉鬧鐘" : {
+    "小朋友說出指定句子才能關掉鬧鐘" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your child says the wake phrase to turn off the alarm"
+            "value" : "Your child says the preset phrase to turn off the alarm"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "小朋友說出喚醒語才能關掉鬧鐘"
+            "value" : "小朋友說出指定句子才能關掉鬧鐘"
+          }
+        }
+      }
+    },
+    "小熊" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bear"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小熊"
           }
         }
       }
@@ -1247,19 +1497,73 @@
         }
       }
     },
-    "已錄製起床音" : {
+    "左側裁掉" : {
+
+    },
+    "已選自錄鈴聲，可以開啟口令關閉。" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wake sound recorded"
+            "value" : "Custom ringtone selected, so phrase dismiss can be turned on."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已錄製起床音"
+            "value" : "已選自錄鈴聲，可以開啟口令關閉。"
+          }
+        }
+      }
+    },
+    "已錄好自錄鈴聲，可以開啟說話關。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom ringtone is ready, so voice dismiss can be turned on."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已錄好自錄鈴聲，可以開啟說話關。"
+          }
+        }
+      }
+    },
+    "已錄好起床錄音，可以開啟說話關。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wake recording is ready, so voice dismiss can be turned on."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已錄好起床錄音，可以開啟說話關。"
+          }
+        }
+      }
+    },
+    "已錄製起床錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wake recording saved"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已錄製起床錄音"
           }
         }
       }
@@ -1316,6 +1620,7 @@
       }
     },
     "我的錄音" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1416,6 +1721,39 @@
         }
       }
     },
+    "改成你比較容易辨認的名字" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change it to a name that's easier for you to recognize"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "改成你比較容易辨認的名字"
+          }
+        }
+      }
+    },
+    "啟用口令關閉" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable phrase dismiss"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "啟用口令關閉"
+          }
+        }
+      }
+    },
     "新增錄音" : {
       "localizations" : {
         "en" : {
@@ -1512,6 +1850,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "早安！新的一天開始囉 ☀️"
+          }
+        }
+      }
+    },
+    "暫時解鎖" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temporary unlock"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時解鎖"
+          }
+        }
+      }
+    },
+    "會用鬧鐘名稱當預設檔名" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uses the alarm name as the default file name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "會用鬧鐘名稱當預設檔名"
           }
         }
       }
@@ -1717,6 +2089,39 @@
         }
       }
     },
+    "自錄鈴聲" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom ringtone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自錄鈴聲"
+          }
+        }
+      }
+    },
+    "自錄鈴聲名稱" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom ringtone name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自錄鈴聲名稱"
+          }
+        }
+      }
+    },
     "覆蓋現有鬧鐘" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1834,6 +2239,22 @@
         }
       }
     },
+    "調整左右時會自動播放目前保留片段" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The current kept segment plays automatically while you adjust the trim."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調整左右時會自動播放目前保留片段"
+          }
+        }
+      }
+    },
     "請回答以下問題才能繼續" : {
       "localizations" : {
         "en" : {
@@ -1867,6 +2288,7 @@
       }
     },
     "請說一段起床的話給孩子聽" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1878,6 +2300,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請說一段起床的話給孩子聽"
+          }
+        }
+      }
+    },
+    "請錄一段要播放給孩子聽的鈴聲" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record a ringtone you want to play for your child"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請錄一段要播放給孩子聽的鈴聲"
           }
         }
       }
@@ -1946,6 +2385,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "起床紀錄"
+          }
+        }
+      }
+    },
+    "起床錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wake recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "起床錄音"
           }
         }
       }
@@ -2168,6 +2624,40 @@
         }
       }
     },
+    "重播保留片段" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replay kept segment"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重播保留片段"
+          }
+        }
+      }
+    },
+    "重新命名自錄鈴聲" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename custom ringtone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新命名自錄鈴聲"
+          }
+        }
+      }
+    },
     "重新錄音 🎙️" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2233,19 +2723,36 @@
         }
       }
     },
-    "錄製起床音" : {
+    "錄製自錄鈴聲" : {
       "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Record Wake Sound"
+            "value" : "Record Custom Ringtone"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "錄製起床音"
+            "value" : "錄製自錄鈴聲"
+          }
+        }
+      }
+    },
+    "錄製起床錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Wake Recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄製起床錄音"
           }
         }
       }
@@ -2279,22 +2786,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錄音中（實驗）"
-          }
-        }
-      }
-    },
-    "錄音喚醒語" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wake recording"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "錄音喚醒語"
           }
         }
       }
@@ -2533,6 +3024,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "響鈴時長"
+          }
+        }
+      }
+    },
+    "預設檔名：%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default file name: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設檔名：%@"
           }
         }
       }

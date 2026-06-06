@@ -8,7 +8,7 @@ import Foundation
 /// How the child dismisses the alarm after the AlarmKit alert fires.
 /// Stored as a raw String in SwiftData — adding new cases is non-breaking.
 enum AlarmTaskType: String, Codable {
-    /// Child must say the wake phrase (voice recognition + fallback button). Default.
+    /// Child must say a preset phrase that is matched from speech-to-text. Default.
     case voice
     /// Child taps the button only — no speech recognition. Good for young toddlers.
     case button
@@ -27,6 +27,7 @@ final class Alarm {
     var weekdays: [Int]           // 1 = Sunday … 7 = Saturday
     var isEnabled: Bool
     var recordingName: String
+    var recordingDisplayName: String?
     var soundFileName: String
     var createdAt: Date
 
@@ -49,6 +50,7 @@ final class Alarm {
         self.weekdays = [2, 3, 4, 5, 6]  // Mon–Fri by default
         self.isEnabled = true
         self.recordingName = recordingName
+        self.recordingDisplayName = nil
         self.soundFileName = "sunny_wake.caf"
         self.createdAt = .now
         self.taskType = taskType
@@ -60,6 +62,11 @@ final class Alarm {
 
     /// nil (rows created before strict mode existed) → false.
     var effectiveRequireAppToStop: Bool { requireAppToStop ?? false }
+
+    var effectiveRecordingDisplayName: String {
+        let trimmed = recordingDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? recordingName : trimmed
+    }
 
     /// Always 24-hour (used internally / for scheduling).
     var timeString: String {

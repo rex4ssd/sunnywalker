@@ -19,6 +19,11 @@ struct BundledSound: Identifiable {
     let emoji: String
 }
 
+struct SelectedRecordingInfo {
+    let baseName: String
+    let displayName: String
+}
+
 private let bundledSounds: [BundledSound] = [
     BundledSound(fileName: "sunny_wake.caf",  displayName: "陽光起床", emoji: "☀️"),
     BundledSound(fileName: "leaf_rustle.caf", displayName: "樹葉沙沙", emoji: "🍃"),
@@ -29,13 +34,16 @@ private let bundledSounds: [BundledSound] = [
 struct RingtonePickerSheet: View {
     /// Current selection passed in so the picker can show a checkmark.
     let currentFileName: String
-    /// Called with the chosen sound file name when the user taps an item.
-    let onSelect: (String) -> Void
+    /// Called with the chosen sound file name, plus the recording base name when using a custom clip.
+    let onSelect: (String, SelectedRecordingInfo?) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \VoiceClip.createdAt, order: .reverse) private var clips: [VoiceClip]
     @StateObject private var player = AudioPlayer()
     @State private var previewingFile: String?
+    @State private var renamingClip: VoiceClip?
+    @State private var renameDraft = ""
 
     var body: some View {
         NavigationStack {
@@ -61,6 +69,19 @@ struct RingtonePickerSheet: View {
         .onReceive(player.$isPlaying) { playing in
             if !playing { previewingFile = nil }
         }
+        .alert("重新命名自錄鈴聲", isPresented: renameAlertBinding) {
+            TextField("自錄鈴聲名稱", text: $renameDraft)
+            Button("取消", role: .cancel) {
+                renamingClip = nil
+                renameDraft = ""
+            }
+            Button("儲存") {
+                saveRename()
+            }
+            .disabled(renameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        } message: {
+            Text("改成你比較容易辨認的名字")
+        }
     }
 
     // MARK: - Sections
@@ -75,7 +96,7 @@ struct RingtonePickerSheet: View {
                     onPreview: { toggleBundledPreview(sound) },
                     onSelect: {
                         player.stop()
-                        onSelect(sound.fileName)
+                        onSelect(sound.fileName, nil)
                         dismiss()
                     }
                 )
@@ -85,13 +106,14 @@ struct RingtonePickerSheet: View {
     }
 
     private var recordingSection: some View {
-        Section(header: Text("我的錄音").font(SunnyFonts.caption(13))) {
+        Section(header: Text("自錄鈴聲").font(SunnyFonts.caption(13))) {
             ForEach(clips) { clip in
                 RingtoneClipRow(
                     clip: clip,
                     isSelected: isClipSelected(clip),
                     isPreviewing: previewingFile == clip.fileName,
                     onPreview: { toggleClipPreview(clip) },
+                    onRename: { beginRename(clip) },
                     onSelect: { selectClip(clip) }
                 )
                 .listRowBackground(Color.white.opacity(0.75))
@@ -134,9 +156,35 @@ struct RingtonePickerSheet: View {
         // Export m4a → CAF for AlarmKit / UNNotification lock-screen sound.
         let base = String(clip.fileName.dropLast(4))
         if let cafName = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base) {
-            onSelect(cafName)
+            onSelect(cafName, SelectedRecordingInfo(baseName: base, displayName: clip.name))
         }
         dismiss()
+    }
+
+    private func beginRename(_ clip: VoiceClip) {
+        renamingClip = clip
+        renameDraft = clip.name
+    }
+
+    private func saveRename() {
+        guard let clip = renamingClip else { return }
+        let trimmed = renameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        clip.name = trimmed
+        try? modelContext.save()
+        if isClipSelected(clip) {
+            let base = String(clip.fileName.dropLast(4))
+            onSelect(currentFileName, SelectedRecordingInfo(baseName: base, displayName: trimmed))
+        }
+        renamingClip = nil
+        renameDraft = ""
+    }
+
+    private var renameAlertBinding: Binding<Bool> {
+        Binding(
+            get: { renamingClip != nil },
+            set: { if !$0 { renamingClip = nil; renameDraft = "" } }
+        )
     }
 }
 
@@ -186,6 +234,7 @@ private struct RingtoneClipRow: View {
     let isSelected: Bool
     let isPreviewing: Bool
     let onPreview: () -> Void
+    let onRename: () -> Void
     let onSelect: () -> Void
 
     var body: some View {
@@ -210,6 +259,13 @@ private struct RingtoneClipRow: View {
 
             Spacer()
 
+            Button(action: onRename) {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(SunnyColors.skyBlue)
+            }
+            .buttonStyle(.plain)
+
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(SunnyColors.leafFresh)
@@ -223,6 +279,6 @@ private struct RingtoneClipRow: View {
 }
 
 #Preview {
-    RingtonePickerSheet(currentFileName: "sunny_wake.caf") { _ in }
+    RingtonePickerSheet(currentFileName: "sunny_wake.caf") { _, _ in }
         .modelContainer(for: VoiceClip.self, inMemory: true)
 }
