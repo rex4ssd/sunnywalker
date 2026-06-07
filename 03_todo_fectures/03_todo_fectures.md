@@ -1,6 +1,18 @@
 # 03_todo_fectures，完成後加 `done-YYYYMMDD_HHMM` 搬到 ## complete, fetures。
 
+
+## 新增鬧鐘頁
+
+
+
+-----------------------------------------------------------------
 ## complete, fetures
+
+### done-20260607 新增鬧鐘頁 — 鈴聲分兩列 + 口令提示優化
+- `AlarmEditorView` 鈴聲卡片拆成「內建鈴聲」＋「自定錄音」兩列，各有 checkmark 標示當前選擇。
+- 切到內建時自動清除 recordingName（讓口令關閉 toggle 自動 disable）。
+- `RingtonePickerSheet` 新增 `RingtonePickerMode`（`.bundled` / `.custom` / `.all`），各自只顯示對應 section；`.custom` 無錄音時顯示引導空狀態。
+- 口令關閉提示文字改為「先在『自定錄音』選一個鈴聲，才能開啟口令關閉。」
 
 ### done-20260606_2031 bug fix, setting中，自動停止的時間無效
 - 修正 AlarmRingView 開啟時接手並停止底層系統鬧鐘，避免自動停止時間看起來失效。

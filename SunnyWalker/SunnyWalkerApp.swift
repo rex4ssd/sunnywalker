@@ -1,5 +1,6 @@
 // SunnyWalker — SunnyWalkerApp.swift  |  Day 16  |  AlarmKit auth on launch
 
+import BackgroundTasks
 import SwiftUI
 import SwiftData
 import UserNotifications
@@ -24,6 +25,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
+
+        // Register BGProcessingTask handler for background alarm auto-stop.
+        // Must be called before the app finishes launching (iOS requirement).
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: AlarmAutoStopService.bgTaskIdentifier,
+            using: nil
+        ) { task in
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false); return
+            }
+            Task { @MainActor in
+                AlarmAutoStopService.shared.handleBGTask(processingTask)
+            }
+        }
+        print("🛡️ BGTaskScheduler: registered \(AlarmAutoStopService.bgTaskIdentifier)")
 
         let center = UNUserNotificationCenter.current()
         center.delegate = self

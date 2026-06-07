@@ -233,16 +233,12 @@ private struct VoiceClipRow: View {
 
             Spacer()
 
-            VStack(spacing: 10) {
-                Button(action: onDelete) {
-                    Image(systemName: "trash.circle")
-                        .font(.system(size: 26))
-                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.75))
-                }
-                .buttonStyle(.plain)
-
-                NavigationChevron()
+            Button(action: onDelete) {
+                Image(systemName: "trash.circle")
+                    .font(.system(size: 26))
+                    .foregroundStyle(SunnyColors.lanternOrange.opacity(0.75))
             }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 6)
     }

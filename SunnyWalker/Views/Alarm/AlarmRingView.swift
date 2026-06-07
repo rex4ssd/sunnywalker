@@ -133,7 +133,9 @@ struct AlarmRingView: View {
             .animation(.easeInOut(duration: 0.4), value: showFallbackButton)
         }
         .onAppear {
-            firedAt = Date()   // record alarm fire time for WakeRecord
+            let appearTime = Date()
+            firedAt = appearTime   // record alarm fire time for WakeRecord
+            print("🔔 AlarmRingView.onAppear [\(ts(appearTime))] alarm=\(alarm?.id.uuidString.prefix(8) ?? "nil") taskType=\(alarm?.effectiveTaskType.rawValue ?? "?") requireAppToStop=\(alarm?.effectiveRequireAppToStop ?? false) ringDuration=\(AppSettings.shared.alarmRingDurationMinutes)min")
             wiggle = true
             // App is now open for this alarm → stop the strict-mode "貪睡模式" nag notifications.
             if let alarm { AlarmScheduler.shared.cancelNags(alarm.id) }
@@ -156,6 +158,7 @@ struct AlarmRingView: View {
             }
         }
         .onDisappear {
+            print("🔔 AlarmRingView.onDisappear [\(ts())] — cancelling ringTimeoutTask + speechTask")
             speechTask?.cancel()
             ringTimeoutTask?.cancel()
             audioPlayer.stop()
@@ -232,16 +235,21 @@ struct AlarmRingView: View {
     /// and let the screen sleep — so the battery doesn't drain if nobody's there.
     private func startRingTimeout() {
         let minutes = max(1, min(10, AppSettings.shared.alarmRingDurationMinutes))
-        print("⏰ AlarmRingView: ring auto-stop in \(minutes) min")
+        let fireAt = Date().addingTimeInterval(Double(minutes * 60))
+        print("⏰ AlarmRingView.startRingTimeout [\(ts())] duration=\(minutes)min fireAt=\(ts(fireAt))")
         ringTimeoutTask = Task {
             try? await Task.sleep(for: .seconds(Double(minutes * 60)))
-            guard !Task.isCancelled else { return }
+            if Task.isCancelled {
+                print("⏰ AlarmRingView.ringTimeoutTask CANCELLED before firing — auto-stop will NOT run")
+                return
+            }
+            print("⏰ AlarmRingView.ringTimeoutTask FIRED [\(ts())]")
             handleAutoStop()
         }
     }
 
     private func handleAutoStop() {
-        print("⏰ AlarmRingView: ring duration reached — gentle 'aww' then close")
+        print("⏰ AlarmRingView.handleAutoStop [\(ts())] — playing timeout_sad.wav then dismiss()")
         speechTask?.cancel()
         ringTimeoutTask?.cancel()
         speechRecognizer.stop()
@@ -252,15 +260,34 @@ struct AlarmRingView: View {
             try? await Task.sleep(for: .seconds(1.6))
             audioPlayer.stop()
             UIApplication.shared.isIdleTimerDisabled = false
+            print("⏰ AlarmRingView.handleAutoStop: calling dismiss() [\(ts())]")
             dismiss()
         }
     }
 
     private func handoffSystemAlarmIfNeeded() {
-        guard let alarm else { return }
-        Task { @MainActor in
-            try? await AlarmKitService.shared.stop(id: alarm.id)
+        guard let alarm else {
+            print("🔔 AlarmRingView.handoffSystemAlarmIfNeeded: alarm=nil — skip")
+            return
         }
+        let alarmID = alarm.id
+        print("🔔 AlarmRingView.handoffSystemAlarmIfNeeded: calling AlarmKitService.stop(\(alarmID.uuidString.prefix(8)))")
+        Task { @MainActor in
+            do {
+                try await AlarmKitService.shared.stop(id: alarmID)
+                print("🔔 AlarmRingView.handoffSystemAlarmIfNeeded: stop() OK [\(ts())]")
+            } catch {
+                print("🔔 AlarmRingView.handoffSystemAlarmIfNeeded: stop() FAILED — \(error) [\(ts())]")
+            }
+        }
+    }
+
+    // MARK: - Log helpers
+
+    private func ts(_ date: Date = Date()) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm:ss.SSS"
+        return f.string(from: date)
     }
 
     private func handleWakeUp(dismissMethod: String = "voice") {

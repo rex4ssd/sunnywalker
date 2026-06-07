@@ -24,7 +24,8 @@ struct AlarmEditorView: View {
     @State private var selectedTaskType: AlarmTaskType = .button
     @State private var requireAppToStop = false
     @State private var isSaving = false
-    @State private var showingRingtonePicker = false
+    @State private var showingBuiltinPicker = false
+    @State private var showingCustomPicker = false
 
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
@@ -186,8 +187,8 @@ struct AlarmEditorView: View {
                             .font(SunnyFonts.caption())
                             .foregroundStyle(voiceDismissAvailable ? SunnyColors.nightIndigo : SunnyColors.sunnyGray)
                         Text(voiceDismissAvailable
-                             ? LocalizedStringKey("已選自錄鈴聲，可以開啟口令關閉。")
-                             : LocalizedStringKey("先選一個自錄鈴聲，才能開啟口令關閉。"))
+                             ? LocalizedStringKey("已選自錄鈴聲，說出關鍵字即可關閉。")
+                             : LocalizedStringKey("先在「自定錄音」選一個鈴聲，才能開啟口令關閉。"))
                             .font(SunnyFonts.caption(13))
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                     }
@@ -216,56 +217,106 @@ struct AlarmEditorView: View {
         }
     }
 
-    private var ringtoneDisplayText: Text {
+    // Whether the current soundFileName is a built-in bundled sound.
+    private var isBuiltinSelected: Bool {
+        !tempAlarm.soundFileName.hasPrefix("alarm_")
+    }
+
+    // Display subtitle for the built-in row.
+    private var builtinSubtitle: String {
         switch tempAlarm.soundFileName {
-        case "sunny_wake.caf":
-            return Text("☀️ 陽光起床")
-        case "leaf_rustle.caf":
-            return Text("🍃 樹葉沙沙")
-        default:
-            if tempAlarm.soundFileName.hasPrefix("alarm_"), voiceDismissAvailable {
-                return Text(verbatim: tempAlarm.effectiveRecordingDisplayName)
-            }
-            if tempAlarm.soundFileName.hasPrefix("alarm_") {
-                return Text("🎤 自錄鈴聲")
-            }
-            return Text(LocalizedStringKey(tempAlarm.soundFileName))
+        case "sunny_wake.caf":  return "☀️ 陽光起床"
+        case "leaf_rustle.caf": return "🍃 樹葉沙沙"
+        default:                return isBuiltinSelected ? tempAlarm.soundFileName : "未選擇"
         }
+    }
+
+    // Display subtitle for the custom recording row.
+    private var customSubtitle: String {
+        guard !tempAlarm.recordingName.isEmpty else { return "未選擇" }
+        let name = tempAlarm.effectiveRecordingDisplayName
+        return "🎤 \(name)"
     }
 
     private var ringtoneCard: some View {
         WatercolorCard {
-            VStack(spacing: 0) {
-                Button { showingRingtonePicker = true } label: {
-                    HStack(spacing: 14) {
-                        Image(systemName: "music.note")
-                            .font(.system(size: 20))
-                            .foregroundStyle(SunnyColors.wheatGold)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("鈴聲")
-                                .font(SunnyFonts.caption())
-                                .foregroundStyle(SunnyColors.nightIndigo)
-                            ringtoneDisplayText
-                                .font(SunnyFonts.caption(14))
-                                .foregroundStyle(SunnyColors.sunnyGray)
-                        }
-                        Spacer()
-                        NavigationChevron()
-                    }
+            VStack(alignment: .leading, spacing: 0) {
+                Text("鈴聲")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
+
+                // Row 1: built-in sounds
+                Button { showingBuiltinPicker = true } label: {
+                    ringtoneRow(
+                        icon: "music.note",
+                        iconColor: SunnyColors.wheatGold,
+                        title: "內建鈴聲",
+                        subtitle: builtinSubtitle,
+                        isSelected: isBuiltinSelected
+                    )
                 }
                 .buttonStyle(.plain)
+
+                Divider().padding(.leading, 62)
+
+                // Row 2: self-recorded clips
+                Button { showingCustomPicker = true } label: {
+                    ringtoneRow(
+                        icon: "mic.fill",
+                        iconColor: SunnyColors.leafFresh,
+                        title: "自定鈴聲(錄音)",
+                        subtitle: customSubtitle,
+                        isSelected: !isBuiltinSelected
+                    )
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, 4)
             }
         }
-        .sheet(isPresented: $showingRingtonePicker) {
-            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName) { chosenSoundFile, chosenRecording in
+        .sheet(isPresented: $showingBuiltinPicker) {
+            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName, mode: .bundled) { chosenSoundFile, _ in
+                tempAlarm.soundFileName = chosenSoundFile
+                tempAlarm.recordingName = ""
+                tempAlarm.recordingDisplayName = nil
+            }
+        }
+        .sheet(isPresented: $showingCustomPicker) {
+            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName, mode: .custom) { chosenSoundFile, chosenRecording in
                 tempAlarm.soundFileName = chosenSoundFile
                 tempAlarm.recordingName = chosenRecording?.baseName ?? ""
                 tempAlarm.recordingDisplayName = chosenRecording?.displayName
             }
         }
+    }
+
+    @ViewBuilder
+    private func ringtoneRow(icon: String, iconColor: Color, title: String, subtitle: String, isSelected: Bool) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundStyle(iconColor)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                Text(subtitle)
+                    .font(SunnyFonts.caption(14))
+                    .foregroundStyle(isSelected ? SunnyColors.lanternOrange : SunnyColors.sunnyGray)
+            }
+            Spacer()
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(SunnyColors.leafFresh)
+            }
+            NavigationChevron()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
     }
 
     // MARK: - Save logic

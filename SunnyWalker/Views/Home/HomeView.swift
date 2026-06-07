@@ -51,6 +51,7 @@ struct HomeView: View {
     // the alarm to the AlarmKit black banner, which seizes the audio session. Ticks every second
     // while the view is visible (cheap: a few date comparisons). See checkForegroundAlarm().
     @State private var lastForegroundFiredKey: String?
+    @State private var lastForegroundGuardLogMinute: Int = -1   // throttle checkForegroundAlarm logs
     private let foregroundAlarmTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var scene: DaytimeScene {
@@ -156,6 +157,9 @@ struct HomeView: View {
             // the alarm just goes silent when the user unlocks. (Fixes "解鎖鐘就停了".)
             if newPhase == .active {
                 print("🏠 HomeView.scenePhase → active; re-checking pending alarm")
+                // Fallback: stop any alarm that outlived its ring window (covers the case where
+                // BGProcessingTask / DispatchTimer didn't fire before user opened the app).
+                AlarmAutoStopService.shared.checkAndStopOverdue()
                 checkPendingAlarm()
                 // Foreground = in-app ring. Cancel AlarmKit so it can't fire its system banner while
                 // we're on-screen (which would background us and break voice-stop). The 1s
@@ -232,7 +236,12 @@ struct HomeView: View {
         if pendingID == nil {
             pendingID = UserDefaults.standard.string(forKey: "pendingAlarmKitAlarmID")
         }
-        guard let id = pendingID else { return }
+        let udKey = UserDefaults.standard.string(forKey: "pendingAlarmKitAlarmID")
+        print("🏠 checkPendingAlarm: delegate.pendingAlarmID=\(delegate?.pendingAlarmID ?? "nil") udKey=\(udKey ?? "nil")")
+        guard let id = pendingID else {
+            print("🏠 checkPendingAlarm: no pending ID — AlarmRingView will NOT be shown (DismissAlarmIntent never writes this key)")
+            return
+        }
         guard let uuid = UUID(uuidString: id) else {
             // Invalid marker: consume it so we don't retry forever.
             delegate?.pendingAlarmID = nil
@@ -265,10 +274,25 @@ struct HomeView: View {
     /// we catch it and AlarmRingView covers the screen. Only runs while AlarmKit is authorized and
     /// the app is .active; in the background AlarmKit owns the alarm (voice-stop isn't possible then).
     private func checkForegroundAlarm() {
-        guard scenePhase == .active, firingAlarm == nil, AlarmKitService.shared.isAuthorized else { return }
+        guard scenePhase == .active, firingAlarm == nil, AlarmKitService.shared.isAuthorized else {
+            // Log guard failures once per minute to avoid spam
+            let nowMin = Calendar.current.component(.minute, from: Date())
+            if nowMin != lastForegroundGuardLogMinute {
+                lastForegroundGuardLogMinute = nowMin
+                print("🏠 checkForegroundAlarm GUARD: scenePhase=\(scenePhase) firingAlarm=\(firingAlarm?.id.uuidString.prefix(8) ?? "nil") akAuthorized=\(AlarmKitService.shared.isAuthorized)")
+            }
+            return
+        }
         let cal = Calendar.current
         let c = cal.dateComponents([.hour, .minute, .weekday, .day], from: Date())
         guard let h = c.hour, let m = c.minute, let wd = c.weekday, let day = c.day else { return }
+        // Log current time vs enabled alarms once per minute
+        let nowMin = Calendar.current.component(.minute, from: Date())
+        if nowMin != lastForegroundGuardLogMinute {
+            lastForegroundGuardLogMinute = nowMin
+            let alarmSummary = alarms.filter(\.isEnabled).map { "\($0.id.uuidString.prefix(8)) \($0.hour):\(String(format: "%02d", $0.minute))" }.joined(separator: ", ")
+            print("🏠 checkForegroundAlarm: now=\(h):\(String(format: "%02d", m)) wd=\(wd) enabledAlarms=[\(alarmSummary)]")
+        }
         for a in alarms where a.isEnabled && a.hour == h && a.minute == m {
             let firesToday = a.weekdays.isEmpty || a.weekdays.contains(wd)
             guard firesToday else { continue }
@@ -308,8 +332,17 @@ struct HomeView: View {
         guard AlarmKitService.shared.isAuthorized else { return }
         let snapshot = alarms
         Task { @MainActor in
-            for a in snapshot { try? await AlarmKitService.shared.cancel(id: a.id) }
-            print("🏠 foreground mode: AlarmKit cancelled — in-app ring active for \(snapshot.count) alarms")
+            for a in snapshot {
+                let stateBefore = AlarmKitService.shared.alarmState(id: a.id)
+                print("🏠 enterForegroundAlarmMode: \(a.id.uuidString.prefix(8)) \(a.hour):\(String(format:"%02d",a.minute)) AKState=\(stateBefore) — calling stop()+cancel()")
+                // stop() silences a currently-ringing alarm; cancel() removes it from the schedule.
+                // cancel() alone does NOT stop the current ring — root cause of "alarm keeps ringing".
+                try? await AlarmKitService.shared.stop(id: a.id)
+                try? await AlarmKitService.shared.cancel(id: a.id)
+                let stateAfter = AlarmKitService.shared.alarmState(id: a.id)
+                print("🏠 enterForegroundAlarmMode: \(a.id.uuidString.prefix(8)) AKState after=\(stateAfter)")
+            }
+            print("🏠 foreground mode: AlarmKit stopped+cancelled — in-app ring active for \(snapshot.count) alarms")
         }
     }
 
@@ -319,6 +352,9 @@ struct HomeView: View {
         let snapshot = alarms
         Task { @MainActor in
             await AlarmKitService.shared.syncAllEnabled(snapshot)
+            // After sync, arm()/disarm() calls inside syncAlarm() have updated AlarmAutoStopService.
+            // Now start audio keep-alive + DispatchTimers if any armed alarm fires within lookAheadMinutes.
+            AlarmAutoStopService.shared.beginBackgroundLifecycle()
             print("🏠 background mode: AlarmKit re-armed for lock/silent")
         }
     }

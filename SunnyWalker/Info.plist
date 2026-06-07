@@ -26,9 +26,14 @@
 	<string>鬧鐘需要聽你說「我起床了」才能關掉喔！聲音只留在這台 iPhone 裡，不會傳出去。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.sunnywalker.alarm.autostop</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>processing</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

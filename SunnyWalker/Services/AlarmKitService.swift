@@ -274,27 +274,44 @@ final class AlarmKitService {
         let localeWeekdays = alarm.weekdays.compactMap { localeWeekday(from: $0) }
 
         let schedule: AlarmKit.Alarm.Schedule
+        // nextFireDate is used by AlarmAutoStopService to arm the auto-stop timer.
+        let nextFireDate: Date?
         if localeWeekdays.isEmpty {
             // No weekdays: one-shot at next occurrence of this hour:minute (today or tomorrow)
             var comps = DateComponents()
             comps.hour = alarm.hour
             comps.minute = alarm.minute
             comps.second = 0
-            var fireDate = Calendar.current.nextDate(
+            let fd = Calendar.current.nextDate(
                 after: Date(),
                 matching: comps,
                 matchingPolicy: .nextTime
             ) ?? Date().addingTimeInterval(3600)
-            schedule = .fixed(fireDate)
+            schedule = .fixed(fd)
+            nextFireDate = fd
         } else {
             let recurrence = AlarmKit.Alarm.Schedule.Relative.Recurrence.weekly(localeWeekdays)
             schedule = .relative(AlarmKit.Alarm.Schedule.Relative(time: time, repeats: recurrence))
+            nextFireDate = AlarmAutoStopService.nextFireDate(
+                hour: alarm.hour,
+                minute: alarm.minute,
+                weekdays: alarm.weekdays
+            )
         }
 
         // ⚠️ AlarmKit will NOT re-arm an id that has already fired and been stopped — once an
         // alarm is in a terminal (.stopped/.countdown-finished) state, calling schedule() with
         // the same id is silently ignored. Symptom: a rung alarm whose time is later pushed back
         // never rings again. Explicitly cancelling first frees the id so the reschedule re-arms.
+        //
+        // Also: cancel() alone does NOT silence a currently-ringing alarm — stop() must be called
+        // first. Without this, syncAlarm (called on every background transition) leaves the system
+        // alarm ringing even after the occurrence is "removed" from the schedule.
+        let stateBeforeSync = alarmState(id: alarm.id)
+        if stateBeforeSync != "not-found" {
+            print("AlarmKitService.syncAlarm: \(alarm.id.uuidString.prefix(8)) state=\(stateBeforeSync) — stop()+cancel() before reschedule")
+        }
+        try? await manager.stop(id: alarm.id)
         try? await manager.cancel(id: alarm.id)
 
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
@@ -335,11 +352,21 @@ final class AlarmKitService {
         }
         #endif
         print("AlarmKitService: synced \(alarm.id) — \(alarm.hour):\(String(format: "%02d", alarm.minute)), weekdays=\(alarm.weekdays)")
+
+        // Arm the background auto-stop so AlarmKit alarm silences itself after ring duration
+        // even when nobody opens the app (BGProcessingTask) or app is kept alive by audio
+        // background mode (DispatchSourceTimer via beginBackgroundLifecycle).
+        if let fd = nextFireDate {
+            let ringSeconds = AppSettings.shared.alarmRingDurationMinutes * 60
+            AlarmAutoStopService.shared.arm(alarmID: alarm.id, fireDate: fd, ringSeconds: ringSeconds)
+        }
     }
 
     /// Remove an alarm from AlarmKit. Safe to call if the alarm was never scheduled.
     func removeAlarm(_ alarm: Alarm) async throws {
+        try? await manager.stop(id: alarm.id)    // silence if currently ringing
         try? await manager.cancel(id: alarm.id)
+        AlarmAutoStopService.shared.disarm(alarmID: alarm.id)   // cancel BGTask / DispatchTimer
         print("AlarmKitService: removed \(alarm.id)")
     }
 
@@ -350,12 +377,28 @@ final class AlarmKitService {
     }
 
     func stop(id: UUID) async throws {
+        // Log the alarm's state before and after stop so we can see if AlarmKit
+        // accepts the stop request or silently ignores it (e.g. already-stopped state).
+        let before = alarmState(id: id)
+        print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state BEFORE=\(before)")
         try await manager.stop(id: id)
+        let after = alarmState(id: id)
+        print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state AFTER=\(after)")
+        // Disarm the auto-stop service — alarm has been manually or automatically stopped.
+        AlarmAutoStopService.shared.disarm(alarmID: id)
     }
 
     // MARK: - List
 
     var scheduledAlarms: [AlarmKit.Alarm] {   // AlarmKit's Alarm, not the SwiftData model
         (try? manager.alarms) ?? []           // manager.alarms is a throwing property
+    }
+
+    /// Human-readable alarm state string for logging.
+    func alarmState(id: UUID) -> String {
+        guard let alarm = (try? manager.alarms)?.first(where: { $0.id == id }) else {
+            return "not-found"
+        }
+        return "\(alarm.state)"
     }
 }

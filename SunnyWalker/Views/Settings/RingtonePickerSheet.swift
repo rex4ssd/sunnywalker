@@ -1,10 +1,11 @@
 // SunnyWalker — RingtonePickerSheet.swift
-// Lets the parent choose a ringtone for an alarm:
-//   • Section 1: bundled app sounds
-//   • Section 2: VoiceClip recordings from the library
+// Lets the parent choose a ringtone for an alarm.
+// mode .bundled  → only built-in sounds
+// mode .custom   → only self-recorded VoiceClips
+// mode .all      → both sections (legacy / preview)
 //
-// On selection the sheet calls onSelect(soundFileName) where soundFileName is a
-// CAF / WAV file name that AlarmScheduler / AlarmKit can reference directly.
+// On selection the sheet calls onSelect(soundFileName, SelectedRecordingInfo?) where
+// soundFileName is a CAF / WAV file name that AlarmScheduler / AlarmKit can reference.
 
 import SwiftUI
 import SwiftData
@@ -24,6 +25,17 @@ struct SelectedRecordingInfo {
     let displayName: String
 }
 
+// MARK: - Picker mode
+
+enum RingtonePickerMode {
+    /// Show only bundled app sounds.
+    case bundled
+    /// Show only self-recorded VoiceClips.
+    case custom
+    /// Show both sections (for backwards compatibility / previews).
+    case all
+}
+
 private let bundledSounds: [BundledSound] = [
     BundledSound(fileName: "sunny_wake.caf",  displayName: "陽光起床", emoji: "☀️"),
     BundledSound(fileName: "leaf_rustle.caf", displayName: "樹葉沙沙", emoji: "🍃"),
@@ -34,6 +46,8 @@ private let bundledSounds: [BundledSound] = [
 struct RingtonePickerSheet: View {
     /// Current selection passed in so the picker can show a checkmark.
     let currentFileName: String
+    /// Which section(s) to show.
+    var mode: RingtonePickerMode = .all
     /// Called with the chosen sound file name, plus the recording base name when using a custom clip.
     let onSelect: (String, SelectedRecordingInfo?) -> Void
 
@@ -50,13 +64,20 @@ struct RingtonePickerSheet: View {
             ZStack {
                 SunnyColors.cloudWhite.ignoresSafeArea()
                 List {
-                    bundledSection
-                    if !clips.isEmpty { recordingSection }
+                    if mode == .bundled || mode == .all {
+                        bundledSection
+                    }
+                    if (mode == .custom || mode == .all), !clips.isEmpty {
+                        recordingSection
+                    }
+                    if mode == .custom && clips.isEmpty {
+                        emptyCustomSection
+                    }
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("選擇鈴聲 🎵")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -84,7 +105,40 @@ struct RingtonePickerSheet: View {
         }
     }
 
+    // MARK: - Helpers
+
+    private var navigationTitle: String {
+        switch mode {
+        case .bundled: return "內建鈴聲 🎵"
+        case .custom:  return "自定鈴聲(錄音) 🎤"
+        case .all:     return "選擇鈴聲 🎵"
+        }
+    }
+
     // MARK: - Sections
+
+    private var emptyCustomSection: some View {
+        Section {
+            HStack {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "mic.slash")
+                        .font(.system(size: 36))
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
+                    Text("還沒有自錄鈴聲")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                    Text("到「我的錄音」頁面錄製後再回來選")
+                        .font(SunnyFonts.caption(13))
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                }
+                Spacer()
+            }
+            .padding(.vertical, 24)
+            .listRowBackground(Color.clear)
+        }
+    }
 
     private var bundledSection: some View {
         Section(header: Text("內建音效").font(SunnyFonts.caption(13))) {

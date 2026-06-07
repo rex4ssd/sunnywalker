@@ -37,6 +37,9 @@ struct StopAlarmIntent: LiveActivityIntent {
         // Stop the AlarmKit alarm — safe to call even if already stopped/timed-out.
         // AlarmManager.stop(id:) is async, so perform() must be async too.
         try? await AlarmManager.shared.stop(id: uuid)
+        // Note: AlarmAutoStopService.disarm() is called automatically when the main app comes to
+        // foreground (via AlarmKitService.stop → disarm, triggered from enterForegroundAlarmMode).
+        // We cannot call it here because StopAlarmIntent is compiled in a separate target.
 
         // ── Routing ──────────────────────────────────────────────────────────
         // Strict (貪睡) alarms must open the app so the child completes the wake task.
@@ -76,6 +79,8 @@ struct DismissAlarmIntent: LiveActivityIntent {
 
         // Just stop the alarm. No app open, no ring screen.
         try? await AlarmManager.shared.stop(id: uuid)
+        // Note: AlarmAutoStopService.disarm() runs later via BGTask or on next app foreground.
+        // Cannot call it here — DismissAlarmIntent is compiled in a separate target.
 
         // Defensive: clear any stale routing marker and stamp the same short-lived suppression
         // HomeView honours, so a racing .alarmFired / checkPendingAlarm can't re-open the ring.
