@@ -46,6 +46,11 @@ targets:
         NSSpeechRecognitionUsageDescription: "用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。"
         UIBackgroundModes:
           - audio
+          - processing   # BGProcessingTask — AlarmAutoStopService Layer 1（背景自動停鈴保險）
+        # ⚠️ 必須在這裡宣告，否則 `xcodegen generate` 會用 info.properties 重建 Info.plist，
+        # 把手改的 BGTaskSchedulerPermittedIdentifiers 洗掉 → BGTaskScheduler.register 直接 crash。
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.sunnywalker.alarm.autostop
         # iPad multitasking rule (App Store error 90474): a universal app must EITHER declare all
         # four orientations OR require full screen. SunnyWalker is portrait-locked, so we require
         # full screen (no iPad split-view) instead of adding landscape we don't support.

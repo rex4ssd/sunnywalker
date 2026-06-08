@@ -157,9 +157,24 @@ struct HomeView: View {
             // the alarm just goes silent when the user unlocks. (Fixes "解鎖鐘就停了".)
             if newPhase == .active {
                 print("🏠 HomeView.scenePhase → active; re-checking pending alarm")
+                // Foreground needs no keep-alive: tear down silent audio / watchdog / timers
+                // (armedAlarms + BGTask stay as Layer-1 insurance; enterForegroundAlarmMode's
+                // stop() chain disarms them one by one).
+                // ⚠️ firingAlarm != nil 時不要動 — AlarmRingView 擁有 audio session，
+                // endBackgroundLifecycle 的 setActive(false) 會跟 in-app 鈴聲打架（560557684 雷）。
+                if firingAlarm == nil {
+                    AlarmAutoStopService.shared.endBackgroundLifecycle()
+                }
                 // Fallback: stop any alarm that outlived its ring window (covers the case where
                 // BGProcessingTask / DispatchTimer didn't fire before user opened the app).
                 AlarmAutoStopService.shared.checkAndStopOverdue()
+                // 把背景 auto-stop 留下的 timeout 記錄轉入 SwiftData（準時率/回應率統計）。
+                // 延遲 0.5s：等 checkAndStopOverdue 的 async stop/queue 跑完再 drain；
+                // 萬一沒趕上，殘餘 pending 會在下次 .active 時補入庫（queue 不會掉資料）。
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                    drainTimeoutRecords()
+                }
                 checkPendingAlarm()
                 // Foreground = in-app ring. Cancel AlarmKit so it can't fire its system banner while
                 // we're on-screen (which would background us and break voice-stop). The 1s
@@ -346,16 +361,39 @@ struct HomeView: View {
         }
     }
 
+    /// 背景 auto-stop（無人回應）留下的 pending timeout 記錄 → WakeRecord(dismissMethod:"timeout")。
+    /// 在 scenePhase → .active（延遲 0.5s）呼叫；checkAndStopOverdue 補停的鬧鐘也會入庫。
+    private func drainTimeoutRecords() {
+        let pending = AlarmAutoStopService.shared.drainPendingTimeoutRecords()
+        guard !pending.isEmpty else { return }
+        for p in pending {
+            let label = alarms.first(where: { $0.id == p.alarmID })?.label ?? ""
+            modelContext.insert(WakeRecord(
+                alarmID: p.alarmID,
+                alarmLabel: label,
+                firedAt: p.firedAt,
+                wokeAt: p.stoppedAt,          // timeout 語意：自動停鈴時刻（不是起床時刻）
+                dismissMethod: "timeout"      // 無人回應 — 統計用：回應率分母、準時率 miss
+            ))
+        }
+        print("🏠 drainTimeoutRecords: \(pending.count) timeout WakeRecord(s) inserted")
+    }
+
     /// Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm fires.
     private func enterBackgroundAlarmMode() {
         guard AlarmKitService.shared.isAuthorized else { return }
         let snapshot = alarms
+        // ★ 背景轉場保護：syncAllEnabled 走多次 AlarmKit IPC、之後還要啟動 keep-alive 音訊。
+        // 沒有 UIApplication background task 的話，app 可能在完成前就被 suspend →
+        // AlarmKit 沒排上 / Layer 2 沒啟動。必須在 scenePhase handler 內同步取得。
+        AlarmAutoStopService.shared.beginTransitionProtection()
         Task { @MainActor in
             await AlarmKitService.shared.syncAllEnabled(snapshot)
             // After sync, arm()/disarm() calls inside syncAlarm() have updated AlarmAutoStopService.
             // Now start audio keep-alive + DispatchTimers if any armed alarm fires within lookAheadMinutes.
             AlarmAutoStopService.shared.beginBackgroundLifecycle()
             print("🏠 background mode: AlarmKit re-armed for lock/silent")
+            AlarmAutoStopService.shared.endTransitionProtection()
         }
     }
 

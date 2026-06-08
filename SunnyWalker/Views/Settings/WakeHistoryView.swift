@@ -71,6 +71,7 @@ private struct WakeRecordCard: View {
         case "voice":    return "mic.fill"
         case "button":   return "hand.tap.fill"
         case "fallback": return "hand.tap"
+        case "timeout":  return "bell.slash.fill"   // 無人回應，背景自動停鈴
         default:         return "checkmark.circle"
         }
     }
@@ -80,6 +81,7 @@ private struct WakeRecordCard: View {
         case "voice":    return "method_voice"
         case "button":   return "method_button"
         case "fallback": return "method_fallback"
+        case "timeout":  return "method_timeout"
         default:         return "method_default"
         }
     }
