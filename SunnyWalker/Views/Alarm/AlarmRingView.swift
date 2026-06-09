@@ -10,6 +10,7 @@ struct AlarmRingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var audioPlayer = AudioPlayer()
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @State private var wiggle = false
@@ -32,9 +33,16 @@ struct AlarmRingView: View {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: Date()))
     }
 
-    /// Attempt label (1-indexed): shows which cycle the child is on while listening.
+    /// 聆聽時顯示「要喊什麼」的提示。
+    /// 有自定口令 → 「說：太陽公公、我起床了」（自定口令 + 預設代表詞「我起床了」，都能辨識）；
+    /// 沒有 → 維持預設「說『我起床了』」。
     var attemptLabel: String {
-        L("attempt_counter %lld", min(recognitionFailureCount + 1, 3))
+        let custom = alarm?.effectiveCustomPhrases ?? []
+        if !custom.isEmpty {
+            let all = custom + [L("我起床了")]   // 自定口令 + 預設代表詞
+            return L("say_phrase_hint %@", all.joined(separator: L("、")))
+        }
+        return L("attempt_counter %lld", min(recognitionFailureCount + 1, 3))
     }
 
     var body: some View {
@@ -166,6 +174,35 @@ struct AlarmRingView: View {
             // Let the device auto-lock / sleep again once the alarm screen is gone.
             UIApplication.shared.isIdleTimerDisabled = false
         }
+        // 切到別的 app（背景）時聲控必定失效（mic 被中斷）。原本沒處理 → 切回前景
+        // speechRecognizer 卡死、UI 還顯示「聆聽中」但喊話無效（圖3：切回來一直說話不停）。
+        // 修法：切背景→停聲控並重置狀態；切回前景→若還在響鈴(voice 模式、未進 fallback/reward)就重啟聆聽。
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background, .inactive:
+                guard isListening || speechTask != nil else { return }
+                print("🎤 AlarmRingView.scenePhase → \(phase): 停止聲控（背景無法辨識）")
+                speechTask?.cancel()
+                speechTask = nil
+                speechRecognizer.stop()
+                isListening = false
+                micPulse = false
+                audioPlayer.unduck()
+            case .active:
+                // 回前景：仍在響鈴、voice 模式、還沒按 fallback / 還沒成功 → 重新開始聆聽。
+                guard !showingReward, !showFallbackButton,
+                      alarm?.effectiveTaskType != .button else { return }
+                print("🎤 AlarmRingView.scenePhase → active: 重啟聲控")
+                speechTask?.cancel()
+                speechTask = Task {
+                    try? await Task.sleep(for: .seconds(1))   // 等 audio session 從背景恢復
+                    guard !Task.isCancelled else { return }
+                    startSpeechCycle()
+                }
+            @unknown default:
+                break
+            }
+        }
         .fullScreenCover(isPresented: $showingReward, onDismiss: { dismiss() }) {
             RewardView()
         }
@@ -193,7 +230,7 @@ struct AlarmRingView: View {
                 self.micPulse = false
                 self.audioPlayer.unduck()
                 self.handleRecognitionFailure()
-            })
+            }, extraKeywords: alarm?.effectiveCustomPhrases ?? [])   // 這個鬧鐘的自定口令
         } catch {
             print("🎤 AlarmRingView.startSpeechCycle: startListening THREW — \(error.localizedDescription)")
             isListening = false

@@ -26,6 +26,7 @@ struct AlarmEditorView: View {
     @State private var isSaving = false
     @State private var showingBuiltinPicker = false
     @State private var showingCustomPicker = false
+    @State private var customPhrase = ""
 
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
@@ -44,6 +45,7 @@ struct AlarmEditorView: View {
             _selectedWeekdays = State(initialValue: Set(a.weekdays))
             _selectedTaskType = State(initialValue: a.recordingName.isEmpty ? .button : a.effectiveTaskType)
             _requireAppToStop = State(initialValue: a.effectiveRequireAppToStop)
+            _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
@@ -130,6 +132,7 @@ struct AlarmEditorView: View {
                     .font(SunnyFonts.body())
                     .foregroundStyle(SunnyColors.nightIndigo)
                     .tint(SunnyColors.leafFresh)
+                    .colorScheme(.light)   // 同自定口令：iOS 26 深色模式輸入文字看不到字的修法
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -196,6 +199,29 @@ struct AlarmEditorView: View {
                 .tint(SunnyColors.lanternOrange)
                 .disabled(!voiceDismissAvailable)
 
+                // 自定口令輸入 — 只在口令關閉開啟時顯示。自定 + 預設詞都認。
+                if isVoiceDismissEnabled {
+                    VStack(alignment: .leading, spacing: 6) {
+                        TextField("自定口令（選填，例如：太陽公公起床了）", text: $customPhrase)
+                            .font(SunnyFonts.caption(15))
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                            .tint(SunnyColors.leafFresh)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.82))
+                            )
+                            // iOS 26 Liquid Glass adaptive color 會把輸入文字染成跟背景同色（深色模式下看不到字）。
+                            // 強制 light scheme，輸入文字才會是深色可見。同 VoiceClipRecorderSheet 的修法。
+                            .colorScheme(.light)
+                        Text("除了預設的「我起床了」等，也會認你設定的口令。多個用逗號分隔。")
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                    }
+                    .padding(.leading, 4)
+                }
+
                 Divider()
 
                 Toggle(isOn: $requireAppToStop) {
@@ -223,19 +249,20 @@ struct AlarmEditorView: View {
     }
 
     // Display subtitle for the built-in row.
-    private var builtinSubtitle: String {
+    // 回傳 Text（非 String）：鈴聲名走 LocalizedStringKey 才能在英文版翻譯；
+    // emoji 與檔名/錄音名是 verbatim 不翻譯。
+    private var builtinSubtitle: Text {
         switch tempAlarm.soundFileName {
-        case "sunny_wake.caf":  return "☀️ 陽光起床"
-        case "leaf_rustle.caf": return "🍃 樹葉沙沙"
-        default:                return isBuiltinSelected ? tempAlarm.soundFileName : "未選擇"
+        case "sunny_wake.caf":  return Text("☀️ ") + Text(LocalizedStringKey("陽光起床"))
+        case "leaf_rustle.caf": return Text("🍃 ") + Text(LocalizedStringKey("樹葉沙沙"))
+        default:                return isBuiltinSelected ? Text(tempAlarm.soundFileName) : Text(LocalizedStringKey("未選擇"))
         }
     }
 
     // Display subtitle for the custom recording row.
-    private var customSubtitle: String {
-        guard !tempAlarm.recordingName.isEmpty else { return "未選擇" }
-        let name = tempAlarm.effectiveRecordingDisplayName
-        return "🎤 \(name)"
+    private var customSubtitle: Text {
+        guard !tempAlarm.recordingName.isEmpty else { return Text(LocalizedStringKey("未選擇")) }
+        return Text("🎤 ") + Text(tempAlarm.effectiveRecordingDisplayName)  // 錄音名是用戶資料，不翻譯
     }
 
     private var ringtoneCard: some View {
@@ -293,7 +320,7 @@ struct AlarmEditorView: View {
     }
 
     @ViewBuilder
-    private func ringtoneRow(icon: String, iconColor: Color, title: String, subtitle: String, isSelected: Bool) -> some View {
+    private func ringtoneRow(icon: String, iconColor: Color, title: LocalizedStringKey, subtitle: Text, isSelected: Bool) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 20))
@@ -303,7 +330,7 @@ struct AlarmEditorView: View {
                 Text(title)
                     .font(SunnyFonts.caption())
                     .foregroundStyle(SunnyColors.nightIndigo)
-                Text(subtitle)
+                subtitle
                     .font(SunnyFonts.caption(14))
                     .foregroundStyle(isSelected ? SunnyColors.lanternOrange : SunnyColors.sunnyGray)
             }
@@ -333,6 +360,9 @@ struct AlarmEditorView: View {
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
         tempAlarm.taskType = isVoiceDismissEnabled ? .voice : .button
         tempAlarm.requireAppToStop = requireAppToStop
+        // 自定口令：trim 後空字串存 nil（effectiveCustomPhrases 回空陣列）。
+        let phrase = customPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        tempAlarm.customDismissPhrase = phrase.isEmpty ? nil : phrase
 
         if !isEditing {
             modelContext.insert(tempAlarm)

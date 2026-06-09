@@ -34,7 +34,8 @@ final class SpeechRecognizer: ObservableObject {
         }
     }
 
-    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil, listeningTimeout: TimeInterval = 8.0) throws {
+    /// - Parameter extraKeywords: 每個鬧鐘的自定口令，與預設詞一起比對（自定 + 預設都認）。
+    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil, listeningTimeout: TimeInterval = 8.0, extraKeywords: [String] = []) throws {
         guard !isListening else { return }
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "SpeechRecognizer", code: -1,
@@ -47,6 +48,9 @@ final class SpeechRecognizer: ObservableObject {
 
         recognizedText = ""
         matchedKeyword = nil
+
+        // 預設詞 + 這個鬧鐘的自定口令一起比對。去重、濾空。
+        let allKeywords = keywords + extraKeywords.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
 
         // The session must be in a recording-capable category BEFORE we read the
         // input node format. AlarmRingView plays the parent's recording first, which
@@ -119,7 +123,7 @@ final class SpeechRecognizer: ObservableObject {
                 guard let text = result?.bestTranscription.formattedString else { return }
                 self.recognizedText = text
 
-                if let hit = self.keywords.first(where: { text.contains($0) }) {
+                if let hit = allKeywords.first(where: { text.contains($0) }) {
                     self.matchedKeyword = hit
                     onMatch(hit)
                     self.stop()

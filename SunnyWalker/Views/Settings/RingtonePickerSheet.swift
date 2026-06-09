@@ -58,6 +58,7 @@ struct RingtonePickerSheet: View {
     @State private var previewingFile: String?
     @State private var renamingClip: VoiceClip?
     @State private var renameDraft = ""
+    @State private var showingRecorder = false   // 自定鈴聲頁直接新增錄音（復用 VoiceClipRecorderSheet）
 
     var body: some View {
         NavigationStack {
@@ -72,6 +73,10 @@ struct RingtonePickerSheet: View {
                     }
                     if mode == .custom && clips.isEmpty {
                         emptyCustomSection
+                    }
+                    // 「新增錄音」— 自定鈴聲頁直接錄，錄完 @Query 自動刷新顯示在上面清單
+                    if mode == .custom || mode == .all {
+                        addRecordingSection
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -90,6 +95,13 @@ struct RingtonePickerSheet: View {
         .onReceive(player.$isPlaying) { playing in
             if !playing { previewingFile = nil }
         }
+        .sheet(isPresented: $showingRecorder) {
+            // 復用 settings「錄音管理」的錄音 sheet；存好的 clip insert 進 context 後
+            // @Query(clips) 立即更新 → 新錄音馬上出現在自定鈴聲清單。
+            VoiceClipRecorderSheet { clip in
+                modelContext.insert(clip)
+            }
+        }
         .alert("重新命名自錄鈴聲", isPresented: renameAlertBinding) {
             TextField("自錄鈴聲名稱", text: $renameDraft)
             Button("取消", role: .cancel) {
@@ -107,7 +119,9 @@ struct RingtonePickerSheet: View {
 
     // MARK: - Helpers
 
-    private var navigationTitle: String {
+    // LocalizedStringKey（非 String）：.navigationTitle(String) 是 verbatim 不會翻譯，
+    // 必須回 LocalizedStringKey 才會查 xcstrings 在英文版顯示英文。
+    private var navigationTitle: LocalizedStringKey {
         switch mode {
         case .bundled: return "內建鈴聲 🎵"
         case .custom:  return "自定鈴聲(錄音) 🎤"
@@ -128,7 +142,7 @@ struct RingtonePickerSheet: View {
                     Text("還沒有自錄鈴聲")
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
-                    Text("到「我的錄音」頁面錄製後再回來選")
+                    Text("點下方「新增錄音」錄一段給孩子的鈴聲")
                         .font(SunnyFonts.caption(13))
                         .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
                         .multilineTextAlignment(.center)
@@ -156,6 +170,37 @@ struct RingtonePickerSheet: View {
                 )
                 .listRowBackground(Color.white.opacity(0.75))
             }
+        }
+    }
+
+    private var canAddMoreClips: Bool { clips.count < VoiceClipLimits.maxCount }
+
+    private var addRecordingSection: some View {
+        Section {
+            Button {
+                showingRecorder = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: canAddMoreClips ? "mic.badge.plus" : "lock.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(canAddMoreClips ? SunnyColors.lanternOrange : SunnyColors.sunnyGray)
+                    if canAddMoreClips {
+                        Text("新增錄音")
+                            .font(SunnyFonts.title(16))
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                    } else {
+                        Text("clips_limit_reached \(VoiceClipLimits.maxCount)")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!canAddMoreClips)
+            .listRowBackground(Color.white.opacity(0.75))
         }
     }
 

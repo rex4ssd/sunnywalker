@@ -41,6 +41,11 @@ final class Alarm {
     /// Use `effectiveRequireAppToStop` — never read this directly.
     var requireAppToStop: Bool?
 
+    /// 自定關鬧鐘口令：除了 SpeechRecognizer 預設詞（「我起床了」等）之外，額外認的關鍵字。
+    /// 多個口令可用逗號（, 或 ，）或換行分隔。Optional + default 配合 SwiftData lightweight migration。
+    /// 讀取請用 `effectiveCustomPhrases`。
+    var customDismissPhrase: String? = nil
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -62,6 +67,15 @@ final class Alarm {
 
     /// nil (rows created before strict mode existed) → false.
     var effectiveRequireAppToStop: Bool { requireAppToStop ?? false }
+
+    /// 把 customDismissPhrase 拆成乾淨的口令陣列（去空白、濾空）。
+    var effectiveCustomPhrases: [String] {
+        guard let raw = customDismissPhrase else { return [] }
+        return raw
+            .split(whereSeparator: { $0 == "," || $0 == "，" || $0.isNewline })
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
 
     var effectiveRecordingDisplayName: String {
         let trimmed = recordingDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "、" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", "
+          }
+        }
+      }
+    },
     "·" : {
 
     },
@@ -53,6 +64,9 @@
         }
       }
     },
+    "☀️ " : {
+
+    },
     "☀️ 陽光起床" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -76,6 +90,9 @@
     "🌿" : {
 
     },
+    "🍃 " : {
+
+    },
     "🍃 樹葉沙沙" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -92,6 +109,9 @@
           }
         }
       }
+    },
+    "🎤 " : {
+
     },
     "🎤 自錄鈴聲" : {
       "extractionState" : "stale",
@@ -636,6 +656,23 @@
         }
       }
     },
+    "say_phrase_hint %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say: %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "說：%@"
+          }
+        }
+      }
+    },
     "settings_label" : {
       "localizations" : {
         "en" : {
@@ -988,6 +1025,17 @@
         }
       }
     },
+    "保留片段" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep segment"
+          }
+        }
+      }
+    },
     "保留長度 %@" : {
       "localizations" : {
         "en" : {
@@ -1095,7 +1143,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save Changes"
+            "value" : "Save"
           }
         },
         "zh-Hant" : {
@@ -1129,13 +1177,24 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save Alarm"
+            "value" : "Save"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存鬧鐘"
+          }
+        }
+      }
+    },
+    "先在「自定錄音」選一個鈴聲，才能開啟口令關閉。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a custom recording first to enable voice-stop."
           }
         }
       }
@@ -1191,6 +1250,28 @@
         }
       }
     },
+    "內建鈴聲" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in"
+          }
+        }
+      }
+    },
+    "內建鈴聲 🎵" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in 🎵"
+          }
+        }
+      }
+    },
     "內建音效" : {
       "localizations" : {
         "en" : {
@@ -1224,6 +1305,9 @@
         }
       }
     },
+    "最多只能設定 %@ 個鬧鐘，請先刪除一個再新增。" : {
+
+    },
     "分享 / 匯出 Markdown" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1241,8 +1325,18 @@
         }
       }
     },
-    "刪除" : {
+    "分享到其他 App" : {
       "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share to other apps"
+          }
+        }
+      }
+    },
+    "刪除" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1254,6 +1348,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除"
+          }
+        }
+      }
+    },
+    "刪除這段錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this recording"
           }
         }
       }
@@ -1293,6 +1398,7 @@
       }
     },
     "到「我的錄音」頁面錄製後再回來選" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1355,6 +1461,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯出"
+          }
+        }
+      }
+    },
+    "匯出 Markdown" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Markdown"
           }
         }
       }
@@ -1528,6 +1645,17 @@
         }
       }
     },
+    "小晴" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny"
+          }
+        }
+      }
+    },
     "小晴（吉祥物）" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1675,6 +1803,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已選自錄鈴聲，可以開啟口令關閉。"
+          }
+        }
+      }
+    },
+    "已選自錄鈴聲，說出關鍵字即可關閉。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom recording selected — say the keyword to stop."
           }
         }
       }
@@ -1849,6 +1988,17 @@
         }
       }
     },
+    "找不到原始音檔" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original audio file not found"
+          }
+        }
+      }
+    },
     "按這裡起床 🌟" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1950,7 +2100,6 @@
       }
     },
     "新增鬧鐘" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2050,6 +2199,17 @@
         }
       }
     },
+    "未選擇" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
     "樹葉沙沙" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2134,7 +2294,6 @@
       }
     },
     "編輯" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2251,6 +2410,39 @@
         }
       }
     },
+    "自定口令（選填，例如：太陽公公起床了）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom phrase (optional, e.g. Good morning sunshine)"
+          }
+        }
+      }
+    },
+    "自定鈴聲(錄音)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom (recording)"
+          }
+        }
+      }
+    },
+    "自定鈴聲(錄音) 🎤" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom (recording) 🎤"
+          }
+        }
+      }
+    },
     "自錄鈴聲" : {
       "localizations" : {
         "en" : {
@@ -2297,6 +2489,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "裁剪錄音"
+          }
+        }
+      }
+    },
+    "裁左 / 裁右" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trim start / end"
           }
         }
       }
@@ -3002,6 +3205,17 @@
         }
       }
     },
+    "錄音名稱" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording name"
+          }
+        }
+      }
+    },
     "錄音完成 ✅" : {
       "localizations" : {
         "en" : {
@@ -3254,6 +3468,16 @@
         }
       }
     },
+    "除了預設的「我起床了」等，也會認你設定的口令。多個用逗號分隔。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besides the default phrases (“I'm awake”, etc.), your custom phrase will also work. Separate multiple phrases with commas."
+          }
+        }
+      }
+    },
     "陽光起床" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3353,7 +3577,35 @@
         }
       }
     },
+    "麥克風尚未就緒" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone not ready"
+          }
+        }
+      }
+    },
+    "點一下，吉祥物會跟你打招呼" : {
+
+    },
+    "點下方「新增錄音」錄一段給孩子的鈴聲" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap “Add recording” below to record a ringtone for your child"
+          }
+        }
+      }
+    },
+    "點下方的 ＋ 來新增第一個吧！" : {
+
+    },
     "點右下角的 + 來新增第一個吧！" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

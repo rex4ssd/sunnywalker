@@ -33,6 +33,7 @@ struct AlarmIOView: View {
                     TextEditor(text: $importText)
                         .font(.system(.footnote, design: .monospaced))
                         .frame(minHeight: 120)
+                        .colorScheme(.light)   // iOS 26 深色模式輸入文字看不到字的修法
                     Button("從剪貼簿貼上") {
                         importText = UIPasteboard.general.string ?? ""
                     }

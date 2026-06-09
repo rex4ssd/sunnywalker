@@ -105,6 +105,9 @@ struct GiraffeAvatar: View {
             .offset(y: -94)  // sit on top of neck
         }
         .frame(width: 120, height: 160)
+        // 頭 + 觸角用 offset(y:-94) 畫到 frame 外上方約 50pt（frame 半高僅 80），不 clip 會蓋到
+        // 上方的日期文字。加 top padding 把溢出量補回佈局尺寸，讓上層 VStack 正確留出間距。
+        .padding(.top, 52)
         .accessibilityLabel("長頸鹿")
         .accessibilityHint("SunnyWalker 吉祥物")
         .onReceive(blinkTimer) { _ in
