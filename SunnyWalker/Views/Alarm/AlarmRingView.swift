@@ -19,6 +19,10 @@ struct AlarmRingView: View {
     @State private var ringTimeoutTask: Task<Void, Never>?
     @State private var recognitionFailureCount = 0
     @State private var showFallbackButton = false
+    // True once we've begun closing the ring (wake success or ring-timeout). Guards the
+    // foreground audio-resume in scenePhase → .active so it can't resurrect a stopped alarm
+    // during the brief success/timeout chime → dismiss() window.
+    @State private var isFinishing = false
 
     // Wake timestamp — set when view appears, used for WakeRecord response time
     @State private var firedAt = Date()
@@ -180,8 +184,9 @@ struct AlarmRingView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background, .inactive:
-                guard isListening || speechTask != nil else { return }
-                print("🎤 AlarmRingView.scenePhase → \(phase): 停止聲控（背景無法辨識）")
+                // 背景無法辨識：停聲控、解除 duck（讓鈴聲回到全音量，靠 audio 背景模式 + AudioPlayer
+                // 的中斷復活在關屏時盡量續響）。注意：不停 audioPlayer——鈴聲要在關屏時繼續響。
+                print("🎤 AlarmRingView.scenePhase → \(phase): 停止聲控（背景無法辨識），鈴聲維持播放 isPlaying=\(audioPlayer.isPlaying)")
                 speechTask?.cancel()
                 speechTask = nil
                 speechRecognizer.stop()
@@ -189,6 +194,12 @@ struct AlarmRingView: View {
                 micPulse = false
                 audioPlayer.unduck()
             case .active:
+                // ★ Issue #2：回前景時，無論哪種 taskType，只要還在響鈴階段（未進 reward / timeout），
+                // 先確保鈴聲還活著——背景被 suspend 可能讓 loop chain 斷掉 → 永久靜音。死了就重啟。
+                if !showingReward && !isFinishing && audioPlayer.isPlaying == false {
+                    print("🎤 AlarmRingView.scenePhase → active: 偵測到鈴聲已停 → 重新 startAudio()")
+                    startAudio()
+                }
                 // 回前景：仍在響鈴、voice 模式、還沒按 fallback / 還沒成功 → 重新開始聆聽。
                 guard !showingReward, !showFallbackButton,
                       alarm?.effectiveTaskType != .button else { return }
@@ -287,6 +298,7 @@ struct AlarmRingView: View {
 
     private func handleAutoStop() {
         print("⏰ AlarmRingView.handleAutoStop [\(ts())] — playing timeout_sad.wav then dismiss()")
+        isFinishing = true
         speechTask?.cancel()
         ringTimeoutTask?.cancel()
         speechRecognizer.stop()
@@ -328,6 +340,7 @@ struct AlarmRingView: View {
     }
 
     private func handleWakeUp(dismissMethod: String = "voice") {
+        isFinishing = true
         speechTask?.cancel()
         ringTimeoutTask?.cancel()
         speechRecognizer.stop()

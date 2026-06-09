@@ -27,10 +27,13 @@ final class SpeechRecognizer: ObservableObject {
         switch code {
         case "en":
             recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-            keywords   = ["I'm awake", "I am awake", "I'm up", "I am up", "wake up", "awake"]
+            keywords   = ["I'm awake", "I am awake", "I'm up", "I am up", "wake up"]
         default:
             recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))
-            keywords   = ["我起床了", "好的", "知道了", "起床囉"]
+            // ⚠️ 只留「起床/醒來」這類明確的起床語句。原本的「好的 / 知道了」太通用——
+            // text.contains 子字串比對下，環境音 / 電視 / 家長錄音裡隨便一句都會誤中 →
+            // 沒人喊話也辨識成功、鬧鐘自動關掉（issue #1 的「自動辨識成功」根因之一）。
+            keywords   = ["我起床了", "我醒了", "我起來了", "起床囉", "起床了"]
         }
     }
 
@@ -68,6 +71,18 @@ final class SpeechRecognizer: ObservableObject {
         request = newRequest
 
         let inputNode = audioEngine.inputNode
+        // ★ Issue #1 核心修法：開啟 voice processing（硬體回聲消除 AEC）。
+        // 沒有 AEC 時，鬧鐘鈴聲（家長錄音，內容常常就是「起床囉/我起床了」）即使被 duck 到
+        // 12% 仍從喇叭外放 → on-device 辨識器把「自己的播放」轉成文字 → 立刻 self-match →
+        // 沒人喊話也辨識成功、自動關閉。AEC 會把已知的播放訊號從 mic 輸入扣掉，杜絕 self-match。
+        // setVoiceProcessingEnabled 必須在讀 format / installTap 之前呼叫（它會改變 input 格式）。
+        do {
+            try inputNode.setVoiceProcessingEnabled(true)
+            print("🎤 SpeechRecognizer: voice processing (AEC) ENABLED — 鬧鐘外放不會再被辨識成口令")
+        } catch {
+            // AEC 開不起來不致命（少數裝置/路由會失敗）；退回純 duck，但 log 出來方便追。
+            print("🎤 SpeechRecognizer: ⚠️ setVoiceProcessingEnabled FAILED — \(error.localizedDescription)（回退無 AEC，self-match 風險升高）")
+        }
         let format = inputNode.outputFormat(forBus: 0)
         // Defensive: a 0 Hz / 0-channel format means the mic route isn't ready.
         // Installing a tap with it crashes ("required condition is false: format.sampleRate").
@@ -123,7 +138,11 @@ final class SpeechRecognizer: ObservableObject {
                 guard let text = result?.bestTranscription.formattedString else { return }
                 self.recognizedText = text
 
-                if let hit = allKeywords.first(where: { text.contains($0) }) {
+                let hit = allKeywords.first(where: { text.contains($0) })
+                // 把每次 partial transcription 都印出來——裝置上一看就知道辨識器到底「聽到」什麼，
+                // 以及是不是把鬧鐘自己的播放當成口令（issue #1 診斷用）。
+                print("🎤 SpeechRecognizer: heard='\(text)' matched=\(hit ?? "—") final=\(result?.isFinal ?? false)")
+                if let hit {
                     self.matchedKeyword = hit
                     onMatch(hit)
                     self.stop()

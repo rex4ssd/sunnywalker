@@ -11,6 +11,7 @@ final class AudioPlayer: NSObject, ObservableObject {
     private var gapSeconds = 0        // injected by caller; no AppSettings dependency
     private var loopTask: Task<Void, Never>?
     private var currentVolume: Float = 1.0   // preserved across loop restarts so a duck survives
+    private var interruptionObserver: NSObjectProtocol?
     @Published var isPlaying = false
 
     // MARK: - Public API
@@ -25,7 +26,52 @@ final class AudioPlayer: NSObject, ObservableObject {
         looping         = loop
         self.gapSeconds = gapSeconds
         currentVolume   = 1.0
+        registerInterruptionObserver()
         activateSessionAndStart(url: url, attempt: 0)
+    }
+
+    // MARK: - Interruption recovery (Issue #2)
+
+    /// ★ Issue #2 根因之二：關屏 / AlarmKit / 其他音訊都會對我們的 session 送出 interruption。
+    /// .began 時系統會把 AVAudioPlayer 暫停；若沒人在 .ended 時把它救回來，鬧鐘就「關屏後沒聲、
+    /// 之後一直沒聲」。原本 AudioPlayer 完全沒處理中斷 → 一次中斷就永久靜音。
+    /// 這裡在 .ended（且系統建議 shouldResume，或我們仍處於 looping 響鈴狀態）時重啟播放。
+    private func registerInterruptionObserver() {
+        guard interruptionObserver == nil else { return }
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            guard let info = note.userInfo,
+                  let raw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+            Task { @MainActor [weak self] in
+                self?.handleInterruption(type, info: info)
+            }
+        }
+    }
+
+    private func handleInterruption(_ type: AVAudioSession.InterruptionType, info: [AnyHashable: Any]) {
+        switch type {
+        case .began:
+            print("🔊 AudioPlayer.interruption BEGAN — player paused by system (looping=\(looping))")
+        case .ended:
+            // 仍在響鈴（looping 且有 currentURL）就一定要救回來，不只看 shouldResume flag。
+            var shouldResume = false
+            if let optRaw = info[AVAudioSessionInterruptionOptionKey] as? UInt {
+                shouldResume = AVAudioSession.InterruptionOptions(rawValue: optRaw).contains(.shouldResume)
+            }
+            print("🔊 AudioPlayer.interruption ENDED — shouldResume=\(shouldResume) looping=\(looping)")
+            guard looping, let url = currentURL else { return }
+            // 先取消可能還在 gap sleep 的 loopTask，避免它稍後又 startOnce 造成雙重播放。
+            loopTask?.cancel()
+            loopTask = nil
+            // 重新拿 session 再重啟一輪播放（startOnce 的 delegate 會接力 loop）。
+            activateSessionAndStart(url: url, attempt: 0)
+        @unknown default:
+            break
+        }
     }
 
     /// Configure the .playback session and start playing — with retry.
@@ -83,6 +129,10 @@ final class AudioPlayer: NSObject, ObservableObject {
         looping = false
         currentURL = nil
         isPlaying = false
+        if let obs = interruptionObserver {
+            NotificationCenter.default.removeObserver(obs)
+            interruptionObserver = nil
+        }
     }
 
     // MARK: - Internal

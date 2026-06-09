@@ -204,7 +204,18 @@ struct HomeView: View {
                 }
             } else {
                 // Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm works.
-                enterBackgroundAlarmMode()
+                // ★ Issue #2 根因之一：原本「無條件」呼叫。當 AlarmRingView 正在響鈴
+                //   （firingAlarm != nil）時，AlarmRingView 的 AudioPlayer 擁有並要保住 audio
+                //   session 才能在關屏時繼續響；此時 enterBackgroundAlarmMode 會 syncAllEnabled
+                //   重排 AlarmKit + beginBackgroundLifecycle（註冊中斷觀察者 / 可能 setActive +
+                //   切 .mixWithOthers）→ 跟 in-app 鈴聲搶 session → 關屏瞬間就沒聲。
+                //   而且這次響鈴的這顆鬧鐘根本不該被重排（in-app ring 已經接手）。
+                //   → 響鈴中不要動 AlarmKit / 背景 keep-alive，把 session 完全留給 AlarmRingView。
+                if firingAlarm == nil {
+                    enterBackgroundAlarmMode()
+                } else {
+                    print("🏠 HomeView.scenePhase → \(newPhase): alarm ringing in-app — SKIP enterBackgroundAlarmMode (AlarmRingView owns the session)")
+                }
                 // Screen locked / app backgrounded → ALWAYS release the mic + audio session.
                 // Two reasons:
                 //   (1) Battery / App Store: no always-on orange mic dot overnight.
