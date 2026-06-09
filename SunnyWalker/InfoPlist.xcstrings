@@ -1,0 +1,54 @@
+{
+  "sourceLanguage" : "zh-Hant",
+  "strings" : {
+    "NSAlarmKitUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SunnyWalker needs alarm permission so it can wake you up even when your device is locked or on silent."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The alarm listens for you to say \"I'm awake\" so it can turn off. Audio stays on this device and is never sent anywhere."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鬧鐘需要聽你說「我起床了」才能關掉喔！聲音只留在這台 iPhone 裡，不會傳出去。"
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Used to recognize what you say so the alarm can be turned off. All recognition happens on-device."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

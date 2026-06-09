@@ -30,6 +30,7 @@
 		56B96DD65F567429D696624B /* WakeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F6D67B3B5D9C27FB3D0E4A5 /* WakeRecord.swift */; };
 		57240F19036ABC19D8492C85 /* mascot_greet_03.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 4ECB4C11C43AEB5AB6279680 /* mascot_greet_03.aiff */; };
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
+		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
@@ -134,6 +135,7 @@
 		C6A487603264A6DA88C647F8 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		D43882E1C62C0E0AF8608822 /* SunnyColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyColors.swift; sourceTree = "<group>"; };
 		E082FE6D44313D96DE49E326 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
+		E0D014C1458197C25E160373 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		F8B2F46A3941FEE3E76A4346 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -212,6 +214,7 @@
 				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
 				B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */,
 				7BD2360682B2434A47F2021F /* Info.plist */,
+				E0D014C1458197C25E160373 /* InfoPlist.xcstrings */,
 				2BD64995B72CADA3B22DB510 /* Localizable.xcstrings */,
 				3D1F158233E1E9163C959DD3 /* PrivacyInfo.xcprivacy */,
 				46A29B4B7C206E35F4EB5B97 /* SunnyWalker.entitlements */,
@@ -406,6 +409,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */,
+				5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */,
 				D203CF6EA08D9B05D6F4E1D1 /* Localizable.xcstrings in Resources */,
 				56776B2E0DCCAF04D93E92C5 /* PrivacyInfo.xcprivacy in Resources */,
 				1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */,
@@ -542,7 +546,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -636,7 +640,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

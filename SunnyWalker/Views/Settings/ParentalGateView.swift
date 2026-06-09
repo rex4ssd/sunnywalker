@@ -19,45 +19,9 @@ struct GateQuestion {
         )
     }
 
-    private static let allTemplates: [GateQuestion] = weekdayQuestions + largestNumberQuestions + multiplicationQuestions
-
-    // MARK: Weekday-ordering questions (concept, not arithmetic)
-    private static let weekdayQuestions: [GateQuestion] = [
-        GateQuestion(
-            prompt: "哪個選項的星期排列順序是正確的？",
-            options: ["週一 → 週三 → 週五", "週三 → 週一 → 週五", "週五 → 週三 → 週一"],
-            correct: "週一 → 週三 → 週五"
-        ),
-        GateQuestion(
-            prompt: "哪個選項的星期排列順序是正確的？",
-            options: ["週二 → 週四 → 週六", "週四 → 週二 → 週六", "週六 → 週四 → 週二"],
-            correct: "週二 → 週四 → 週六"
-        ),
-        GateQuestion(
-            prompt: "哪個選項的星期排列順序是正確的？",
-            options: ["週日 → 週二 → 週四", "週二 → 週日 → 週四", "週四 → 週二 → 週日"],
-            correct: "週日 → 週二 → 週四"
-        ),
-    ]
-
-    // MARK: Largest 3-digit number
-    private static let largestNumberQuestions: [GateQuestion] = [
-        GateQuestion(
-            prompt: "下面哪個數字最大？",
-            options: ["932", "847", "578"],
-            correct: "932"
-        ),
-        GateQuestion(
-            prompt: "下面哪個數字最大？",
-            options: ["763", "489", "651"],
-            correct: "763"
-        ),
-        GateQuestion(
-            prompt: "下面哪個數字最大？",
-            options: ["819", "734", "296"],
-            correct: "819"
-        ),
-    ]
+    // Kids category: only multiplication questions — weekday/largest-number sets removed
+    // (too easy for 6–8 yr olds; Apple may reject a gate a child can pass). See App_Review_fix.md §2-2.
+    private static let allTemplates: [GateQuestion] = multiplicationQuestions
 
     // MARK: 3-digit multiplication (adult-level)
     private static let multiplicationQuestions: [GateQuestion] = [
