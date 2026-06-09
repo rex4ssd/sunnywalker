@@ -11,6 +11,11 @@ final class AudioRecorder: ObservableObject {
     @Published var isRecording = false
     @Published var currentURL: URL?
 
+    /// 每段自定錄音的長度上限（秒）。免費版 3 分鐘、Pro 無限——統一從 FeatureLimits 取。
+    /// 用 record(forDuration:) 當硬上限：即使 App 被切背景、UI 計時器沒跑到，檔案長度也一定被截斷。
+    /// RecordingView 另有一個同步 UI 計時器負責收尾（存檔名、匯出）。Pro（.infinity）時不設上限。
+    static var maxRecordingSeconds: TimeInterval { FeatureLimits.maxAlarmRecordingSeconds }
+
     func start(named name: String) throws {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
@@ -30,7 +35,12 @@ final class AudioRecorder: ObservableObject {
             AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
         ]
         recorder = try AVAudioRecorder(url: url, settings: settings)
-        recorder?.record()
+        let cap = Self.maxRecordingSeconds
+        if cap.isFinite {
+            recorder?.record(forDuration: cap)   // 免費版硬上限：到時自動停
+        } else {
+            recorder?.record()                   // Pro：不設長度上限
+        }
         currentURL = url
         isRecording = true
     }

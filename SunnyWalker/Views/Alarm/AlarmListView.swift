@@ -24,28 +24,46 @@ private let sampleAlarmData: [SampleAlarmData] = [
 
 struct AlarmListView: View {
     let alarms: [Alarm]
+    /// Optional scrolling header. iPhone passes clock + mascot so the whole home page scrolls as
+    /// ONE continuous strip (like the built-in Clock app) instead of clock/mascot being pinned and
+    /// only the list scrolling. nil on iPad's side-by-side layout (clock/mascot live in their own column).
+    var header: AnyView? = nil
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         if alarms.isEmpty {
-            emptyState
+            // Empty state still scrolls, with the header (clock+mascot) on top.
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    if let header { header }
+                    emptyStateContent
+                }
+            }
         } else {
+            // Single List: header row (clock+mascot) + alarm cards scroll together as one long strip.
             // List (not ScrollView+LazyVStack) so .swipeActions works natively.
             List {
+                if let header {
+                    header
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets())
+                }
                 ForEach(alarms) { alarm in
                     AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) })
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                 }
-                // Spacer row so FAB doesn't cover the last card
-                Color.clear.frame(height: 80)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(.init())
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)   // 像 iPhone 內建鬧鐘：一條長清單、不顯示 scroll bar
+            // 底部 FAB（語言/設定/新增）浮在清單之上（是 ZStack 的 sibling，不在 List 內）。
+            // 用 safeAreaInset 在清單底保留空間，捲到底時最後一張卡落在 FAB 上方。
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: 120)
+            }
         }
     }
 
@@ -62,33 +80,32 @@ struct AlarmListView: View {
         modelContext.delete(alarm)
     }
 
-    // Empty state: message + ghost sample cards so the layout reads naturally
-    private var emptyState: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                VStack(spacing: 8) {
-                    Text("🌿")
-                        .font(.system(size: 56))
-                    Text("還沒有鬧鐘")
-                        .font(SunnyFonts.title(22))
-                        .foregroundStyle(SunnyColors.nightIndigo)
-                    Text("點右下角的 + 來新增第一個吧！")
-                        .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.sunnyGray)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 24)
-
-                LazyVStack(spacing: 12) {
-                    ForEach(sampleAlarmData) { data in
-                        SampleAlarmCard(data: data)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .opacity(0.4)
+    // Empty state: message + ghost sample cards so the layout reads naturally.
+    // No own ScrollView — body wraps it (with the header) in a single ScrollView.
+    private var emptyStateContent: some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 8) {
+                Text("🌿")
+                    .font(.system(size: 56))
+                Text("還沒有鬧鐘")
+                    .font(SunnyFonts.title(22))
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                Text("點下方的 ＋ 來新增第一個吧！")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
             }
-            .padding(.bottom, 100)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 24)
+
+            LazyVStack(spacing: 12) {
+                ForEach(sampleAlarmData) { data in
+                    SampleAlarmCard(data: data)
+                }
+            }
+            .padding(.horizontal, 20)
+            .opacity(0.4)
         }
+        .padding(.bottom, 100)
     }
 }
 

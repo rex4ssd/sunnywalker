@@ -13,6 +13,8 @@ struct RecordingView: View {
     @StateObject private var audioPlayer = AudioPlayer()
     @State private var recordingError: String?
     @State private var draftDisplayName: String
+    // 3 分鐘到自動收尾（與 AudioRecorder 的硬上限同步）。手動按停止會先 cancel 它。
+    @State private var autoStopWork: DispatchWorkItem?
 
     init(
         alarm: Alarm,
@@ -73,6 +75,8 @@ struct RecordingView: View {
                         .foregroundStyle(SunnyColors.forestDeep)
                 }
             }
+            // 視窗關掉就取消尚未觸發的 3 分鐘自動停止計時器，避免它在 view 消失後才 fire。
+            .onDisappear { autoStopWork?.cancel(); autoStopWork = nil }
         }
     }
 
@@ -102,6 +106,13 @@ struct RecordingView: View {
                 .font(SunnyFonts.caption(13))
                 .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                 .multilineTextAlignment(.center)
+            if AudioRecorder.maxRecordingSeconds.isFinite {
+                Text(L("錄音最長 %lld 分鐘，超過會自動停止",
+                       Int(AudioRecorder.maxRecordingSeconds / 60)))
+                    .font(SunnyFonts.caption(12))
+                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
+                    .multilineTextAlignment(.center)
+            }
             TextField("自錄鈴聲名稱", text: $draftDisplayName)
                 .font(SunnyFonts.caption(15))
                 .foregroundStyle(SunnyColors.nightIndigo)
@@ -112,6 +123,7 @@ struct RecordingView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .fill(Color.white.opacity(0.82))
                 )
+                .colorScheme(.light)   // iOS 26 深色模式輸入文字看不到字的修法
             if let error = recordingError {
                 Text(error)
                     .font(SunnyFonts.caption())
@@ -148,12 +160,27 @@ struct RecordingView: View {
         audioPlayer.stop()
         do {
             try audioRecorder.start(named: recordingStorageName)
+            scheduleAutoStop()
         } catch {
             recordingError = L("recording_failed %@", error.localizedDescription)
         }
     }
 
+    /// 錄音上限到 → 自動跑跟手動「停止錄音」一樣的收尾流程（存檔名、匯出 CAF）。
+    /// Pro（無上限）時不排計時器。
+    private func scheduleAutoStop() {
+        autoStopWork?.cancel(); autoStopWork = nil
+        let cap = AudioRecorder.maxRecordingSeconds
+        guard cap.isFinite else { return }
+        let work = DispatchWorkItem {
+            if audioRecorder.isRecording { stopRecording() }
+        }
+        autoStopWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + cap, execute: work)
+    }
+
     private func stopRecording() {
+        autoStopWork?.cancel(); autoStopWork = nil
         audioRecorder.stop()
         alarm.recordingName = recordingStorageName
         alarm.recordingDisplayName = displayNameForStorage

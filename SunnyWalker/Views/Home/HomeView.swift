@@ -17,6 +17,15 @@ struct HomeView: View {
 
     @State private var currentTime = Date()
 
+    // FAB hint: which icon's label capsule is currently shown. Default nil keeps the bar clean;
+    // long-pressing an icon reveals its hint for ~1.6s. See revealHint(_:) / FabHint.
+    @State private var hintedFab: String? = nil
+
+    // Max number of alarms a parent can keep (free-tier cap from FeatureLimits; Pro = unlimited).
+    // The "+" flow is blocked (with an alert) once this is reached. See openAddAlarmFlow().
+    private var maxAlarms: Int { FeatureLimits.maxAlarms }
+    @State private var showingMaxAlarmsAlert = false
+
     // "+" (add alarm) gate states
     @State private var showingParentalGate = false
     @State private var gateDidSucceed = false
@@ -74,7 +83,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
-                                MascotView()
+                                MascotView(tappable: true)
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
@@ -89,7 +98,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
-                                MascotView()
+                                MascotView(tappable: true)
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
@@ -99,15 +108,23 @@ struct HomeView: View {
                     }
                 }
             } else {
-                // iPhone: stacked layout
-                VStack(spacing: 0) {
-                    ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
-                        .padding(.top, 56)
-                        .padding(.bottom, 12)
-                    MascotView()
-                        .padding(.bottom, 8)
-                    AlarmListView(alarms: alarms)
-                }
+                // iPhone: ONE continuous scroll, like the built-in Clock app. Clock + mascot are the
+                // first scrolling rows above the alarm cards, so the whole page reads as a single long
+                // strip you can drag up/down freely (no pinned header, no separate panel, no scrollbar).
+                AlarmListView(
+                    alarms: alarms,
+                    header: AnyView(
+                        VStack(spacing: 0) {
+                            ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
+                                .padding(.top, 56)
+                                .padding(.bottom, 12)
+                            MascotView(tappable: true)
+                                .padding(.bottom, 8)
+                        }
+                        // List row 預設靠左對齊 → 撐滿寬度才會水平置中（時鐘 / 日期 / 小動物）。
+                        .frame(maxWidth: .infinity)
+                    )
+                )
             }
             addButton
         }
@@ -453,78 +470,65 @@ struct HomeView: View {
 
     // MARK: - FAB buttons (add alarm + IO)
 
-    /// Capsule label shown to the left of each FAB button.
-    /// Takes LocalizedStringKey so xcstrings translations apply automatically.
-    private func fabLabel(_ key: LocalizedStringKey) -> some View {
-        Text(key)
-            .font(SunnyFonts.caption(13))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(.black.opacity(0.30))
-            .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.20), radius: 3, y: 2)
-    }
-
     private var addButton: some View {
-        VStack(alignment: .trailing, spacing: 16) {
+        // 預設只露三顆 icon（語言 / 設定 / 新增鬧鐘），畫面保持乾淨；長按任一顆才浮出它的提示字
+        // 膠囊（FabHint），1.6s 後自動消失。.bottom 對齊讓 48/48/60 不同大小的圓鈕底線切齊。
+        HStack(alignment: .bottom, spacing: 20) {
             // Language switcher — no parental gate, kids can use it too
-            HStack(spacing: 12) {
-                fabLabel("language_setting")
-                Menu {
-                    ForEach(AppLanguage.allCases) { lang in
-                        Button {
-                            localization.language = lang
-                        } label: {
-                            Text(lang.displayKey)
-                        }
+            Menu {
+                ForEach(AppLanguage.allCases) { lang in
+                    Button {
+                        localization.language = lang
+                    } label: {
+                        Text(lang.displayKey)
                     }
-                } label: {
-                    Image(systemName: "globe")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(SunnyColors.sunnyGray.opacity(0.55))
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
                 }
-                .accessibilityLabel(Text("language_setting"))
+            } label: {
+                Image(systemName: "globe")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(SunnyColors.sunnyGray.opacity(0.55))
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.25), radius: 8, y: 4)
             }
+            .accessibilityLabel(Text("language_setting"))
+            .modifier(FabHint(key: "language_setting", id: "lang", hinted: $hintedFab, reveal: revealHint))
 
             // Settings — gated: parental gate fires first, then SettingsView opens
-            HStack(spacing: 12) {
-                fabLabel("settings_label")
-                Button {
-                    openSettingsFlow()
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
-                        .background(SunnyColors.forestDeep)
-                        .clipShape(Circle())
-                        .shadow(color: SunnyColors.forestDeep.opacity(0.45), radius: 8, y: 4)
-                }
-                .accessibilityLabel(Text("settings_label"))
+            Button {
+                openSettingsFlow()
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(SunnyColors.forestDeep)
+                    .clipShape(Circle())
+                    .shadow(color: SunnyColors.forestDeep.opacity(0.45), radius: 8, y: 4)
             }
+            .accessibilityLabel(Text("settings_label"))
+            .modifier(FabHint(key: "settings_label", id: "settings", hinted: $hintedFab, reveal: revealHint))
 
             // Add alarm button — gated behind parental gate
-            HStack(spacing: 12) {
-                fabLabel("新增鬧鐘")
-                Button {
-                    openAddAlarmFlow()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
-                        .frame(width: 60, height: 60)
-                        .background(SunnyColors.lanternOrange)
-                        .clipShape(Circle())
-                        .shadow(color: SunnyColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
-                }
+            Button {
+                openAddAlarmFlow()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 60, height: 60)
+                    .background(SunnyColors.lanternOrange)
+                    .clipShape(Circle())
+                    .shadow(color: SunnyColors.lanternOrange.opacity(0.45), radius: 10, y: 5)
             }
+            .accessibilityLabel(Text("新增鬧鐘"))
+            .modifier(FabHint(key: "新增鬧鐘", id: "add", hinted: $hintedFab, reveal: revealHint))
         }
-        .padding(24)
+        // maxWidth: .infinity 讓三顆 icon 在底部置中；bottom safe area 由系統保留 → 不壓到 home indicator。
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+        .padding(.bottom, 16)
         // Parental gate for "+" → AlarmEditorView
         .sheet(isPresented: $showingParentalGate, onDismiss: {
             if gateDidSucceed {
@@ -546,9 +550,30 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
+        // Alarm cap reached → tell the parent to delete one first.
+        .alert("鬧鐘數量已達上限", isPresented: $showingMaxAlarmsAlert) {
+            Button("好", role: .cancel) { }
+        } message: {
+            Text("最多只能設定 \(maxAlarms) 個鬧鐘，請先刪除一個再新增。")
+        }
+    }
+
+    /// Show the long-pressed FAB's hint capsule, then auto-hide it after a short delay.
+    private func revealHint(_ id: String) {
+        withAnimation(.easeInOut(duration: 0.15)) { hintedFab = id }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if hintedFab == id { hintedFab = nil }
+            }
+        }
     }
 
     private func openAddAlarmFlow() {
+        // Enforce the alarm cap before anything else (even before the parental gate).
+        guard alarms.count < maxAlarms else {
+            showingMaxAlarmsAlert = true
+            return
+        }
         settings.clearExpiredParentalUnlockIfNeeded()
         if settings.isParentalGateUnlocked() {
             showingAddAlarm = true
@@ -567,6 +592,40 @@ struct HomeView: View {
     }
 }
 
+
+// MARK: - FabHint (long-press tooltip for a FAB icon)
+
+/// Long-press a FAB icon → briefly show its hint capsule above it (auto-hides via `reveal`).
+/// Keeps the home screen uncluttered while still surfacing each icon's meaning on demand.
+/// Uses `.simultaneousGesture` so the icon's own tap (Button action / Menu open) still works.
+private struct FabHint: ViewModifier {
+    let key: LocalizedStringKey
+    let id: String
+    @Binding var hinted: String?
+    let reveal: (String) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if hinted == id {
+                    Text(key)
+                        .font(SunnyFonts.caption(13))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.75))
+                        .clipShape(Capsule())
+                        .fixedSize()
+                        .offset(y: -42)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .bottom)))
+                        .allowsHitTesting(false)
+                }
+            }
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.35).onEnded { _ in reveal(id) }
+            )
+    }
+}
 
 // MARK: - Clock header (self-contained per-second redraw)
 
@@ -721,39 +780,6 @@ struct SettingsView: View {
                     .pickerStyle(.navigationLink)
                 }
 
-                // Parental tools (direct — Settings itself already gated)
-                Section(
-                    header: Text("parental_section"),
-                    footer: Text("bedside_lock_footer")
-                ) {
-                    // Bed Side Mode — direct toggle
-                    Button {
-                        if bedSide.isBedSideActive { bedSide.disable() } else { bedSide.enable() }
-                    } label: {
-                        HStack {
-                            Label("bedside_mode_label", systemImage: bedSide.isBedSideActive ? "moon.fill" : "moon")
-                                .foregroundStyle(bedSide.isBedSideActive ? SunnyColors.starGold : .primary)
-                            Spacer()
-                            Text(bedSide.isBedSideActive ? "bedside_on" : "bedside_off")
-                                .font(SunnyFonts.caption(13))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(bedSide.isBedSideActive ? SunnyColors.nightDeep : SunnyColors.sunnyGray)
-                                .clipShape(Capsule())
-                        }
-                    }
-
-                    Button { showingHistory = true } label: {
-                        Label("起床紀錄", systemImage: "chart.bar.fill")
-                            .foregroundStyle(SunnyColors.forestDeep)
-                    }
-                    Button { showingIO = true } label: {
-                        Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
-                            .foregroundStyle(SunnyColors.leafFresh)
-                    }
-                }
-
                 Section(
                     header: Text("temporary_unlock_section"),
                     footer: Text(isTemporarilyUnlocked
@@ -791,6 +817,39 @@ struct SettingsView: View {
                                 .foregroundStyle(SunnyColors.forestDeep)
                                 .monospacedDigit()
                         }
+                    }
+                }
+
+                // Parental tools — moved to the very bottom (家長工具放最下面)
+                Section(
+                    header: Text("parental_section"),
+                    footer: Text("bedside_lock_footer")
+                ) {
+                    // Bed Side Mode — direct toggle
+                    Button {
+                        if bedSide.isBedSideActive { bedSide.disable() } else { bedSide.enable() }
+                    } label: {
+                        HStack {
+                            Label("bedside_mode_label", systemImage: bedSide.isBedSideActive ? "moon.fill" : "moon")
+                                .foregroundStyle(bedSide.isBedSideActive ? SunnyColors.starGold : .primary)
+                            Spacer()
+                            Text(bedSide.isBedSideActive ? "bedside_on" : "bedside_off")
+                                .font(SunnyFonts.caption(13))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(bedSide.isBedSideActive ? SunnyColors.nightDeep : SunnyColors.sunnyGray)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    Button { showingHistory = true } label: {
+                        Label("起床紀錄", systemImage: "chart.bar.fill")
+                            .foregroundStyle(SunnyColors.forestDeep)
+                    }
+                    Button { showingIO = true } label: {
+                        Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
+                            .foregroundStyle(SunnyColors.leafFresh)
                     }
                 }
             }

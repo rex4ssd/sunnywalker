@@ -3,9 +3,36 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Feature limits (free vs Pro)
+
+/// Single source of truth for every monetizable cap in the app. The free tier enforces these;
+/// the paid (Pro) version unlocks them by flipping `isPro` to true — ideally wired to StoreKit /
+/// a purchased entitlement later. KEEP ALL CAPS HERE so adding Pro is a one-switch change and so
+/// code review can see the whole free/paid boundary in one place. See 03_todo_fectures.md.
+///
+/// Semantics: `Int.max` / `.infinity` mean "effectively unlimited" — call sites that schedule a
+/// timer or pass a duration MUST check `.isFinite` before using the recording caps.
+enum FeatureLimits {
+    /// Whether the user owns Pro. Currently always false (free). Wire to StoreKit before shipping Pro.
+    static var isPro: Bool = false
+
+    /// Max number of alarms a parent can keep at once.
+    static var maxAlarms: Int { isPro ? .max : 6 }
+
+    /// Max number of saved voice clips in the library ("自定鈴聲").
+    static var maxVoiceClips: Int { isPro ? .max : 5 }
+
+    /// Max length of a single library voice clip, in seconds.
+    static var maxVoiceClipSeconds: Double { isPro ? 30 : 5 }
+
+    /// Max length of a per-alarm parent recording, in seconds. `.infinity` for Pro (no auto-stop).
+    static var maxAlarmRecordingSeconds: TimeInterval { isPro ? .infinity : 180 }
+}
+
 // MARK: - Mascot theme
 
 enum MascotTheme: String, CaseIterable, Identifiable {
+    case sunnyAlarm = "sunnyAlarm"
     case sunny    = "sunny"
     case giraffe  = "giraffe"
     case bunny    = "bunny"
@@ -15,6 +42,7 @@ enum MascotTheme: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .sunnyAlarm: return "小鬧晴（Sunny Alarm）"
         case .sunny:   return "小晴（灰色精靈）"
         case .giraffe: return "長頸鹿"
         case .bunny:   return "小兔子"
@@ -24,6 +52,7 @@ enum MascotTheme: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
+        case .sunnyAlarm: return "alarm.fill"
         case .sunny:   return "moon.stars.fill"
         case .giraffe: return "pawprint.fill"
         case .bunny:   return "hare.fill"

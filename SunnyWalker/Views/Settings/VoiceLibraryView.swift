@@ -8,11 +8,11 @@ import AVFoundation
 
 // MARK: - Upgrade-path limits
 
+/// Thin redirect to the central FeatureLimits so all paid-gated caps live in one place
+/// (AppSettings.swift). Pro unlock flips FeatureLimits.isPro and these follow automatically.
 enum VoiceClipLimits {
-    /// Maximum number of clips (free tier). Paid tier can raise this.
-    static let maxCount: Int = 5
-    /// Maximum recording duration in seconds (free tier). Paid tier can raise this.
-    static let maxDurationSeconds: Double = 5.0
+    static var maxCount: Int { FeatureLimits.maxVoiceClips }
+    static var maxDurationSeconds: Double { FeatureLimits.maxVoiceClipSeconds }
 }
 
 // MARK: - VoiceLibraryView
@@ -233,12 +233,24 @@ private struct VoiceClipRow: View {
 
             Spacer()
 
-            Button(action: onDelete) {
-                Image(systemName: "trash.circle")
-                    .font(.system(size: 26))
-                    .foregroundStyle(SunnyColors.lanternOrange.opacity(0.75))
+            // 編輯 + 刪除 兩顆 icon，中間留 22pt 間隔避免按錯（小孩 / 大拇指誤觸）。
+            HStack(spacing: 22) {
+                Button(action: onSelect) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 24))
+                        .foregroundStyle(SunnyColors.forestDeep.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("編輯"))
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash.circle")
+                        .font(.system(size: 26))
+                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text("刪除"))
             }
-            .buttonStyle(.plain)
         }
         .padding(.vertical, 6)
     }
@@ -554,6 +566,7 @@ private struct VoiceClipDetailSheet: View {
                                     .padding(14)
                                     .background(Color.white.opacity(0.92))
                                     .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    .colorScheme(.light)   // iOS 26 深色模式輸入文字看不到字的修法
 
                                 Button("儲存名稱") {
                                     clip.name = trimmedName
