@@ -64,7 +64,7 @@ struct AlarmIOView: View {
                 AlarmScheduler.shared.cancel(old.id)
                 // Also drop the AlarmKit entry — otherwise the deleted alarm keeps
                 // firing from the system alarm list (orphaned alarm).
-                Task { [old] in try? await AlarmKitService.shared.removeAlarm(old) }
+                Task { [old] in try? AlarmKitService.shared.removeAlarm(old) }
                 modelContext.delete(old)
             }
         }

@@ -123,7 +123,7 @@ final class AlarmKitService {
         // aborts in -[TLAlertQueuePlayerController _prepareAudioEnvironmentForStateDescriptor:]).
         // Using the system default alarm tone here; the parent's recording still plays in-app.
         // To re-enable branded sound on a REAL device, add: sound: .named("sunny_wake.caf")
-        try await manager.schedule(
+        _ = try await manager.schedule(
             id: id,
             configuration: .timer(
                 duration: 60,
@@ -146,7 +146,7 @@ final class AlarmKitService {
         // On Simulator: omit sound — .named() crashes Simulator ToneLibrary (SpringBoard abort).
         // On real device: ring with the custom CAF.
         #if targetEnvironment(simulator)
-        try await manager.schedule(
+        _ = try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: .fixed(date),
@@ -155,7 +155,7 @@ final class AlarmKitService {
             )
         )
         #else
-        try await manager.schedule(
+        _ = try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: .fixed(date),
@@ -197,7 +197,7 @@ final class AlarmKitService {
         )
 
         #if targetEnvironment(simulator)
-        try await manager.schedule(
+        _ = try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: schedule,
@@ -206,7 +206,7 @@ final class AlarmKitService {
             )
         )
         #else
-        try await manager.schedule(
+        _ = try await manager.schedule(
             id: id,
             configuration: .alarm(
                 schedule: schedule,
@@ -264,7 +264,7 @@ final class AlarmKitService {
     /// - If weekdays is empty: schedules a one-shot alarm at the next occurrence of the alarm's time.
     func syncAlarm(_ alarm: Alarm) async throws {
         guard alarm.isEnabled else {
-            try await removeAlarm(alarm)
+            try removeAlarm(alarm)
             return
         }
 
@@ -311,8 +311,8 @@ final class AlarmKitService {
         if stateBeforeSync != "not-found" {
             print("AlarmKitService.syncAlarm: \(alarm.id.uuidString.prefix(8)) state=\(stateBeforeSync) — stop()+cancel() before reschedule")
         }
-        try? await manager.stop(id: alarm.id)
-        try? await manager.cancel(id: alarm.id)
+        try? manager.stop(id: alarm.id)
+        try? manager.cancel(id: alarm.id)
 
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
         // On Simulator: omit sound — .named() crashes Simulator ToneLibrary.
@@ -330,22 +330,22 @@ final class AlarmKitService {
 
         #if targetEnvironment(simulator)
         if strict {
-            try await manager.schedule(id: alarm.id, configuration: .alarm(
+            _ = try await manager.schedule(id: alarm.id, configuration: .alarm(
                 schedule: schedule, attributes: attrs,
                 stopIntent: StopAlarmIntent(alarmID: idStr)))
         } else {
-            try await manager.schedule(id: alarm.id, configuration: .alarm(
+            _ = try await manager.schedule(id: alarm.id, configuration: .alarm(
                 schedule: schedule, attributes: attrs,
                 stopIntent: DismissAlarmIntent(alarmID: idStr)))
         }
         #else
         if strict {
-            try await manager.schedule(id: alarm.id, configuration: .alarm(
+            _ = try await manager.schedule(id: alarm.id, configuration: .alarm(
                 schedule: schedule, attributes: attrs,
                 stopIntent: StopAlarmIntent(alarmID: idStr),
                 sound: .named(soundName)))
         } else {
-            try await manager.schedule(id: alarm.id, configuration: .alarm(
+            _ = try await manager.schedule(id: alarm.id, configuration: .alarm(
                 schedule: schedule, attributes: attrs,
                 stopIntent: DismissAlarmIntent(alarmID: idStr),
                 sound: .named(soundName)))
@@ -363,9 +363,9 @@ final class AlarmKitService {
     }
 
     /// Remove an alarm from AlarmKit. Safe to call if the alarm was never scheduled.
-    func removeAlarm(_ alarm: Alarm) async throws {
-        try? await manager.stop(id: alarm.id)    // silence if currently ringing
-        try? await manager.cancel(id: alarm.id)
+    func removeAlarm(_ alarm: Alarm) throws {
+        try? manager.stop(id: alarm.id)    // silence if currently ringing
+        try? manager.cancel(id: alarm.id)
         AlarmAutoStopService.shared.disarm(alarmID: alarm.id)   // cancel BGTask / DispatchTimer
         print("AlarmKitService: removed \(alarm.id)")
     }
@@ -373,7 +373,7 @@ final class AlarmKitService {
     // MARK: - Cancel / Stop (low-level, used internally and by StopAlarmIntent)
 
     func cancel(id: UUID) async throws {
-        try await manager.cancel(id: id)
+        try manager.cancel(id: id)
     }
 
     func stop(id: UUID) async throws {
@@ -381,7 +381,7 @@ final class AlarmKitService {
         // accepts the stop request or silently ignores it (e.g. already-stopped state).
         let before = alarmState(id: id)
         print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state BEFORE=\(before)")
-        try await manager.stop(id: id)
+        try manager.stop(id: id)
         let after = alarmState(id: id)
         print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state AFTER=\(after)")
         // Disarm the auto-stop service — alarm has been manually or automatically stopped.

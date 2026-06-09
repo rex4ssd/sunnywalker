@@ -16,18 +16,26 @@ final class BedSideManager: ObservableObject {
 
     @Published var isBedSideActive: Bool = false
 
-    private var savedBrightness: CGFloat = UIScreen.main.brightness
+    private var savedBrightness: CGFloat = 0.5   // default; actual value captured in enable()
     private let bedSideBrightness: CGFloat = 0.02
     private let udKey = "bedSideSavedBrightness"
+
+    /// Returns the screen from the active window scene.
+    /// Replaces deprecated `UIScreen.main` (iOS 26+).
+    private var currentScreen: UIScreen? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.screen
+    }
 
     // MARK: - Enable
 
     func enable() {
         guard !isBedSideActive else { return }
-        savedBrightness = UIScreen.main.brightness
+        savedBrightness = currentScreen?.brightness ?? 0.5
         // Persist before dimming — failsafe for force-quit
         UserDefaults.standard.set(Double(savedBrightness), forKey: udKey)
-        UIScreen.main.brightness = bedSideBrightness
+        currentScreen?.brightness = bedSideBrightness
         UIApplication.shared.isIdleTimerDisabled = true
         isBedSideActive = true
         print("BedSideManager: enabled — dimmed, idleTimer off")
@@ -37,7 +45,7 @@ final class BedSideManager: ObservableObject {
 
     func disable() {
         guard isBedSideActive else { return }
-        UIScreen.main.brightness = savedBrightness
+        currentScreen?.brightness = savedBrightness
         UIApplication.shared.isIdleTimerDisabled = false
         UserDefaults.standard.removeObject(forKey: udKey)
         isBedSideActive = false
@@ -52,7 +60,7 @@ final class BedSideManager: ObservableObject {
     func restoreOnLaunch() {
         guard let stored = UserDefaults.standard.object(forKey: udKey) as? Double else { return }
         let brightness = CGFloat(stored)
-        UIScreen.main.brightness = brightness
+        currentScreen?.brightness = brightness
         UIApplication.shared.isIdleTimerDisabled = false
         UserDefaults.standard.removeObject(forKey: udKey)
         print("BedSideManager: restored brightness \(brightness) after force-quit")

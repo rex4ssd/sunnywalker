@@ -72,7 +72,7 @@ struct AlarmListView: View {
     private func deleteAlarm(_ alarm: Alarm) {
         // Cancel from AlarmKit and v1 scheduler
         Task {
-            try? await AlarmKitService.shared.removeAlarm(alarm)
+            try? AlarmKitService.shared.removeAlarm(alarm)
             let id = alarm.id
             let staleIDs = (1...7).map { "\(id.uuidString)-\($0)" } + [id.uuidString]
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: staleIDs)
