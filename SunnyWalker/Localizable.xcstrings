@@ -170,6 +170,57 @@
         }
       }
     },
+    "127 × 4 = ？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "127 × 4 = ?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "127 × 4 = ？"
+          }
+        }
+      }
+    },
+    "154 × 5 = ？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "154 × 5 = ?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "154 × 5 = ？"
+          }
+        }
+      }
+    },
+    "236 × 3 = ？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "236 × 3 = ?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "236 × 3 = ？"
+          }
+        }
+      }
+    },
     "attempt_counter %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2666,54 +2717,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請回答以下問題才能繼續"
-          }
-        }
-      }
-    },
-    "127 × 4 = ？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "127 × 4 = ?"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "127 × 4 = ？"
-          }
-        }
-      }
-    },
-    "154 × 5 = ？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "154 × 5 = ?"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "154 × 5 = ？"
-          }
-        }
-      }
-    },
-    "236 × 3 = ？" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "236 × 3 = ?"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "236 × 3 = ？"
           }
         }
       }

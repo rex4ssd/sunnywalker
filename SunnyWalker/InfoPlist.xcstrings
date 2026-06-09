@@ -1,7 +1,32 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SunnyWalker"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SunnyWalker"
+          }
+        }
+      }
+    },
     "NSAlarmKitUsageDescription" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -18,6 +43,7 @@
       }
     },
     "NSMicrophoneUsageDescription" : {
+      "comment" : "Privacy - Microphone Usage Description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -34,6 +60,7 @@
       }
     },
     "NSSpeechRecognitionUsageDescription" : {
+      "comment" : "Privacy - Speech Recognition Usage Description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
