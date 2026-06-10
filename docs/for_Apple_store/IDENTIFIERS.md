@@ -44,7 +44,7 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 | 額外語言 | 繁體中文（zh-Hant） |
 | 平台 | iOS（iPhone + iPad，`TARGETED_DEVICE_FAMILY = 1,2`） |
 | 最低系統 | iOS 26.0 |
-| 版本 / build | `1.0` / `1`（`Info.plist`：CFBundleShortVersionString / CFBundleVersion） |
+| 版本 / build | `1.0.20260610` / `4`（`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`；Info.plist 用 `$(...)` 引用。與 Lode 一致：marketing=MAJOR.MINOR.YYYYMMDD、build=遞增整數。每次 re-upload 更新日期段與 build int）|
 | 主類別 | Education |
 | 次類別 | Utilities |
 | 年齡分級 | 4+ |
@@ -66,12 +66,15 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 
 | Key | 值 | 狀態 |
 |---|---|---|
-| `com.apple.developer.alarmkit` | `true` | ✅ 宣告完成，⚠️ 需 Apple Developer Portal 批准 |
+| （無）| — | ✅ **不需任何 entitlement** |
 
-AppleKit entitlement 申請資料：
-- Bundle ID：`app.rexcode.sunnywalker`
-- Team ID：`NHY8MKW8NH`
-- 用途：見 `docs/for_Apple_store/ALARMKIT_REQUEST.md`（或直接貼申請文字）
+**AlarmKit 不需要 entitlement，也不需向 Apple 申請。** 只靠 `Info.plist` 的
+`NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()` 即可。
+`com.apple.developer.alarmkit` 不是 Developer Portal 可勾選 / 可申請的 managed capability
+（Capabilities / App Services / Capability Requests 三處皆查無），硬塞進 entitlements 檔
+反而會讓自動簽章失敗（`Entitlement com.apple.developer.alarmkit not found...`）。
+因此 `SunnyWalker.entitlements` 刻意保持空白、也不設 `CODE_SIGN_ENTITLEMENTS`。
+詳見 `docs/alarmkit_entitlement_and_submit.md`。
 
 ---
 

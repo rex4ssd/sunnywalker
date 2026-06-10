@@ -1,16 +1,11 @@
 
-**1. AlarmKit Entitlement 申請**
+**1. AlarmKit — 不需申請、不需 entitlement** ✅
 
-前往 [https://developer.apple.com/contact/request/alarmkit](https://developer.apple.com/contact/request/alarmkit)（或 Developer Portal → 左欄 Additional Capabilities → Request Additional Capabilities）。
-
-填表內容：
-- **App Name / Bundle ID**：
- Bundle ID：app.rexcode.sunnywalker
- Team ID：NHY8MKW8NH
-
-- **Use case**：「Children's alarm app that must fire at exact scheduled times even when app is in background. Using AlarmKit to guarantee delivery of wake-up alarms.」
-- **Expected usage volume**：估計每天觸發幾次 alarm
-
+AlarmKit **不需向 Apple 申請任何 entitlement / capability**。只靠 `Info.plist` 的
+`NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()` 即可，
+Developer Portal 沒有對應的申請項。`SunnyWalker.entitlements` 刻意留空、不設
+`CODE_SIGN_ENTITLEMENTS`。送審不需為 AlarmKit 做任何後台操作。
+（背景與驗證細節見 `docs/alarmkit_entitlement_and_submit.md`。）
 
 ---
 

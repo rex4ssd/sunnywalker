@@ -238,9 +238,11 @@ App Store Connect 要設定：
 - 三個出口（`VoiceLibraryView` / `AlarmIOView` / `WakeHistoryView`）已在 gated 的 `SettingsView` 內，**本次先不加第二層 gate**（見第 2-1 節判斷）。
 - 僅在「再次因 parental gate 被退」時，才對這三處 `ShareLink`／匯出按鈕各外包一層 `ParentalGateView`。
 
-**Step 5 — 版本號**
-- `project.yml` ▸ `settings.base.CURRENT_PROJECT_VERSION`：`2` → **`3`**（App Store 拒絕重複 build number）。
-- 注意：顯示版本 `1.0` 來自 `info.properties.CFBundleShortVersionString`（不是 `MARKETING_VERSION: 0.1.0`，那個被 info.properties 覆蓋掉、實際沒生效）；本次顯示版本維持 `1.0` 即可，只動 build number。
+**Step 5 — 版本號（2026-06-10 已改成對齊 Lode 的版號規則）**
+- ✅ 已完成：`project.yml` 現為 `MARKETING_VERSION: "1.0.20260610"`、`CURRENT_PROJECT_VERSION: 4`；`Info.plist` 改用 `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)` 引用，single source。
+- 顯示版本從原本的 `1.0` 改成 **`1.0.20260610`**（marketing=MAJOR.MINOR.YYYYMMDD，與 Lode `0.5.20260605` 同規則），build = **`4`**（被退的是 build 2；新 build 用 4，>2 即可）。
+- ⚠️ Archive 前把日期段 `20260610` 改成實際 archive 當天。
+- ⚠️ **App Store Connect 端**：原本被退的版本記錄是「1.0」。因為改了顯示版本，要到該版本頁把 **Version 欄位從 `1.0` 改成 `1.0.20260610`**（app 尚未上架、可直接改），上傳後選 build 4。若懶得改，也可把 `MARKETING_VERSION` 改回 `1.0`、只 bump build——但那就不跟 Lode 一致了。
 
 **Step 6 — 驗證**
 - `xcodegen generate` → build → 英文/中文兩語系各跑一次（見第 1 節驗收 + 確認 gate 在兩語系都正確顯示）。
@@ -266,7 +268,7 @@ App Store Connect 要設定：
 
 **共同**
 
-- [ ] `CURRENT_PROJECT_VERSION` 再 +1（App Store 拒絕重複 build number）→ 目前是 2，下次上傳設 3
+- [x] 版本號已對齊 Lode：顯示版本 `1.0.20260610`、build `4`（被退的是 2）。⚠️ ASC 版本頁的 Version 欄位記得也從 `1.0` 改成 `1.0.20260610`
 - [ ] 回覆 App Store Connect 的 Resolution Center，簡述兩點都已修正
 
 > 回覆 Apple 範例（英文）：

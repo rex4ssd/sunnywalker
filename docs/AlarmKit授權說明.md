@@ -46,20 +46,23 @@ iOS 26 之後，第三方 app 可以申請相同權限，讓鬧鐘體驗跟系�
 
 ---
 
-## AlarmKit 的特殊 Entitlement
+## AlarmKit 不需要 Entitlement，也不需向 Apple 申請
 
-AlarmKit **不是** 一般 app 申請就能用的 API。  
-開發者必須向 Apple 申請 `com.apple.developer.alarms` entitlement，經過審核批准後，才能在 App Store 正式發布。
+> ⚠️ 更正（以本帳號 Developer Portal 實測為準）：早期筆記曾說「要向 Apple 申請
+> `com.apple.developer.alarms` entitlement」，**不正確**。
 
-### 申請流程
+AlarmKit **不需要任何 entitlement、也沒有可申請的 capability**。啟用條件只有兩個：
 
-1. 在 Xcode → Signing & Capabilities → `+` 新增 "Alarms" capability
-2. 前往 [developer.apple.com](https://developer.apple.com) 提交 entitlement 申請
-3. Apple 審核（通常需要幾天到幾週）
-4. 審核通過後，在正式 provisioning profile 中啟用
+1. `Info.plist` 的 `NSAlarmKitUsageDescription`（已有）。
+2. runtime 呼叫 `AlarmManager.requestAuthorization()`，使用者按同意。
 
-> **開發測試期間**：連接實體裝置的開發 build 可以直接測試（entitlement 尚未正式批准也能跑）。  
-> **Simulator**：技術上可觸發 AlarmKit alert，但**沒有聲音**（系統限制）。
+Developer Portal 的 **Capabilities / App Services / Capability Requests** 三處都查不到
+AlarmKit / Alarms 項目——它不是 managed capability，沒有需求單可填、不用等核准。
+`com.apple.developer.alarmkit` 也**不是**可 provision 的 entitlement，硬放進
+entitlements 檔會讓自動簽章失敗（`Entitlement ... not found and could not be included
+in profile`）。所以 `SunnyWalker.entitlements` 刻意留空、不設 `CODE_SIGN_ENTITLEMENTS`。
+
+> **Simulator**：技術上可觸發 AlarmKit alert，但**沒有聲音**（系統限制）；響鈴一定要看實機。
 
 ---
 

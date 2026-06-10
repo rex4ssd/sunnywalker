@@ -1,5 +1,8 @@
 # SunnyWalker — 啟用 AlarmKit + 修好鎖屏/前景響鈴（2026-06-04）
 
+> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+
+
 **狀態：** ✅ 鎖屏響鈴、前景響鈴、前景聲控停鬧鐘、麥克風只在響鈴時開 —— 全部真機驗證通過，準備上 App Store。
 
 > 這份是 2026-06-04 的權威現況報告。它**修正/取代** `fix_report_2026-06-03_three_alarm_bugs.md` 與 `design_background_voice_stop.md` 裡「AlarmKit 還沒批、UN 是 fallback、背景聆聽常駐」等假設——那些是昨天 AlarmKit 未生效時的狀態，今天已不同。

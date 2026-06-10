@@ -1,5 +1,8 @@
 # Session 回顧：踩雷 & 無效的 implement（2026-06-03）
 
+> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+
+
 > 接手自斷掉的 `sunnay_0603`，處理鬧鐘自訂聲音、聲控、背景聲控、貪睡模式、icon。
 > 這份只記**踩到的雷**和**做了卻沒效的實作**，給下個 session 少走冤枉路。完整變更看
 > `docs/fix_report_2026-06-03_three_alarm_bugs.md` 與 `docs/design_background_voice_stop.md`。

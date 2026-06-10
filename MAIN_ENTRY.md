@@ -58,11 +58,12 @@ git push origin dev/auto --tags
 ```
 
 ## ⚠️ 上架前必做
-1. **AlarmKit entitlement** — 到 developer.apple.com 申請；沒有就無法真機測試
-2. **真機測試** — 鎖屏響鈴、靜音突破、weekly repeat 正確性
-3. **App icon** — `Assets.xcassets/AppIcon` 目前是 PIL "SW" placeholder；需要設計師出圖
+1. ~~AlarmKit entitlement 申請~~ — ✅ **不需申請、不需 entitlement**（只靠 `NSAlarmKitUsageDescription` + runtime 授權；見 `docs/alarmkit_entitlement_and_submit.md`）
+2. **真機測試** — 鎖屏響鈴、靜音突破、weekly repeat 正確性（⚠️ 含「entitlements 檔留空下 `requestAuthorization()` 仍要回 authorized」的再驗證）
+3. ~~App icon placeholder~~ — ✅ 已換正式圖（`AppIcon-1024.png`，1024 RGB 無 alpha）
 4. **TestFlight** — 上傳 build，邀請內測
 5. **App Store Connect** — 填寫 description、keywords、age rating（4+）、隱私政策 URL
+6. **版本/build** — ✅ 已對齊 Lode：marketing `1.0.20260610`、build `4`（Archive 前把日期段改成實際 archive 日）
 
 ## 📁 重要路徑
 - Spec: `docs/design/DESIGN_v2.md`

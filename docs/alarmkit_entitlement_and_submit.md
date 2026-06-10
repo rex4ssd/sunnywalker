@@ -1,11 +1,19 @@
 # AlarmKit entitlement + App Store 送審筆記（2026-06-04）
 
+> 🔴 **2026-06-10 更正（以現行 repo 為準）：** 本文部分內容停在 06-04 的中間狀態。
+> **最終決定：AlarmKit 不需要 entitlement、也不需向 Apple 申請。**
+> `SunnyWalker.entitlements` 現在**刻意留空**、`project.yml` 也**不設 `CODE_SIGN_ENTITLEMENTS`**
+> （把 `com.apple.developer.alarmkit` 放進去會讓自動簽章失敗）。啟用只靠 `Info.plist` 的
+> `NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()`。
+> ⚠️ **待驗證**：本文曾把「`requestAuthorization()` 從 `Code=1` 變 authorized」歸因於補上
+> entitlement；但現行 repo 已移除該 entitlement，需在真機重新確認授權仍成功。
+
 ## ✅ 已完成（程式端，已 commit）
 
 - 鎖屏 / 靜音響鈴：AlarmKit 全螢幕鬧鐘（已啟用、真機驗證）。
 - 前景響鈴 + 聲控停鬧鐘：`AlarmRingView` 自訂鈴 loop（修好 Library/Sounds 查找 + session 啟用重試）。
 - 麥克風只在響鈴時開（AlarmKit 授權後關閉常駐 BGListen，無橘點長亮）。
-- AlarmKit 正確簽進 binary：`CODE_SIGN_ENTITLEMENTS` + `NSAlarmKitUsageDescription`（修好 `Code=1`）。
+- AlarmKit 授權路徑：`NSAlarmKitUsageDescription` + runtime `requestAuthorization()`（**無** entitlement、**無** `CODE_SIGN_ENTITLEMENTS`；見頂部更正）。
 - 最低 iOS 版本：`IPHONEOS_DEPLOYMENT_TARGET = 26.0`（project.yml 與 pbxproj 一致）。
 
 ## 🔜 接下來要做（送審待辦，依序）
@@ -30,13 +38,13 @@
 - **Capability Requests** 搜 `AlarmKit` → 空
 
 → **AlarmKit 不是 portal 可勾選 / 可申請的 managed capability。沒有需求單可填、不用等核准。**
-它純粹由 **entitlement 檔 + Xcode 自動簽章**管理：只要
-1. `SunnyWalker/SunnyWalker.entitlements` 含 `com.apple.developer.alarmkit = true`，
-2. `project.yml` 的 `CODE_SIGN_ENTITLEMENTS` 指到該檔（已設），
-3. 用**自動簽章**（`DEVELOPMENT_TEAM = NHY8MKW8NH`）build，
+而且它**根本不需要 entitlement**：
+1. `SunnyWalker/SunnyWalker.entitlements` **留空**（放 `com.apple.developer.alarmkit` 反而會讓自動簽章報 `Entitlement ... not found and could not be included in profile`）。
+2. `project.yml` **不設** `CODE_SIGN_ENTITLEMENTS`。
+3. 啟用只靠 `Info.plist` 的 `NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()`，用**自動簽章**（`DEVELOPMENT_TEAM = NHY8MKW8NH`）build 即可。
 
-Xcode 就會自動把這個 entitlement 登記進 App ID 與 provisioning profile。
-（這就是為什麼補上 `CODE_SIGN_ENTITLEMENTS` 後，裝置上 `requestAuthorization()` 從 `Code=1` 變成 `isAuthorized=true`。）
+> ⚠️ 本文舊版曾把「`requestAuthorization()` 由 `Code=1` 變 authorized」歸因於補 entitlement，
+> 但現行 repo 已把 entitlement 移除（留空）。送審前請在真機重新確認授權仍回 `authorized`。
 
 > 先前查到部落格說「要向 Apple 申請」是不準的；以這個帳號 portal 的實際畫面為準：沒有申請項。
 

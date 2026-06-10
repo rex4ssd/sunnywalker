@@ -1,5 +1,8 @@
 # SunnyWalker — Session Report 2026-06-04
 
+> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+
+
 ## 一、App Store 上架前置審查
 
 本次開工前先做了一輪 App Store 準備狀況掃描，確認以下問題：

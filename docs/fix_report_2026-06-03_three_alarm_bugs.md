@@ -1,3 +1,5 @@
+> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+
 > ⚠️ **2026-06-04 已更新 — 部分內容已被取代。** 本報告描述的是「AlarmKit 尚未生效、UN 為 fallback」的當日狀態。隔天發現關屏不響的真因是 **AlarmKit 從未被簽進 binary**（`project.yml` 沒設 `CODE_SIGN_ENTITLEMENTS`、`NSAlarmKitUsageDescription` 被移除），已啟用 AlarmKit 並修好。**現況以 `fix_report_2026-06-04_enable_alarmkit.md` 為準**；下方「AlarmKit 還沒批 / UN 是 fallback / 長期才推 AlarmKit」等說法已不適用。
 
 ---

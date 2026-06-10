@@ -84,16 +84,17 @@ totoroGray    → sunnyGray（依新角色顏色命名）
 
 ---
 
-### 2-C. AlarmKit Entitlement 批准
+### 2-C. AlarmKit — 不需 entitlement、不需申請 ✅
 
-**問題**：`SunnyWalker.entitlements` 已宣告 `com.apple.developer.alarmkit = true`，但此 entitlement **需要 Apple Developer Portal 申請審核**，否則：
-- 真機安裝後 `AlarmManager.requestAuthorization()` 會 throw
-- 無法上傳至 TestFlight / App Store Connect
+> ⚠️ 更正：早期筆記寫「需 Apple 申請審核」**不正確**。
 
-**行動**：
-1. 登入 developer.apple.com → Certificates, Identifiers & Profiles
-2. App ID `app.rexcode.sunnywalker` → Capabilities → **Alarms**（申請 AlarmKit）
-3. 提交申請，等候批准（通常數天至數週）
+AlarmKit 不需要任何 entitlement，Developer Portal 也沒有可申請的 Alarms capability
+（Capabilities / App Services / Capability Requests 三處皆查無）。`SunnyWalker.entitlements`
+刻意留空、不設 `CODE_SIGN_ENTITLEMENTS`。啟用只靠 `Info.plist` 的
+`NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()`。
+
+**行動**：無 portal 操作。只需確認 App ID `app.rexcode.sunnywalker` 用**自動簽章**即可。
+（⚠️ 唯一要再驗的是：entitlements 留空下，真機 `requestAuthorization()` 仍要回 `authorized`。）
 
 ---
 
@@ -155,11 +156,11 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 > Team：RUEI YI WU / NHY8MKW8NH
 
 1. **Identifiers** → 新增（或確認已有）App ID `app.rexcode.sunnywalker`
-   - Capabilities 勾選：**Alarms（AlarmKit）**
-   - Capabilities 勾選：**Push Notifications**（fallback 通知需要）
+   - ❌ 不用勾 Alarms（AlarmKit 無此 capability，見 §2-C）
+   - ❌ 不用勾 Push Notifications（fallback 走 **本地**通知 `UNUserNotificationCenter`，本地通知不需任何 capability；Push 只給遠端 APNs）
 2. **Certificates** → 確認 Distribution Certificate 未過期
-3. **Profiles** → 建立 App Store Distribution Provisioning Profile for `app.rexcode.sunnywalker`
-4. **AlarmKit 申請** → 送出 Alarms capability request（§2-C）
+3. **Profiles** → 用**自動簽章**即可（不需手動建含特殊 entitlement 的 profile）
+4. ~~AlarmKit 申請~~ → ✅ 不需申請（見 §2-C）
 
 ---
 
@@ -239,7 +240,7 @@ newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
 
 | # | 項目 | 說明 |
 |---|---|---|
-| 1 | ⏳ AlarmKit entitlement 批准 | 已申請，等 Apple 回覆 |
+| 1 | ✅ AlarmKit | 不需 entitlement、不需申請（見 §2-C）。改為待辦：真機再驗 `requestAuthorization()` 回 authorized |
 | 2 | 🔴 截圖 | Simulator ⌘S，6.9"（必）、6.7"、13" iPad（建議） |
 | 3 | 🔴 App Store Connect 建立 App | SKU `sunnywalker-ios-001`，填 APP_STORE_LISTING.md 文案 |
 | 4 | 🔴 Archive + 上傳 build | Xcode → Product → Archive → Distribute |

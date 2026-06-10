@@ -1,5 +1,8 @@
 # SunnyWalker 開發日誌 — 2026-06-03
 
+> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+
+
 > 本次 session 從 UI bug 開始，一路挖到 AlarmKit entitlement、iOS 26 Liquid Glass、
 > UNNotification 聲音消失、語音辨識語言鎖死等根本問題。
 

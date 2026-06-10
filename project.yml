@@ -8,8 +8,12 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: 3   # bumped: App Store rejects duplicate build numbers on re-upload
+    # Version scheme aligned with Lode (Mac App Store): marketing = MAJOR.MINOR.YYYYMMDD,
+    # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
+    # archive date; bump it (and the build int) on every re-upload — App Store rejects
+    # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
+    MARKETING_VERSION: "1.0.20260610"
+    CURRENT_PROJECT_VERSION: 4   # bump on every upload (App Store rejects duplicate build numbers)
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
@@ -37,8 +41,10 @@ targets:
         # resets anything not listed to its own defaults (that's why a hand-edited CFBundleVersion
         # kept reverting to "1"). Build number is driven by CURRENT_PROJECT_VERSION so re-uploads
         # only need that one number bumped (App Store rejects duplicate build numbers).
-        CFBundleShortVersionString: "1.0"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        # No export-controlled encryption → declare exempt so Xcode/Organizer never prompts on upload.
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: ""
         NSAlarmKitUsageDescription: "SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。"
