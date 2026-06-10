@@ -64,7 +64,24 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
             print("🚀 AppDelegate.didFinishLaunching: picked up killed-state pendingAlarmID=\(alarmKitID.prefix(8))")
         }
 
+        // 🔬 冷啟動鑑識：重建上一輪背景/被殺的時間軸（自動停鈴失效診斷）。
+        Task { @MainActor in
+            AlarmAutoStopService.shared.logLifecycleForensics(context: "cold-launch")
+        }
+
         return true
+    }
+
+    // 🔬 forensics markers — 用來區分「只是進背景」vs「app 被關閉/殺掉」。
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        UserDefaults.standard.set(Date(), forKey: AlarmAutoStopService.lastDidEnterBgKey)
+    }
+
+    // ⚠️ 注意：force-quit（從多工列上滑）通常『不會』觸發 willTerminate（app 已 suspended 直接被殺）。
+    // 但系統主動回收或某些關閉路徑會觸發 — 有值就是強訊號：上次是被終止，不是單純背景。
+    func applicationWillTerminate(_ application: UIApplication) {
+        UserDefaults.standard.set(Date(), forKey: AlarmAutoStopService.lastWillTerminateKey)
+        print("🔬 AppDelegate.applicationWillTerminate — app 正在被終止 \(Date())")
     }
 
     // Called when the user interacts with an alarm notification (tap on body, ✕ dismiss, action).

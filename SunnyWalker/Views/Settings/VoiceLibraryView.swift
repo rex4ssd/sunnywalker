@@ -969,26 +969,21 @@ private enum VoiceClipAudioEditor {
         }
 
         let tempURL = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".m4a")
-        exporter.outputURL = tempURL
-        exporter.outputFileType = .m4a
         exporter.timeRange = CMTimeRange(
             start: CMTime(seconds: safeStart, preferredTimescale: 600),
             end: CMTime(seconds: safeEnd, preferredTimescale: 600)
         )
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            exporter.exportAsynchronously {
-                switch exporter.status {
-                case .completed:
-                    continuation.resume(returning: ())
-                case .failed:
-                    continuation.resume(throwing: exporter.error ?? VoiceClipAudioEditorError.exportFailed)
-                case .cancelled:
-                    continuation.resume(throwing: VoiceClipAudioEditorError.cancelled)
-                default:
-                    continuation.resume(throwing: VoiceClipAudioEditorError.exportFailed)
-                }
-            }
+        // iOS 18+ async export — replaces the deprecated exportAsynchronously / .status / .error
+        // trio and removes the "non-Sendable AVAssetExportSession captured in @Sendable closure"
+        // warning (there's no completion closure anymore). timeRange is still honoured; outputURL /
+        // outputFileType are now passed as the to:/as: arguments.
+        do {
+            try await exporter.export(to: tempURL, as: .m4a)
+        } catch is CancellationError {
+            throw VoiceClipAudioEditorError.cancelled
+        } catch {
+            throw VoiceClipAudioEditorError.exportFailed
         }
 
         let fm = FileManager.default

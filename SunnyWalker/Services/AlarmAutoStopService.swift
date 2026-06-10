@@ -45,6 +45,7 @@ import AVFoundation
 import BackgroundTasks
 import Foundation
 import UIKit
+import UserNotifications
 
 @MainActor
 final class AlarmAutoStopService {
@@ -114,6 +115,59 @@ final class AlarmAutoStopService {
 
     private let pendingRecordsKey = "AlarmAutoStop.pendingTimeoutRecords"
 
+    // MARK: - Lifecycle forensics（診斷：app 在背景到底活到哪一刻就被 suspend / force-quit）
+    //
+    // 自動停鈴是 100% app-side（AlarmKit iOS 26 沒有原生 ring-duration / timeout API — 已查證）。
+    // 所以 app 一旦在響鈴前就被殺/suspend，stopAt 的 DispatchTimer 永遠跑不到。問題是：process 死掉
+    // 的瞬間「沒有 log」。解法：在背景每個還活著的關鍵點戳一個持久化「心跳」時間章；下次開 app
+    // 用 logLifecycleForensics 重建時間軸，直接看出 app 最後一次執行是「背景剛進入」(→ 被 suspend/
+    // 殺，根本沒撐到響鈴) 還是「響鈴時刻」(→ 活著但 stop() 失敗)。
+    static let lastHeartbeatKey      = "AlarmAutoStop.lastHeartbeat"
+    static let lastHeartbeatPhaseKey = "AlarmAutoStop.lastHeartbeatPhase"
+    static let lastBGTaskFiredKey    = "AlarmAutoStop.lastBGTaskFiredAt"
+    static let lastDidEnterBgKey     = "AlarmAutoStop.lastDidEnterBackgroundAt"  // 由 AppDelegate 寫
+    static let lastWillTerminateKey  = "AlarmAutoStop.lastWillTerminateAt"        // 由 AppDelegate 寫
+
+    /// 背景仍在執行時戳一個時間章。phase 標記是哪個機制還活著（watchdog / dispatch / bgtask…）。
+    private func recordHeartbeat(_ phase: String) {
+        let d = UserDefaults.standard
+        d.set(Date(), forKey: Self.lastHeartbeatKey)
+        d.set(phase, forKey: Self.lastHeartbeatPhaseKey)
+    }
+
+    /// 開 app（前景）或 BGTask 喚醒時呼叫：把上一輪背景的「存活時間軸」印出來。
+    func logLifecycleForensics(context: String) {
+        let d = UserDefaults.standard
+        let now = Date()
+        func stamp(_ key: String) -> String {
+            guard let date = d.object(forKey: key) as? Date else { return "never" }
+            return "\(fmt(date)) (\(Int(now.timeIntervalSince(date)))s ago)"
+        }
+        let hbPhase = d.string(forKey: Self.lastHeartbeatPhaseKey) ?? "—"
+        print("🔬 Forensics[\(context)] now=\(fmt(now))")
+        print("🔬   lastHeartbeat   =\(stamp(Self.lastHeartbeatKey)) phase=\(hbPhase)   ← app 背景最後一次還在執行")
+        print("🔬   lastBGTaskFired =\(stamp(Self.lastBGTaskFiredKey))   ← Layer1 BGProcessingTask 是否被 iOS 喚醒")
+        print("🔬   didEnterBg      =\(stamp(Self.lastDidEnterBgKey))")
+        print("🔬   willTerminate   =\(stamp(Self.lastWillTerminateKey))   ← 有值代表上次是被『關閉/殺掉』")
+        let armed = armedAlarms.values.sorted { $0.stopAt < $1.stopAt }
+        print("🔬   armedAlarms=\(armed.count)")
+        for e in armed {
+            let fire = e.stopAt.addingTimeInterval(-Double(e.ringSeconds ?? 0))
+            let akState = AlarmKitService.shared.alarmState(id: e.alarmID)
+            print("🔬     • \(e.alarmID.uuidString.prefix(8)) fire=\(fmt(fire)) stopAt=\(fmt(e.stopAt)) ring=\(e.ringSeconds ?? 0)s overdue=\(e.stopAt <= now) AlarmKit=\(akState)")
+        }
+        // 🔬 測試「黑標」到底是不是 legacy UNNotification 在響（AlarmAutoStop.stop() 只停 AlarmKit，
+        //     停不了 UN 通知）。若 delivered>0 且內容是鬧鐘 → 響的是 UN，不是 AlarmKit → 不同修法。
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { delivered in
+            let alarmIDs = delivered.map { $0.request.identifier }
+            print("🔬   UN delivered=\(delivered.count) ids=\(alarmIDs.prefix(8))")
+        }
+        center.getPendingNotificationRequests { pending in
+            print("🔬   UN pending=\(pending.count) ids=\(pending.map { $0.identifier }.prefix(8))")
+        }
+    }
+
     private func queueTimeoutRecord(for entry: ArmedEntry, stoppedAt: Date = Date()) {
         let firedAt = entry.alertingSeenAt
             ?? entry.stopAt.addingTimeInterval(-Double(entry.ringSeconds ?? 0))
@@ -175,6 +229,7 @@ final class AlarmAutoStopService {
 
     /// scenePhase → .active 時呼叫：停掉所有「早該停了」的鬧鐘
     func checkAndStopOverdue() {
+        logLifecycleForensics(context: "foreground-active")   // 🔬 每次回前景重建上一輪背景時間軸
         let now = Date()
         let overdue = armedAlarms.values.filter { $0.stopAt <= now }
         guard !overdue.isEmpty else { return }
@@ -218,6 +273,24 @@ final class AlarmAutoStopService {
         startSilentAudio()
         for entry in upcoming { installDispatchTimer(entry) }
         startWatchdog()
+        recordHeartbeat("keep-alive-armed")   // 🔬 forensics: 進背景時 keep-alive 確實啟動了
+    }
+
+    /// True if there is an armed alarm whose fire time is within the ring window — i.e.
+    /// `beginBackgroundLifecycle()` will (or already did) start the 0-vol `.playback` keep-alive.
+    /// HomeView's scenePhase→background branch uses this to avoid `setActive(false)`-ing the very
+    /// session the auto-stop DispatchTimer depends on. Mirrors the window test in
+    /// `beginBackgroundLifecycle()` (single source of truth for "are we keeping the app alive?").
+    /// Note: once an alarm is alerting, `nearestFire` is in the past → returns true (we must keep
+    /// the session through the whole ring), and after `stopAt` the alarm is disarmed → returns false.
+    func keepAliveNeededNow() -> Bool {
+        let now = Date()
+        let upcoming = armedAlarms.values.filter { $0.stopAt > now }
+        guard !upcoming.isEmpty else { return false }
+        let nearestFire = upcoming
+            .map { $0.stopAt.addingTimeInterval(-Double($0.ringSeconds ?? 0)) }
+            .min()!
+        return nearestFire.timeIntervalSince(now) <= lookAheadMinutes * 60
     }
 
     /// scenePhase → .active 時呼叫：前景不需要 keep-alive，全部收掉。
@@ -258,6 +331,9 @@ final class AlarmAutoStopService {
     /// BGTask handler — 在 SunnyWalkerApp.AppDelegate.didFinishLaunching 裡註冊
     func handleBGTask(_ task: BGProcessingTask) {
         print("🛡️ AlarmAutoStop.handleBGTask fired")
+        UserDefaults.standard.set(Date(), forKey: Self.lastBGTaskFiredKey)   // 🔬 Layer1 真的被喚醒了
+        recordHeartbeat("bgtask")
+        logLifecycleForensics(context: "bgtask-wake")
         task.expirationHandler = {
             print("🛡️ AlarmAutoStop.handleBGTask: expired before completion")
         }
@@ -320,6 +396,7 @@ final class AlarmAutoStopService {
             print("🛡️ AlarmAutoStop.DispatchTimer fired for \(alarmID.uuidString.prefix(8))")
             Task { @MainActor in
                 let service = AlarmAutoStopService.shared
+                service.recordHeartbeat("dispatch-fire")   // 🔬 撐到 stopAt 了 — keep-alive 成功
                 if let entry = service.armedAlarms[alarmID] {
                     service.queueTimeoutRecord(for: entry)   // 無人回應 → timeout 統計
                 }
@@ -352,6 +429,7 @@ final class AlarmAutoStopService {
 
     private func watchdogTick() {
         let now = Date()
+        recordHeartbeat("watchdog")   // 🔬 forensics: 每 5s 一跳 — app 背景最後一跳=process 死亡時刻
         // (c) alerting 偵測 → 夾 stopAt（每個 alarm 只夾一次）
         clampStopAtForAlertingAlarms(now: now)
 

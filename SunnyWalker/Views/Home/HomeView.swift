@@ -229,9 +229,25 @@ struct HomeView: View {
                 if firingAlarm == nil {
                     let sess = AVAudioSession.sharedInstance()
                     let prevCat = sess.category
+                    // ALWAYS stop the mic/capture session: a leftover .playAndRecord session (聲控 /
+                    // 背景聆聽 / foreground voice-stop) ducks the ringer, which is the ONLY sound while
+                    // the app is suspended. This is the actual fix for issue#2 ("關屏只彈訊息、沒鈴聲").
                     BackgroundListeningManager.shared.stop()   // no-op if it wasn't the one that's active
-                    try? sess.setActive(false, options: [.notifyOthersOnDeactivation])
-                    print("🏠 HomeView.scenePhase → \(newPhase): released mic + audio session so the UN alarm sound isn't ducked (prevCategory=\(prevCat.rawValue), bgListenActive=\(BackgroundListeningManager.shared.isActive))")
+                    // ★ But do NOT blanket-deactivate the session when AlarmAutoStop needs its 0-vol
+                    //   .playback keep-alive alive. That keep-alive is what keeps the app running in the
+                    //   background so the DispatchTimer can fire stop() at stopAt. The unconditional
+                    //   setActive(false) (added for issue#2) killed it — log shows
+                    //   prevCategory=AVAudioSessionCategoryPlayback — so a 1-min alarm with the app
+                    //   closed + screen off never auto-stops. A .mixWithOthers 0-vol playback session
+                    //   does NOT duck AlarmKit's SpringBoard ring, so it is safe to keep here.
+                    //   (Killing the mic above already handles the issue#2 ducking culprit.)
+                    if AlarmKitService.shared.isAuthorized,
+                       AlarmAutoStopService.shared.keepAliveNeededNow() {
+                        print("🏠 HomeView.scenePhase → \(newPhase): stopped mic, KEEPING keep-alive audio session for AlarmAutoStop (prevCategory=\(prevCat.rawValue))")
+                    } else {
+                        try? sess.setActive(false, options: [.notifyOthersOnDeactivation])
+                        print("🏠 HomeView.scenePhase → \(newPhase): released mic + audio session so the UN alarm sound isn't ducked (prevCategory=\(prevCat.rawValue), bgListenActive=\(BackgroundListeningManager.shared.isActive))")
+                    }
                 } else {
                     // An alarm is ringing in-app (AlarmRingView) — it owns the audio session and
                     // needs it alive to keep playing while the screen is off. Don't tear it down.

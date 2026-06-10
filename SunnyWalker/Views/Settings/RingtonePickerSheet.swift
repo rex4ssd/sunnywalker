@@ -308,7 +308,7 @@ private struct RingtoneBundledRow: View {
             .buttonStyle(.plain)
 
             // Text concatenation preserves localization for each segment
-            (Text(sound.emoji + " ") + Text(LocalizedStringKey(sound.displayName)))
+            Text("\(sound.emoji) \(Text(LocalizedStringKey(sound.displayName)))")
                 .font(SunnyFonts.title(16))
                 .foregroundStyle(SunnyColors.nightIndigo)
 

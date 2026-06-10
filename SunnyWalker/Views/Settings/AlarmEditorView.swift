@@ -253,8 +253,8 @@ struct AlarmEditorView: View {
     // emoji 與檔名/錄音名是 verbatim 不翻譯。
     private var builtinSubtitle: Text {
         switch tempAlarm.soundFileName {
-        case "sunny_wake.caf":  return Text("☀️ ") + Text(LocalizedStringKey("陽光起床"))
-        case "leaf_rustle.caf": return Text("🍃 ") + Text(LocalizedStringKey("樹葉沙沙"))
+        case "sunny_wake.caf":  return Text("☀️ \(Text(LocalizedStringKey("陽光起床")))")
+        case "leaf_rustle.caf": return Text("🍃 \(Text(LocalizedStringKey("樹葉沙沙")))")
         default:                return isBuiltinSelected ? Text(tempAlarm.soundFileName) : Text(LocalizedStringKey("未選擇"))
         }
     }
@@ -262,7 +262,7 @@ struct AlarmEditorView: View {
     // Display subtitle for the custom recording row.
     private var customSubtitle: Text {
         guard !tempAlarm.recordingName.isEmpty else { return Text(LocalizedStringKey("未選擇")) }
-        return Text("🎤 ") + Text(tempAlarm.effectiveRecordingDisplayName)  // 錄音名是用戶資料，不翻譯
+        return Text("🎤 \(tempAlarm.effectiveRecordingDisplayName)")  // 錄音名是用戶資料，不翻譯（插值值不會被在地化查表）
     }
 
     private var ringtoneCard: some View {

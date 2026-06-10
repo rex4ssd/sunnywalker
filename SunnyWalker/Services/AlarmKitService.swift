@@ -379,13 +379,21 @@ final class AlarmKitService {
     func stop(id: UUID) async throws {
         // Log the alarm's state before and after stop so we can see if AlarmKit
         // accepts the stop request or silently ignores it (e.g. already-stopped state).
+        // ★ disarm() 一定要執行——即使 manager.stop() 對 not-found 鬧鐘 throw。否則殘留 armed
+        //   條目會讓 watchdog 每 5s 無限空轉、背景 keep-alive 永不 teardown、持續耗電（2026-06-10
+        //   真機 log：stop(722A79FC) BEFORE=not-found 無限洗版、永遠沒有 AFTER）。放進 defer 保證收尾。
+        defer { AlarmAutoStopService.shared.disarm(alarmID: id) }
+
         let before = alarmState(id: id)
         print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state BEFORE=\(before)")
+        // AlarmKit 端已不存在 → 不要呼叫 manager.stop()（對 not-found 會 throw）；只靠 defer 清殘留登記。
+        guard before != "not-found" else {
+            print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — not-found → disarm only (skip manager.stop)")
+            return
+        }
         try manager.stop(id: id)
         let after = alarmState(id: id)
         print("🔔 AlarmKitService.stop(\(id.uuidString.prefix(8))) — state AFTER=\(after)")
-        // Disarm the auto-stop service — alarm has been manually or automatically stopped.
-        AlarmAutoStopService.shared.disarm(alarmID: id)
     }
 
     // MARK: - List

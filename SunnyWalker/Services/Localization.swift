@@ -39,7 +39,10 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 @MainActor
 final class LocalizationManager: ObservableObject {
     static let shared = LocalizationManager()
-    static let storageKey = "appLanguageCode"
+    // nonisolated: SunnyLocalization (a nonisolated enum) reads this off the main actor. Without
+    // nonisolated, Swift 6 mode errors on the cross-actor reference. Safe — an immutable Sendable
+    // String constant can't race.
+    nonisolated static let storageKey = "appLanguageCode"
 
     @Published var language: AppLanguage {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey) }
