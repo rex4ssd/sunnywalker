@@ -392,7 +392,7 @@ private struct BearAvatar: View {
 #Preview {
     VStack(spacing: 32) {
         MascotView()
-        Text("MascotView — switches with Settings")
+        Text("吉祥物會隨設定切換")
             .font(.caption)
             .foregroundStyle(.secondary)
     }

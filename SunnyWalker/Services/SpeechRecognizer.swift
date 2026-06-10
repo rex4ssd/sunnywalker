@@ -16,6 +16,15 @@ final class SpeechRecognizer: ObservableObject {
     private var isListening = false
     private var timeoutTask: Task<Void, Never>?
 
+    // ★ Issue #1+#2 修法：鈴聲改由「本 engine 內」的 player node 播放，當 AEC 參考訊號。
+    // 舊版用外部 AVAudioPlayer 同時在 .playAndRecord session 上輸出，與 VPIO 的 output unit
+    // 搶資源 → `auou/vpio/appl render err: -1` 狂洗、mic 不穩。把鈴聲收進同一個 engine 後，
+    // voice processing 能正確把它從 mic 扣掉，render -1 消失、self-match 也擋得更乾淨。
+    private let alarmPlayerNode = AVAudioPlayerNode()
+    private var alarmFile: AVAudioFile?
+    private var alarmGap = 0
+    private var alarmLoopGeneration = 0   // 防止舊的 loop 排程在 stop/restart 後又重排
+
     private let keywords: [String]
 
     init() {
@@ -37,8 +46,20 @@ final class SpeechRecognizer: ObservableObject {
         }
     }
 
-    /// - Parameter extraKeywords: 每個鬧鐘的自定口令，與預設詞一起比對（自定 + 預設都認）。
-    func startListening(onMatch: @escaping (String) -> Void, onFailure: (() -> Void)? = nil, listeningTimeout: TimeInterval = 8.0, extraKeywords: [String] = []) throws {
+    /// - Parameters:
+    ///   - extraKeywords: 每個鬧鐘的自定口令，與預設詞一起比對（自定 + 預設都認）。
+    ///   - alarmReferenceURL: 響鈴音檔。傳入時，鈴聲改由「本 engine 內」的 AVAudioPlayerNode 播放，
+    ///     讓 voice processing(AEC) 能把它當參考訊號從 mic 扣掉。取代舊版「外部 AVAudioPlayer + duck」
+    ///     的做法（舊版兩顆 output unit 搶 .playAndRecord session → render err -1、聲控時好時壞）。
+    ///   - alarmGapSeconds: 每段鈴聲之間的靜音秒數（給小孩開口的空檔）。
+    ///   - duckVolume: 聆聽時鈴聲音量（0–1）。AEC 會把它從 mic 扣掉，所以可放比舊版更大聲也不誤判。
+    func startListening(onMatch: @escaping (String) -> Void,
+                        onFailure: (() -> Void)? = nil,
+                        listeningTimeout: TimeInterval = 8.0,
+                        extraKeywords: [String] = [],
+                        alarmReferenceURL: URL? = nil,
+                        alarmGapSeconds: Int = 0,
+                        duckVolume: Float = 0.12) throws {
         guard !isListening else { return }
         guard let recognizer, recognizer.isAvailable else {
             throw NSError(domain: "SpeechRecognizer", code: -1,
@@ -71,23 +92,35 @@ final class SpeechRecognizer: ObservableObject {
         request = newRequest
 
         let inputNode = audioEngine.inputNode
-        // ★ Issue #1 核心修法：開啟 voice processing（硬體回聲消除 AEC）。
-        // 沒有 AEC 時，鬧鐘鈴聲（家長錄音，內容常常就是「起床囉/我起床了」）即使被 duck 到
-        // 12% 仍從喇叭外放 → on-device 辨識器把「自己的播放」轉成文字 → 立刻 self-match →
-        // 沒人喊話也辨識成功、自動關閉。AEC 會把已知的播放訊號從 mic 輸入扣掉，杜絕 self-match。
-        // setVoiceProcessingEnabled 必須在讀 format / installTap 之前呼叫（它會改變 input 格式）。
-        do {
-            try inputNode.setVoiceProcessingEnabled(true)
-            print("🎤 SpeechRecognizer: voice processing (AEC) ENABLED — 鬧鐘外放不會再被辨識成口令")
-        } catch {
-            // AEC 開不起來不致命（少數裝置/路由會失敗）；退回純 duck，但 log 出來方便追。
-            print("🎤 SpeechRecognizer: ⚠️ setVoiceProcessingEnabled FAILED — \(error.localizedDescription)（回退無 AEC，self-match 風險升高）")
+
+        // 兩種模式：
+        //  A. alarmReferenceURL != nil → 鈴聲與聆聽「並存」：需要 VPIO/AEC 把鈴聲從 mic 扣掉，
+        //     並把鈴聲掛進同一個 engine 當參考訊號（強制走喇叭，否則 VPIO 預設走聽筒會很小聲）。
+        //  B. alarmReferenceURL == nil → time-multiplex：聆聽時鈴聲是靜音的（AlarmRingView 已 stop），
+        //     沒有並存播放 → 不需要 AEC。關掉 VPIO 用「純 mic」最穩、擷取最乾淨（不會像開了 VPIO +
+        //     in-engine 播放時整路 starve 到完全沒 partial）。這是目前 AlarmRingView 走的路徑。
+        var alarmReady = false
+        if let alarmReferenceURL {
+            try? session.overrideOutputAudioPort(.speaker)
+            do {
+                try inputNode.setVoiceProcessingEnabled(true)   // 改 input 格式，須在讀 format 前
+                print("🎤 SpeechRecognizer: voice processing (AEC) ENABLED — 鬧鐘外放不會再被辨識成口令")
+            } catch {
+                print("🎤 SpeechRecognizer: ⚠️ setVoiceProcessingEnabled FAILED — \(error.localizedDescription)（回退無 AEC）")
+            }
+            alarmReady = prepareAlarmReference(url: alarmReferenceURL, gap: alarmGapSeconds, volume: duckVolume)
+        } else {
+            // 確保 VPIO 是關的（plain mic）。engine 此時未 start，是安全的切換時機。
+            try? inputNode.setVoiceProcessingEnabled(false)
+            print("🎤 SpeechRecognizer: plain mic（聆聽時鈴聲靜音，VPIO off — 乾淨擷取）")
         }
+
         let format = inputNode.outputFormat(forBus: 0)
         // Defensive: a 0 Hz / 0-channel format means the mic route isn't ready.
         // Installing a tap with it crashes ("required condition is false: format.sampleRate").
         guard format.sampleRate > 0, format.channelCount > 0 else {
             request = nil
+            teardownAlarmReference()
             throw NSError(domain: "SpeechRecognizer", code: -3,
                           userInfo: [NSLocalizedDescriptionKey: L("麥克風尚未就緒")])
         }
@@ -99,13 +132,22 @@ final class SpeechRecognizer: ObservableObject {
         do {
             try audioEngine.start()
         } catch {
-            // Roll back the tap so a retry starts from a clean state.
+            // Roll back the tap + alarm node so a retry starts from a clean state.
             print("🎤 SpeechRecognizer: audioEngine.start() FAILED — \(error.localizedDescription)")
             inputNode.removeTap(onBus: 0)
+            teardownAlarmReference()
             request = nil
             throw error
         }
         isListening = true
+
+        // engine 起來後才開始排程鈴聲 loop（completion 內會檢查 isListening + generation）。
+        if alarmReady {
+            alarmLoopGeneration &+= 1
+            scheduleAlarmLoop(generation: alarmLoopGeneration)
+            alarmPlayerNode.play()
+            print("🎤 SpeechRecognizer: alarm reference playing in-engine (AEC ref, vol=\(duckVolume))")
+        }
         print("🎤 SpeechRecognizer: listening (inputFormat sampleRate=\(format.sampleRate) ch=\(format.channelCount))")
 
         // Fires onFailure after listeningTimeout seconds if the child says random words
@@ -156,11 +198,58 @@ final class SpeechRecognizer: ObservableObject {
         isListening = false
         timeoutTask?.cancel()
         timeoutTask = nil
+        teardownAlarmReference()
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         request?.endAudio()
         task?.cancel()
         request = nil
         task = nil
+    }
+
+    // MARK: - Alarm reference (AEC) playback through the recognition engine
+
+    /// 把鈴聲音檔接到本 engine 的 player node → mainMixer。回傳是否成功（失敗就聆聽時靜音，不致命）。
+    private func prepareAlarmReference(url: URL, gap: Int, volume: Float) -> Bool {
+        do {
+            let file = try AVAudioFile(forReading: url)
+            alarmFile = file
+            alarmGap  = max(0, gap)
+            if alarmPlayerNode.engine == nil {
+                audioEngine.attach(alarmPlayerNode)
+            }
+            // engine 此時尚未 start，是安全的 (re)connect 時機。format 用檔案的 processingFormat，
+            // mixer/VPIO 會自動做 sample-rate 轉換到輸出。
+            audioEngine.connect(alarmPlayerNode, to: audioEngine.mainMixerNode, format: file.processingFormat)
+            alarmPlayerNode.volume = volume
+            return true
+        } catch {
+            print("🎤 SpeechRecognizer: ⚠️ alarm reference load FAILED — \(error.localizedDescription)（聆聽時鈴聲將靜音）")
+            alarmFile = nil
+            return false
+        }
+    }
+
+    /// 排一段鈴聲；播完（dataPlayedBack）等 gap 秒再排下一段。generation 變了或停止聆聽就不再續排。
+    private func scheduleAlarmLoop(generation: Int) {
+        guard let file = alarmFile else { return }
+        alarmPlayerNode.scheduleFile(file, at: nil, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.isListening, generation == self.alarmLoopGeneration else { return }
+                if self.alarmGap > 0 {
+                    try? await Task.sleep(for: .seconds(Double(self.alarmGap)))
+                }
+                guard self.isListening, generation == self.alarmLoopGeneration else { return }
+                self.scheduleAlarmLoop(generation: generation)
+            }
+        }
+    }
+
+    private func teardownAlarmReference() {
+        alarmLoopGeneration &+= 1   // 讓任何在途的 completion 續排失效
+        if alarmPlayerNode.engine != nil, alarmPlayerNode.isPlaying {
+            alarmPlayerNode.stop()
+        }
+        alarmFile = nil
     }
 }

@@ -261,19 +261,13 @@ final class GateQuestionTests: XCTestCase {
         }
     }
 
-    func testWeekdayQuestionsAreHardForChildren() {
-        // Weekday ordering requires understanding calendar order — not simple arithmetic
-        let weekdayPrompt = "哪個選項的星期排列順序是正確的？"
-        var found = false
-        for _ in 0..<50 {
+    func testRandomPoolContainsOnlyAdultMultiplicationQuestions() {
+        // Kids-category parental gates must not use questions a child can easily answer.
+        for _ in 0..<20 {
             let q = GateQuestion.random()
-            if q.prompt == weekdayPrompt {
-                found = true
-                XCTAssertTrue(q.correct.contains("週"), "weekday correct answer should contain 週")
-                break
-            }
+            XCTAssertTrue(q.prompt.contains("×"), "Expected multiplication question, got '\(q.prompt)'")
+            XCTAssertGreaterThanOrEqual(Int(q.correct) ?? 0, 100, "Expected a three-digit answer")
         }
-        XCTAssertTrue(found, "Weekday question should appear in random pool")
     }
 
     func testMultiplicationAnswersAreCorrect() {

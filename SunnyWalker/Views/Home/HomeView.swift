@@ -274,10 +274,8 @@ struct HomeView: View {
             // the ring spuriously (the scenePhase/onAppear paths read the same marker).
             UserDefaults.standard.removeObject(forKey: "pendingAlarmKitAlarmID")
             (UIApplication.shared.delegate as? AppDelegate)?.pendingAlarmID = nil
-            // Restore brightness before showing AlarmRingView (bed-side may have dimmed screen)
-            bedSide.disable()
             print("🏠 HomeView.onReceive: routing → AlarmRingView for \(uuid.uuidString.prefix(8))")
-            firingAlarm = alarm
+            presentRing(alarm)
         }
         .fullScreenCover(item: $firingAlarm) { alarm in
             AlarmRingView(alarm: alarm)
@@ -321,7 +319,32 @@ struct HomeView: View {
             return
         }
         print("🏠 HomeView.checkPendingAlarm: routing → AlarmRingView for \(uuid.uuidString.prefix(8))")
-        firingAlarm = alarm
+        presentRing(alarm)
+    }
+
+    /// Present the in-app ring screen for `alarm`. ⚠️ AlarmRingView is a `.fullScreenCover` on
+    /// HomeView, but Settings / Add-alarm / parental-gate are `.sheet`s on the SAME view — SwiftUI
+    /// only allows ONE presentation at a time, so a due alarm could NOT show its ring while a sheet
+    /// was open (e.g. the parent is on the Settings page / just toggled 床邊模式) until the sheet was
+    /// manually closed — the reported "開設定頁時鬧鐘不會動" bug. Fix: close any open sheet first,
+    /// then present the cover on the next runloop (avoids a present-while-dismissing race).
+    private func presentRing(_ alarm: Alarm) {
+        bedSide.disable()   // restore brightness if 床邊模式 dimmed the screen
+        let sheetWasOpen = showingSettings || showingAddAlarm
+            || showingParentalGate || showingParentalForSettings
+        guard sheetWasOpen else {
+            firingAlarm = alarm
+            return
+        }
+        print("🏠 presentRing: a sheet was open → closing it first, then presenting ring for \(alarm.id.uuidString.prefix(8))")
+        showingSettings = false
+        showingAddAlarm = false
+        showingParentalGate = false
+        showingParentalForSettings = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.35))   // let the sheet finish dismissing
+            firingAlarm = alarm
+        }
     }
 
     /// While the app is on-screen, fire the alarm IN-APP (full-screen AlarmRingView) rather than via
@@ -374,8 +397,7 @@ struct HomeView: View {
             // braces guard against a race (alarm fired the instant we became active), stop it too.
             let alarm = a
             Task { @MainActor in try? await AlarmKitService.shared.stop(id: alarm.id) }
-            bedSide.disable()      // restore brightness if bed-side dimmed the screen
-            firingAlarm = alarm    // presents AlarmRingView (.fullScreenCover)
+            presentRing(alarm)     // closes any open sheet first, then presents AlarmRingView
             break
         }
     }
@@ -731,15 +753,14 @@ struct SettingsView: View {
 
                 // Clock format
                 Section(header: Text("time_format_section")) {
-                    Toggle(isOn: Binding(
-                        get: { !settings.use24HourClock },
-                        set: { settings.use24HourClock = !$0 }
-                    )) {
-                        Label("12h_label", systemImage: "clock")
-                    }
-                    .tint(SunnyColors.leafFresh)
                     Toggle(isOn: $settings.use24HourClock) {
-                        Label("24h_label", systemImage: "clock.fill")
+                        Label {
+                            Text(settings.use24HourClock
+                                 ? LocalizedStringKey("24 小時制")
+                                 : LocalizedStringKey("12 小時制"))
+                        } icon: {
+                            Image(systemName: settings.use24HourClock ? "clock.fill" : "clock")
+                        }
                     }
                     .tint(SunnyColors.leafFresh)
                 }
@@ -753,7 +774,7 @@ struct SettingsView: View {
                         HStack {
                             Label("recording_gap_label", systemImage: "waveform")
                             Spacer()
-                            Text("\(settings.recordingGapSeconds) s")
+                            Text("\(settings.recordingGapSeconds) 秒")
                                 .foregroundStyle(SunnyColors.sunnyGray)
                                 .monospacedDigit()
                         }
@@ -776,17 +797,9 @@ struct SettingsView: View {
                     }
                 }
 
-                // Background listening (FOREGROUND-only voice-stop; mic released on background)
-                Section(
-                    header: Text("聲控關鬧鐘（實驗）"),
-                    footer: Text("開啟後，App 在前台時保持麥克風（橘點亮），可說「我起床了」關鬧鐘。切到背景或螢幕關閉會自動停止麥克風，不整夜佔用；此時鬧鐘改由系統通知橫幅發出鈴聲。")
-                ) {
-                    Toggle(isOn: $settings.backgroundListeningEnabled) {
-                        Label("聲控模式", systemImage: settings.backgroundListeningEnabled ? "mic.fill" : "mic.slash")
-                            .foregroundStyle(settings.backgroundListeningEnabled ? SunnyColors.lanternOrange : .primary)
-                    }
-                    .tint(SunnyColors.lanternOrange)
-                }
+                // 「聲控模式」全域開關已移除：聲控關鬧鐘改由每個鬧鐘自己的「啟用口令關閉」(taskType=.voice)
+                // 控制，前景響鈴時才開麥克風（AlarmRingView 內）。backgroundListeningEnabled 屬性保留但
+                // dormant（預設 false），避免動到 HomeView/BackgroundListeningManager 的既有參照。
 
                 // Mascot theme
                 Section(header: Text("主題")) {
@@ -813,27 +826,19 @@ struct SettingsView: View {
                                  ? LocalizedStringKey("temporary_unlock_active_footer")
                                  : LocalizedStringKey("temporary_unlock_footer"))
                 ) {
-                    Stepper(value: $settings.parentalUnlockDurationMinutes, in: 5...60, step: 5) {
-                        HStack {
-                            Label("temporary_unlock_duration", systemImage: "lock.open")
-                            Spacer()
-                            Text(L("temporary_unlock_minutes %lld", settings.parentalUnlockDurationMinutes))
-                                .foregroundStyle(SunnyColors.sunnyGray)
-                                .monospacedDigit()
+                    HStack {
+                        Button {
+                            settings.beginParentalUnlockWindow()
+                            unlockNow = Date()
+                        } label: {
+                            Label("temporary_unlock_start", systemImage: "lock.open")
                         }
-                    }
-
-                    Button {
-                        settings.beginParentalUnlockWindow()
-                        unlockNow = Date()
-                    } label: {
-                        HStack {
-                            Label("temporary_unlock_start", systemImage: "timer")
-                            Spacer()
-                            Text(L("temporary_unlock_minutes %lld", settings.parentalUnlockDurationMinutes))
-                                .foregroundStyle(SunnyColors.sunnyGray)
-                                .monospacedDigit()
-                        }
+                        Spacer()
+                        Text(L("temporary_unlock_minutes %lld", settings.parentalUnlockDurationMinutes))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                            .monospacedDigit()
+                        Stepper("", value: $settings.parentalUnlockDurationMinutes, in: 5...60, step: 5)
+                            .labelsHidden()
                     }
 
                     if isTemporarilyUnlocked {

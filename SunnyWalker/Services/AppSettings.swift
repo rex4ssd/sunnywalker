@@ -42,7 +42,7 @@ enum MascotTheme: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .sunnyAlarm: return "小鬧晴（Sunny Alarm）"
+        case .sunnyAlarm: return "小鬧晴"
         case .sunny:   return "小晴（灰色精靈）"
         case .giraffe: return "長頸鹿"
         case .bunny:   return "小兔子"

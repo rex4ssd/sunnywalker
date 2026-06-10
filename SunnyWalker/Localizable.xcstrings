@@ -39,7 +39,15 @@
       }
     },
     "%@ s" : {
-
+      "extractionState" : "stale",
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 秒"
+          }
+        }
+      }
     },
     "%@ 分" : {
       "localizations" : {
@@ -56,6 +64,9 @@
           }
         }
       }
+    },
+    "%@ 秒" : {
+
     },
     "%lld 分" : {
       "extractionState" : "stale",
@@ -146,6 +157,23 @@
     "🔐" : {
 
     },
+    "12 小時制" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12-hour"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 小時制"
+          }
+        }
+      }
+    },
     "12h_label" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -158,7 +186,24 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "12 小時制  (2:05 PM)"
+            "value" : "12 小時制（下午 2:05）"
+          }
+        }
+      }
+    },
+    "24 小時制" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24-hour"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24 小時制"
           }
         }
       }
@@ -253,13 +298,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All items below require parental verification — kids can't change them on their own."
+            "value" : "Items above require parental verification before they can be changed."
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "以下所有項目需家長驗證才能更改，小孩無法自行操作。"
+            "value" : "以上項目需經家長驗證後才能調整。"
           }
         }
       }
@@ -325,8 +370,8 @@
         },
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "clips_counter %1$@ %2$@"
+            "state" : "translated",
+            "value" : "已錄製 %1$@ / %2$@ 段"
           }
         }
       }
@@ -343,7 +388,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "clips_counter %lld %lld"
+            "value" : "已錄製 %1$lld / %2$lld 段"
           }
         }
       }
@@ -359,7 +404,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "clips_limit_reached %@"
+            "value" : "最多只能保留 %@ 段錄音"
           }
         }
       }
@@ -376,7 +421,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "clips_limit_reached %lld"
+            "value" : "最多只能保留 %lld 段錄音"
           }
         }
       }
@@ -545,7 +590,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "沒有回應（自動停止）"
+            "value" : "沒有回應"
           }
         }
       }
@@ -661,7 +706,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "recording_launch_failed %@"
+            "value" : "無法開始錄音：%@"
           }
         }
       }
@@ -1381,7 +1426,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "分享 / 匯出 Markdown"
+            "value" : "分享 / 匯出文字內容"
           }
         }
       }
@@ -2044,7 +2089,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來"
+            "value" : "打勾：一定要打開應用程式完成起床任務才能關，關掉通知也會一直響回來"
           }
         }
       }
@@ -2405,6 +2450,7 @@
       }
     },
     "聲控關鬧鐘（實驗）" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2865,6 +2911,9 @@
           }
         }
       }
+    },
+    "這個動作無法復原。" : {
+
     },
     "週一 → 週三 → 週五" : {
       "extractionState" : "stale",
@@ -3430,6 +3479,7 @@
       }
     },
     "開啟後，App 在前台時保持麥克風（橘點亮），可說「我起床了」關鬧鐘。切到背景或螢幕關閉會自動停止麥克風，不整夜佔用；此時鬧鐘改由系統通知橫幅發出鈴聲。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3440,7 +3490,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟後，App 在前台時保持麥克風（橘點亮），可說「我起床了」關鬧鐘。切到背景或螢幕關閉會自動停止麥克風，不整夜佔用；此時鬧鐘改由系統通知橫幅發出鈴聲。"
+            "value" : "開啟後，應用程式在前台時保持麥克風（橘點亮），可說「我起床了」關鬧鐘。切到背景或螢幕關閉會自動停止麥克風，不整夜佔用；此時鬧鐘改由系統通知橫幅發出鈴聲。"
           }
         }
       }
@@ -3457,7 +3507,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "開啟後，App 在畫面最前台時保持麥克風（橘點亮），說「我起床了」就能關鬧鐘。切到背景或螢幕關閉，麥克風會自動停止，不會整夜佔用。"
+            "value" : "開啟後，應用程式在畫面最前台時保持麥克風（橘點亮），說「我起床了」就能關鬧鐘。切到背景或螢幕關閉，麥克風會自動停止，不會整夜佔用。"
           }
         }
       }
@@ -3474,7 +3524,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聲控「我起床了」只在打開 App 的起床畫面（前景）才有效。系統鬧鐘響鈴時會佔用麥克風，無法在背景或黑標通知上用聲音關鬧鐘——請按 ✕ 關閉。系統鬧鐘啟用時本功能不會開啟麥克風，以節省電力。"
+            "value" : "聲控「我起床了」只在打開應用程式的起床畫面（前景）才有效。系統鬧鐘響鈴時會佔用麥克風，無法在背景或橫幅通知上用聲音關鬧鐘，請按 ✕ 關閉。系統鬧鐘啟用時本功能不會開啟麥克風，以節省電力。"
           }
         }
       }

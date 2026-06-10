@@ -22,7 +22,6 @@ struct AlarmEditorView: View {
     @State private var label = "起床囉"
     @State private var selectedWeekdays: Set<Int> = [2, 3, 4, 5, 6]
     @State private var selectedTaskType: AlarmTaskType = .button
-    @State private var requireAppToStop = false
     @State private var isSaving = false
     @State private var showingBuiltinPicker = false
     @State private var showingCustomPicker = false
@@ -44,7 +43,6 @@ struct AlarmEditorView: View {
             _label           = State(initialValue: a.label)
             _selectedWeekdays = State(initialValue: Set(a.weekdays))
             _selectedTaskType = State(initialValue: a.recordingName.isEmpty ? .button : a.effectiveTaskType)
-            _requireAppToStop = State(initialValue: a.effectiveRequireAppToStop)
             _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
         } else {
             // Create mode
@@ -221,22 +219,6 @@ struct AlarmEditorView: View {
                     }
                     .padding(.leading, 4)
                 }
-
-                Divider()
-
-                Toggle(isOn: $requireAppToStop) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Label("貪睡模式", systemImage: requireAppToStop ? "bed.double.fill" : "bed.double")
-                            .font(SunnyFonts.caption())
-                            .foregroundStyle(SunnyColors.nightIndigo)
-                        Text(requireAppToStop
-                             ? LocalizedStringKey("打勾：一定要打開 App 完成起床任務才能關，關掉通知也會一直響回來")
-                             : LocalizedStringKey("不打勾：在通知上按 ✕ 就能關掉鬧鐘"))
-                            .font(SunnyFonts.caption(13))
-                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
-                    }
-                }
-                .tint(SunnyColors.lanternOrange)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -359,7 +341,6 @@ struct AlarmEditorView: View {
         tempAlarm.minute   = comps.minute ?? 0
         tempAlarm.weekdays = selectedWeekdays.isEmpty ? [2, 3, 4, 5, 6] : Array(selectedWeekdays).sorted()
         tempAlarm.taskType = isVoiceDismissEnabled ? .voice : .button
-        tempAlarm.requireAppToStop = requireAppToStop
         // 自定口令：trim 後空字串存 nil（effectiveCustomPhrases 回空陣列）。
         let phrase = customPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
         tempAlarm.customDismissPhrase = phrase.isEmpty ? nil : phrase

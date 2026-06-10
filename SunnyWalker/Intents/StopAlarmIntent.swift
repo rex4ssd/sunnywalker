@@ -22,7 +22,7 @@ struct StopAlarmIntent: LiveActivityIntent {
         .foreground(.immediate)
     }
 
-    @Parameter(title: "鬧鐘 ID")
+    @Parameter(title: "鬧鐘識別碼")
     var alarmID: String
 
     init() { alarmID = "" }
@@ -62,12 +62,12 @@ struct StopAlarmIntent: LiveActivityIntent {
 /// alarm"; the old UNNotification dismiss handler only runs when AlarmKit is unauthorized.)
 struct DismissAlarmIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "關閉鬧鐘"
-    static var description = IntentDescription("關掉 SunnyWalker 鬧鐘，不開啟 App。")
+    static var description = IntentDescription("關掉 SunnyWalker 鬧鐘，不開啟應用程式。")
 
     /// Background only — never bring the app to the foreground.
     static var supportedModes: IntentModes { .background }
 
-    @Parameter(title: "鬧鐘 ID")
+    @Parameter(title: "鬧鐘識別碼")
     var alarmID: String
 
     init() { alarmID = "" }

@@ -624,7 +624,7 @@ private struct VoiceClipDetailSheet: View {
                                 .disabled(!clipExists)
 
                                 ShareLink(item: clip.recordingsURL, preview: SharePreview(clip.name)) {
-                                    Label("分享到其他 App", systemImage: "square.and.arrow.up")
+                                    Label("分享到其他應用程式", systemImage: "square.and.arrow.up")
                                         .font(SunnyFonts.caption())
                                         .foregroundStyle(SunnyColors.nightIndigo)
                                         .frame(maxWidth: .infinity)

@@ -120,35 +120,48 @@ private struct AlarmCard: View {
     var body: some View {
         WatercolorCard {
             HStack(alignment: .center, spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(alarm.formattedTime(use24h: settings.use24HourClock))
-                        .font(SunnyFonts.clock(40))
-                        .foregroundStyle(
-                            alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
-                        )
-                    HStack(spacing: 4) {
-                        // Known default/common names localize; custom parent names show as typed.
-                        Text(LocalizedStringKey(alarm.label))
-                            .font(SunnyFonts.caption())
-                            .foregroundStyle(SunnyColors.sunnyGray)
-                        if !alarm.weekdays.isEmpty {
-                            Text("·")
-                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
-                            Text(alarm.weekdaySymbols.joined(separator: " "))
-                                .font(SunnyFonts.caption(14))
-                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+                Button {
+                    showingEditor = true
+                } label: {
+                    HStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(alarm.formattedTime(use24h: settings.use24HourClock))
+                                .font(SunnyFonts.clock(40))
+                                .foregroundStyle(
+                                    alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
+                                )
+                            HStack(spacing: 4) {
+                                // Known default/common names localize; custom parent names show as typed.
+                                Text(LocalizedStringKey(alarm.label))
+                                    .font(SunnyFonts.caption())
+                                    .foregroundStyle(SunnyColors.sunnyGray)
+                                if !alarm.weekdays.isEmpty {
+                                    Text("·")
+                                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
+                                    Text(alarm.weekdaySymbols.joined(separator: " "))
+                                        .font(SunnyFonts.caption(14))
+                                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+                                }
+                            }
                         }
+                        Spacer()
                     }
+                    .padding(.leading, 20)
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 18)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
-                .onTapGesture { showingEditor = true }   // tap time/label → edit alarm
-                Spacer()
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("編輯鬧鐘")
+
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
                     .labelsHidden()
+                    .accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")
+                    .padding(.trailing, 20)
+                    .padding(.vertical, 18)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 18)
         }
         .opacity(alarm.isEnabled ? 1.0 : 0.6)
         .animation(.easeInOut(duration: 0.2), value: alarm.isEnabled)

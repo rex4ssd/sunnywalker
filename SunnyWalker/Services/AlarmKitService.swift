@@ -118,7 +118,7 @@ final class AlarmKitService {
     @discardableResult
     func scheduleTestAlarm() async throws -> UUID {
         let id = UUID()
-        let attrs = makeAttributes(alarmID: id.uuidString, title: "SunnyWalker PoC 測試！")
+        let attrs = makeAttributes(alarmID: id.uuidString, title: "SunnyWalker 測試鬧鐘")
         // NOTE: custom AlarmKit sounds (.named) crash the Simulator's ToneLibrary (SpringBoard
         // aborts in -[TLAlertQueuePlayerController _prepareAudioEnvironmentForStateDescriptor:]).
         // Using the system default alarm tone here; the parent's recording still plays in-app.

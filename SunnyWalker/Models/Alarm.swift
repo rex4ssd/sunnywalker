@@ -65,8 +65,11 @@ final class Alarm {
     /// Always resolves to a concrete value — nil (pre-Day-16 rows) → `.voice`.
     var effectiveTaskType: AlarmTaskType { taskType ?? .voice }
 
-    /// nil (rows created before strict mode existed) → false.
-    var effectiveRequireAppToStop: Bool { requireAppToStop ?? false }
+    /// 「貪睡模式 / strict mode」已於 2026-06-10 移除：它原本承諾「一定要開 App 才能關」，但
+    /// AlarmKit 系統鬧鐘的實體鍵(音量/側鍵)由 iOS 直接 map 成「停止」，第三方攔不到，承諾無法兌現；
+    /// 而真正想要的「貪睡再響直到橫滑」也做不到。所以一律回 false（全 app 走非嚴格路徑：
+    /// 鎖屏停止＝直接關、不發 nag）。stored property 與下游程式保留但永遠不會被觸發。
+    var effectiveRequireAppToStop: Bool { false }
 
     /// 把 customDismissPhrase 拆成乾淨的口令陣列（去空白、濾空）。
     var effectiveCustomPhrases: [String] {

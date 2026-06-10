@@ -6,11 +6,13 @@ import UniformTypeIdentifiers
 
 struct WakeHistoryView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\WakeRecord.wokeAt, order: .reverse)])
     private var records: [WakeRecord]
 
     @State private var showingExporter = false
     @State private var exportDocument = MarkdownDocument(text: "")
+    @State private var showingClearAllConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -31,15 +33,25 @@ struct WakeHistoryView: View {
                         .foregroundStyle(SunnyColors.sunnyGray)
                 }
                 if !records.isEmpty {
-                    ToolbarItem(placement: .confirmationAction) {
+                    ToolbarItemGroup(placement: .confirmationAction) {
+                        Button {
+                            showingClearAllConfirm = true
+                        } label: {
+                            Label("全部清除", systemImage: "trash")
+                        }
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                        .tint(SunnyColors.sunnyGray)
+
                         Button {
                             exportDocument = MarkdownDocument(text: WakeHistoryMarkdown.build(from: records))
                             showingExporter = true
                         } label: {
-                            Label("匯出 Markdown", systemImage: "square.and.arrow.up")
+                            Label("匯出紀錄", systemImage: "square.and.arrow.up")
                         }
                         .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.forestDeep)
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                        .tint(SunnyColors.sunnyGray)
                     }
                 }
             }
@@ -50,7 +62,23 @@ struct WakeHistoryView: View {
                 contentType: WakeHistoryMarkdown.markdownType,
                 defaultFilename: WakeHistoryMarkdown.defaultFilename()
             ) { _ in }
+            .confirmationDialog("確定清除全部起床紀錄？", isPresented: $showingClearAllConfirm, titleVisibility: .visible) {
+                Button("全部清除", role: .destructive) { clearAll() }
+                Button("取消", role: .cancel) { }
+            } message: {
+                Text("這個動作無法復原。")
+            }
         }
+    }
+
+    // MARK: - Delete
+
+    private func delete(_ record: WakeRecord) {
+        withAnimation { modelContext.delete(record) }
+    }
+
+    private func clearAll() {
+        withAnimation { for r in records { modelContext.delete(r) } }
     }
 
     // MARK: - Empty state
@@ -75,7 +103,7 @@ struct WakeHistoryView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(records) { record in
-                    WakeRecordCard(record: record)
+                    WakeRecordCard(record: record) { delete(record) }
                 }
             }
             .padding(.horizontal, 20)
@@ -88,16 +116,7 @@ struct WakeHistoryView: View {
 
 private struct WakeRecordCard: View {
     let record: WakeRecord
-
-    private var methodIcon: String {
-        switch record.dismissMethod {
-        case "voice":    return "mic.fill"
-        case "button":   return "hand.tap.fill"
-        case "fallback": return "hand.tap"
-        case "timeout":  return "bell.slash.fill"   // 無人回應，背景自動停鈴
-        default:         return "checkmark.circle"
-        }
-    }
+    var onDelete: () -> Void
 
     private var methodLabel: LocalizedStringKey {
         switch record.dismissMethod {
@@ -109,36 +128,49 @@ private struct WakeRecordCard: View {
         }
     }
 
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d, yyyy, HH:mm"
+        return formatter.string(from: record.wokeAt)
+    }
+
     var body: some View {
         WatercolorCard {
-            HStack(alignment: .center, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(record.alarmLabel)
-                        .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.nightIndigo)
-                    Text(record.wokeAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(SunnyFonts.body(18))
-                        .foregroundStyle(SunnyColors.nightIndigo)
-                    HStack(spacing: 6) {
-                        Image(systemName: "timer")
-                            .font(.caption)
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Text(record.alarmLabel)
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                            .lineLimit(1)
                         Text(L("response_label %@", record.responseFormatted))
-                            .font(SunnyFonts.caption(14))
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                            .fixedSize(horizontal: true, vertical: false)
                     }
-                    .foregroundStyle(SunnyColors.sunnyGray)
+                    Text(formattedDate)
+                        .font(SunnyFonts.body(16.2))
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                        .lineLimit(1)
                 }
                 Spacer()
                 VStack(spacing: 4) {
-                    Image(systemName: methodIcon)
-                        .font(.system(size: 20))
-                        .foregroundStyle(SunnyColors.leafFresh)
+                    Button(action: onDelete) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.55))
+                    }
+                    .accessibilityLabel("刪除這筆紀錄")
+
                     Text(methodLabel)
-                        .font(SunnyFonts.caption(12))
+                        .font(SunnyFonts.caption(11))
                         .foregroundStyle(SunnyColors.sunnyGray)
+                        .lineLimit(1)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
     }
 }
@@ -188,7 +220,7 @@ enum WakeHistoryMarkdown {
         case "voice":    return "語音"
         case "button":   return "按鈕"
         case "fallback": return "輔助"
-        case "timeout":  return "沒有回應（自動停止）"
+        case "timeout":  return "沒有回應"
         default:         return method
         }
     }
@@ -216,7 +248,7 @@ enum WakeHistoryMarkdown {
         md += "## 統計總覽\n\n"
         md += "- 總起床次數：**\(total)**\n"
         md += "- 有回應（小朋友主動關）：**\(responded.count)**\n"
-        md += "- 沒有回應（自動停止）：**\(noResponse)**\n"
+        md += "- 沒有回應：**\(noResponse)**\n"
         md += String(format: "- 回應率：**%.0f%%**\n", responseRate)
         if !responded.isEmpty {
             md += "- 平均回應時間：**\(avgResponse) 秒**\n"

@@ -26,7 +26,7 @@ struct AlarmIOView: View {
                     Text(exportText)
                         .font(.system(.footnote, design: .monospaced))
                         .textSelection(.enabled)
-                    ShareLink("分享 / 匯出 Markdown", item: exportText)
+                    ShareLink("分享匯出內容", item: exportText)
                 }
 
                 Section("匯入") {

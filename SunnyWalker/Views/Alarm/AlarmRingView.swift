@@ -33,6 +33,11 @@ struct AlarmRingView: View {
     @State private var micPulse = false
     @State private var fallbackButtonEnabled = false
 
+    // Time-multiplex 響鈴/聆聽：鈴聲響一段 → 靜音開聆聽窗（提示穿插在間隔）→ 沒中就再響。
+    // 「間隔不夠就自動拉長」= 聆聽窗本身就是被拉長的間隔，長度 = listenWindowSeconds。
+    private let ringWindowSeconds: Double = 4      // 每輪先響多久讓孩子聽到（首輪用 warmup 5s）
+    private let listenWindowSeconds: Double = 7    // 聆聽窗長度（鈴聲此時靜音）
+
     private var scene: DaytimeScene {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: Date()))
     }
@@ -161,11 +166,11 @@ struct AlarmRingView: View {
                 showFallbackButton = true
                 fallbackButtonEnabled = true
             } else {
-                // .voice (default) + future .math: start speech after 5s warm-up
+                // .voice (default): 先響一段 warm-up，再開第一個聆聽窗（time-multiplex）。
                 speechTask = Task {
-                    try? await Task.sleep(for: .seconds(5))
+                    try? await Task.sleep(for: .seconds(5))   // 首輪響鈴 = warm-up
                     guard !Task.isCancelled else { return }
-                    startSpeechCycle()
+                    startListenWindow()
                 }
             }
         }
@@ -184,15 +189,18 @@ struct AlarmRingView: View {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background, .inactive:
-                // 背景無法辨識：停聲控、解除 duck（讓鈴聲回到全音量，靠 audio 背景模式 + AudioPlayer
-                // 的中斷復活在關屏時盡量續響）。注意：不停 audioPlayer——鈴聲要在關屏時繼續響。
-                print("🎤 AlarmRingView.scenePhase → \(phase): 停止聲控（背景無法辨識），鈴聲維持播放 isPlaying=\(audioPlayer.isPlaying)")
+                // 背景無法辨識：停聲控。⚠️ 若此刻正在「聆聽窗」(鈴聲被 stop 靜音)就進背景，會變永久
+                // 靜音（issue#2）。所以停聲控後，若沒有東西在響，立刻把鈴聲交回外部 AudioPlayer
+                // （.playback + 背景音訊模式 + 中斷復活）繼續響。
+                print("🎤 AlarmRingView.scenePhase → \(phase): 停止聲控（背景無法辨識），確保鈴聲續響 isPlaying=\(audioPlayer.isPlaying)")
                 speechTask?.cancel()
                 speechTask = nil
                 speechRecognizer.stop()
                 isListening = false
                 micPulse = false
-                audioPlayer.unduck()
+                if !showingReward && !isFinishing && !audioPlayer.isPlaying {
+                    startAudio()
+                }
             case .active:
                 // ★ Issue #2：回前景時，無論哪種 taskType，只要還在響鈴階段（未進 reward / timeout），
                 // 先確保鈴聲還活著——背景被 suspend 可能讓 loop chain 斷掉 → 永久靜音。死了就重啟。
@@ -200,15 +208,16 @@ struct AlarmRingView: View {
                     print("🎤 AlarmRingView.scenePhase → active: 偵測到鈴聲已停 → 重新 startAudio()")
                     startAudio()
                 }
-                // 回前景：仍在響鈴、voice 模式、還沒按 fallback / 還沒成功 → 重新開始聆聽。
+                // 回前景：仍在響鈴、voice 模式、還沒按 fallback / 還沒成功 → 先讓鈴聲響一小段
+                // （session 也順便從背景恢復），再開聆聽窗。
                 guard !showingReward, !showFallbackButton,
                       alarm?.effectiveTaskType != .button else { return }
-                print("🎤 AlarmRingView.scenePhase → active: 重啟聲控")
+                print("🎤 AlarmRingView.scenePhase → active: 重啟響鈴/聆聽循環")
                 speechTask?.cancel()
                 speechTask = Task {
-                    try? await Task.sleep(for: .seconds(1))   // 等 audio session 從背景恢復
+                    try? await Task.sleep(for: .seconds(2))   // 等 session 恢復 + 響一下再聽
                     guard !Task.isCancelled else { return }
-                    startSpeechCycle()
+                    startListenWindow()
                 }
             @unknown default:
                 break
@@ -221,32 +230,32 @@ struct AlarmRingView: View {
 
     // MARK: - Speech cycle
 
-    private func startSpeechCycle() {
-        guard !showingReward, !showFallbackButton else { return }
-        print("🎤 AlarmRingView.startSpeechCycle: attempt #\(recognitionFailureCount + 1) — ducking + start listening")
+    /// 開一個「聆聽窗」：先把鈴聲靜音（time-multiplex 的核心——聆聽時沒有並存播放，mic 才乾淨、
+    /// 也不會 self-match），再用 plain mic 聽 listenWindowSeconds 秒。鈴聲會在沒中時由
+    /// handleRecognitionFailure 重新響起（提示詞就穿插在這段靜音間隔裡）。
+    private func startListenWindow() {
+        guard !showingReward, !showFallbackButton, !isFinishing else { return }
+        print("🎤 AlarmRingView.startListenWindow: attempt #\(recognitionFailureCount + 1) — 鈴聲靜音 + 開聆聽窗 \(listenWindowSeconds)s")
         isListening = true
         micPulse = true
-        // Duck the recording so the child can speak without shouting over it.
-        audioPlayer.duck(to: 0.12)
+        audioPlayer.stop()   // ⭐ 聆聽期間鈴聲靜音；不傳 alarmReferenceURL → plain mic、不開 VPIO
         do {
             try speechRecognizer.startListening(onMatch: { keyword in
                 print("🎤 AlarmRingView: MATCHED '\(keyword)' — waking up")
                 self.isListening = false
                 self.micPulse = false
-                self.audioPlayer.unduck()
                 self.handleWakeUp(dismissMethod: "voice")
             }, onFailure: {
-                print("🎤 AlarmRingView: speech onFailure (no match / timeout)")
+                print("🎤 AlarmRingView: listen window onFailure (no match / timeout)")
                 self.isListening = false
                 self.micPulse = false
-                self.audioPlayer.unduck()
                 self.handleRecognitionFailure()
-            }, extraKeywords: alarm?.effectiveCustomPhrases ?? [])   // 這個鬧鐘的自定口令
+            }, listeningTimeout: listenWindowSeconds,
+               extraKeywords: alarm?.effectiveCustomPhrases ?? [])   // 這個鬧鐘的自定口令
         } catch {
-            print("🎤 AlarmRingView.startSpeechCycle: startListening THREW — \(error.localizedDescription)")
+            print("🎤 AlarmRingView.startListenWindow: startListening THREW — \(error.localizedDescription)")
             isListening = false
             micPulse = false
-            audioPlayer.unduck()
             handleRecognitionFailure()
         }
     }
@@ -254,9 +263,9 @@ struct AlarmRingView: View {
     private func handleRecognitionFailure() {
         recognitionFailureCount += 1
         if recognitionFailureCount >= 3 {
-            withAnimation {
-                showFallbackButton = true
-            }
+            // 放棄聲控：保持響鈴 + 顯示 fallback 按鈕。
+            startAudio()
+            withAnimation { showFallbackButton = true }
             // Enable button after 0.5s — prevents accidental tap-through on appearance
             speechTask = Task {
                 try? await Task.sleep(for: .seconds(0.5))
@@ -264,15 +273,18 @@ struct AlarmRingView: View {
                 fallbackButtonEnabled = true
             }
         } else {
-            // Show "沒關係，再試一次！" for 1.5s, then restart
+            // ⭐ RING phase：把鈴聲放回來再響一段（孩子重新聽到），同時顯示「再試一次」提示，
+            // 響滿 ringWindowSeconds 後才開下一個聆聽窗 → 提示/聆聽穿插在響鈴間隔、間隔自動拉長。
+            startAudio()
             showRetryMessage = true
             speechTask = Task {
                 try? await Task.sleep(for: .seconds(1.5))
                 guard !Task.isCancelled else { return }
                 showRetryMessage = false
-                try? await Task.sleep(for: .seconds(0.3))
+                let remain = max(0, ringWindowSeconds - 1.5)   // 湊滿 ring window 再聆聽
+                try? await Task.sleep(for: .seconds(remain))
                 guard !Task.isCancelled else { return }
-                startSpeechCycle()
+                startListenWindow()
             }
         }
     }
@@ -375,54 +387,49 @@ struct AlarmRingView: View {
         audioPlayer.play(url: url, loop: false, gapSeconds: 0)
     }
 
-    private func startAudio() {
-        // Read gap from AppSettings here so AudioPlayer stays dependency-free.
+    /// Resolve which audio file the alarm should play, and the inter-loop gap. Single source of
+    /// truth shared by the external AudioPlayer (warm-up / background / fallback) AND the speech
+    /// engine (which plays the same file as the AEC reference while listening), so both always
+    /// ring with the identical sound.
+    /// Priority: parent recording → custom CAF in Library/Sounds → bundled CAF → default tone.
+    private func resolveAlarmAudio() -> (url: URL, gap: Int)? {
         let gap = AppSettings.shared.recordingGapSeconds
 
         let recordingName = alarm?.recordingName ?? ""
         if !recordingName.isEmpty {
             let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let url = docs.appendingPathComponent("Recordings/\(recordingName).m4a")
-            if FileManager.default.fileExists(atPath: url.path) {
-                print("🎬 AlarmRingView.startAudio: playing CUSTOM recording \(recordingName).m4a")
-                audioPlayer.play(url: url, loop: true, gapSeconds: gap)
-                return
-            }
-            print("🎬 AlarmRingView.startAudio: recording \(recordingName).m4a MISSING — falling back")
+            if FileManager.default.fileExists(atPath: url.path) { return (url, gap) }
+            print("🎬 AlarmRingView.resolveAlarmAudio: recording \(recordingName).m4a MISSING — falling back")
         }
 
-        // The alarm's chosen sound CAF. Exported custom alarm sounds live in Library/Sounds
-        // (that's where AlarmSoundExporter writes them for the notification path) — NOT the bundle.
-        // startAudio used to only check the bundle, so a custom CAF was never found and the ring
-        // screen fell through to "skipping playback" → SILENT wake screen (the child has no idea
-        // the alarm went off). Check Library/Sounds first, then the bundle.
+        // Exported custom alarm sounds live in Library/Sounds (AlarmSoundExporter writes them there
+        // for the notification path) — NOT the bundle. Check Library/Sounds first, then the bundle.
         let soundName = alarm?.soundFileName ?? ""
         if !soundName.isEmpty {
             let soundsDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("Sounds", isDirectory: true)
             let cafURL = soundsDir.appendingPathComponent(soundName)
-            if FileManager.default.fileExists(atPath: cafURL.path) {
-                print("🎬 AlarmRingView.startAudio: playing Library/Sounds \(soundName)")
-                audioPlayer.play(url: cafURL, loop: true, gapSeconds: gap)
-                return
-            }
-            if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) {
-                print("🎬 AlarmRingView.startAudio: playing bundled \(soundName)")
-                audioPlayer.play(url: bundleURL, loop: true, gapSeconds: gap)
-                return
-            }
-            print("🎬 AlarmRingView.startAudio: \(soundName) not in Library/Sounds or bundle — using default tone")
+            if FileManager.default.fileExists(atPath: cafURL.path) { return (cafURL, gap) }
+            if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) { return (bundleURL, gap) }
+            print("🎬 AlarmRingView.resolveAlarmAudio: \(soundName) not in Library/Sounds or bundle — using default tone")
         }
 
-        // Guaranteed fallback: the bundled default alarm tone. NEVER leave the wake screen silent —
-        // the child must hear the alarm. It loops with `gap` seconds of silence between plays, and
-        // the speech cycle ducks it to 0.12 while listening, so "我起床了" recognition still works.
+        // Guaranteed fallback: the bundled default alarm tone. NEVER leave the wake screen silent.
         if let defaultURL = Bundle.main.url(forResource: "sunny_wake.caf", withExtension: nil) {
-            print("🎬 AlarmRingView.startAudio: playing DEFAULT sunny_wake.caf")
-            audioPlayer.play(url: defaultURL, loop: true, gapSeconds: gap)
-        } else {
-            print("🎬 AlarmRingView.startAudio: ⚠️ default sunny_wake.caf missing from bundle — no audio")
+            return (defaultURL, gap)
         }
+        print("🎬 AlarmRingView.resolveAlarmAudio: ⚠️ default sunny_wake.caf missing from bundle — no audio")
+        return nil
+    }
+
+    /// Play the alarm loop through the external AudioPlayer (.playback). Used outside the active
+    /// listening window: warm-up, retry gaps, fallback-button wait, and background ringing. During
+    /// listening the alarm is silenced (time-multiplex — see startListenWindow).
+    private func startAudio() {
+        guard let (url, gap) = resolveAlarmAudio() else { return }
+        print("🎬 AlarmRingView.startAudio: playing \(url.lastPathComponent) (loop, gap=\(gap)s)")
+        audioPlayer.play(url: url, loop: true, gapSeconds: gap)
     }
 }
 
