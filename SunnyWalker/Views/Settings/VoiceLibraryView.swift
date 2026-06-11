@@ -5,6 +5,7 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+import Speech
 
 // MARK: - Upgrade-path limits
 
@@ -273,6 +274,8 @@ struct VoiceClipRecorderSheet: View {
     @State private var recordedBase   = ""    // UUID string — AudioRecorder stores as <base>.m4a
     @State private var recordedDuration: TimeInterval = 0
     @State private var errorMessage: String?
+    @State private var isTranscribing = false
+    @State private var speechTask: SFSpeechRecognitionTask?
 
     enum RecorderPhase { case ready, recording, done }
 
@@ -368,6 +371,36 @@ struct VoiceClipRecorderSheet: View {
                             .stroke(SunnyColors.leafFresh.opacity(0.45), lineWidth: 1.5)
                     )
                     .colorScheme(.light)
+
+                // Manual auto-name button / spinner
+                Group {
+                    if isTranscribing {
+                        HStack(spacing: 6) {
+                            ProgressView().scaleEffect(0.75)
+                            Text("辨識中…")
+                                .font(.system(size: 12))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                        }
+                    } else {
+                        Button {
+                            let url = recordingURL(base: recordedBase)
+                            let current = clipName.trimmingCharacters(in: .whitespaces)
+                            let fallback = current.isEmpty ? L("我的錄音") : current
+                            transcribeForName(url: url, fallback: fallback)
+                        } label: {
+                            Label("辨識錄音內容", systemImage: "sparkles")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(SunnyColors.leafFresh)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(SunnyColors.leafFresh.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(recordedBase.isEmpty)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: isTranscribing)
             }
         }
     }
@@ -469,13 +502,67 @@ struct VoiceClipRecorderSheet: View {
         countdownTimer?.invalidate(); countdownTimer = nil
         recorder.stop()
         phase = .done
-        if clipName.isEmpty { clipName = "我的錄音" }
 
         // Measure actual duration from the written file
         let url = recordingURL(base: recordedBase)
         if let af = try? AVAudioFile(forReading: url) {
             let sr = af.processingFormat.sampleRate
             recordedDuration = sr > 0 ? Double(af.length) / sr : 0
+        }
+
+        // Set default name; user can tap ✨ to auto-name from voice content.
+        if clipName.isEmpty { clipName = L("我的錄音") }
+    }
+
+    /// Transcribe `url` using SFSpeechURLRecognitionRequest (on-device, no network).
+    /// Sets `clipName` to the first 7 characters of the result, or keeps `fallback`.
+    private func transcribeForName(url: URL, fallback: String) {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        let localeId = SunnyLocalization.code == "en" ? "en-US" : "zh-TW"
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeId)),
+              recognizer.isAvailable else { return }
+
+        isTranscribing = true
+        speechTask?.cancel()
+
+        let request = SFSpeechURLRecognitionRequest(url: url)
+        // On-device only when supported — preserves privacy.
+        if recognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        }
+        request.shouldReportPartialResults = false
+
+        // Safety timeout: give up after 5 s if Speech never fires final result.
+        let timeoutTask = Task {
+            try? await Task.sleep(for: .seconds(5))
+            await MainActor.run {
+                guard self.isTranscribing else { return }
+                self.speechTask?.cancel(); self.speechTask = nil
+                self.isTranscribing = false
+                if self.clipName.isEmpty { self.clipName = fallback }
+            }
+        }
+
+        speechTask = recognizer.recognitionTask(with: request) { result, error in
+            guard let result, result.isFinal else {
+                if error != nil {
+                    Task { @MainActor in
+                        timeoutTask.cancel()
+                        self.speechTask = nil
+                        self.isTranscribing = false
+                        if self.clipName.isEmpty { self.clipName = fallback }
+                    }
+                }
+                return
+            }
+            let text = result.bestTranscription.formattedString
+            let name = String(text.prefix(7)).trimmingCharacters(in: .whitespaces)
+            Task { @MainActor in
+                timeoutTask.cancel()
+                self.speechTask = nil
+                self.isTranscribing = false
+                self.clipName = name.isEmpty ? fallback : name
+            }
         }
     }
 
@@ -512,6 +599,7 @@ struct VoiceClipRecorderSheet: View {
         countdownTimer?.invalidate(); countdownTimer = nil
         recorder.stop()
         player.stop()
+        speechTask?.cancel(); speechTask = nil
         // Clean up any partially-written file
         if !recordedBase.isEmpty {
             try? FileManager.default.removeItem(at: recordingURL(base: recordedBase))

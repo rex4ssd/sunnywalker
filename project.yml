@@ -13,7 +13,7 @@ settings:
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
     MARKETING_VERSION: "1.0.20260610"
-    CURRENT_PROJECT_VERSION: 4   # bump on every upload (App Store rejects duplicate build numbers)
+    CURRENT_PROJECT_VERSION: 6   # bump on every upload (App Store rejects duplicate build numbers). ASC 已有 build 5 → 下次 archive 用 6
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 

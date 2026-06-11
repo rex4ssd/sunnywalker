@@ -276,6 +276,40 @@
         }
       }
     },
+    "alarm_days_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to select all days · Tap again to clear all"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下全選 / 再點全清除"
+          }
+        }
+      }
+    },
+    "alarm_label_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to fill with alarm time · Tap again to clear"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下填入設定時間 / 再點清空名稱"
+          }
+        }
+      }
+    },
     "attempt_counter %lld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1400,7 +1434,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "S"
+            "value" : "Sa"
           }
         },
         "zh-Hant" : {
@@ -1863,6 +1897,23 @@
         }
       }
     },
+    "小鬧晴" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny (Alarm)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小鬧晴"
+          }
+        }
+      }
+    },
     "尚未錄音" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2227,7 +2278,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "S"
+            "value" : "Su"
           }
         },
         "zh-Hant" : {
@@ -2312,6 +2363,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "None"
+          }
+        }
+      }
+    },
+    "標籤" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Label"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標籤"
           }
         }
       }
@@ -2912,6 +2979,9 @@
         }
       }
     },
+    "辨識中…" : {
+
+    },
     "這個動作無法復原。" : {
 
     },
@@ -3201,6 +3271,7 @@
       }
     },
     "重複日" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3212,6 +3283,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重複日"
+          }
+        }
+      }
+    },
+    "重覆" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Days"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重覆"
           }
         }
       }
@@ -3564,6 +3651,7 @@
       }
     },
     "關鬧鐘方式" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3657,6 +3745,7 @@
       }
     },
     "鬧鐘名稱" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

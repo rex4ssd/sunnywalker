@@ -26,6 +26,14 @@ struct AlarmEditorView: View {
     @State private var showingBuiltinPicker = false
     @State private var showingCustomPicker = false
     @State private var customPhrase = ""
+    @StateObject private var previewPlayer = AudioPlayer()
+    @State private var previewingRow: String? = nil
+    // Label tap/long-press
+    @State private var showLabelHint = false
+    @State private var labelLongPressed = false
+    // Days tap/long-press
+    @State private var showDaysHint = false
+    @State private var daysLongPressed = false
 
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
@@ -63,8 +71,8 @@ struct AlarmEditorView: View {
                         timePicker
                         labelField
                         weekdayPicker
-                        dismissMethodCard
                         ringtoneCard
+                        dismissMethodCard
                     }
                     .padding(24)
                 }
@@ -74,6 +82,10 @@ struct AlarmEditorView: View {
                     selectedTaskType = .button
                 }
             }
+            .onReceive(previewPlayer.$isPlaying) { playing in
+                if !playing { previewingRow = nil }
+            }
+            .onDisappear { previewPlayer.stop() }
             .navigationTitle(isEditing ? "編輯鬧鐘" : "新增鬧鐘")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -122,41 +134,105 @@ struct AlarmEditorView: View {
 
     private var labelField: some View {
         WatercolorCard {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("鬧鐘名稱")
-                    .font(SunnyFonts.caption())
-                    .foregroundStyle(SunnyColors.sunnyGray)
-                TextField("例如：上學囉！", text: $label)
-                    .font(SunnyFonts.body())
-                    .foregroundStyle(SunnyColors.nightIndigo)
-                    .tint(SunnyColors.leafFresh)
-                    .colorScheme(.light)   // 同自定口令：iOS 26 深色模式輸入文字看不到字的修法
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 12) {
+                    Text("標籤")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(showLabelHint ? SunnyColors.leafFresh : SunnyColors.sunnyGray)
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(
+                            minimumDuration: 0.5,
+                            pressing: { isPressing in
+                                if !isPressing {
+                                    withAnimation(.easeOut(duration: 0.2)) { showLabelHint = false }
+                                }
+                            },
+                            perform: {
+                                labelLongPressed = true
+                                withAnimation(.spring(duration: 0.2)) { showLabelHint = true }
+                            }
+                        )
+                        .simultaneousGesture(TapGesture().onEnded {
+                            defer { labelLongPressed = false }
+                            guard !labelLongPressed else { return }
+                            handleLabelTap()
+                        })
+                    TextField("例如：上學囉！", text: $label)
+                        .font(SunnyFonts.body())
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                        .multilineTextAlignment(.trailing)
+                        .tint(SunnyColors.leafFresh)
+                        .colorScheme(.light)
+                }
+                .padding(.horizontal, 20)
+                .frame(height: 56)
+
+                if showLabelHint {
+                    Text(LocalizedStringKey("alarm_label_hint"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(SunnyColors.leafFresh.opacity(0.85))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
         }
     }
 
     private var weekdayPicker: some View {
         WatercolorCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("重複日")
-                    .font(SunnyFonts.caption())
-                    .foregroundStyle(SunnyColors.sunnyGray)
+            VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 8) {
-                    ForEach(weekdayLabels, id: \.0) { num, sym in
-                        WeekdayChip(symbol: sym, isSelected: selectedWeekdays.contains(num)) {
-                            if selectedWeekdays.contains(num) {
-                                selectedWeekdays.remove(num)
-                            } else {
-                                selectedWeekdays.insert(num)
+                    Text("重覆")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(showDaysHint ? SunnyColors.leafFresh : SunnyColors.sunnyGray)
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(
+                            minimumDuration: 0.5,
+                            pressing: { isPressing in
+                                if !isPressing {
+                                    withAnimation(.easeOut(duration: 0.2)) { showDaysHint = false }
+                                }
+                            },
+                            perform: {
+                                daysLongPressed = true
+                                withAnimation(.spring(duration: 0.2)) { showDaysHint = true }
+                            }
+                        )
+                        .simultaneousGesture(TapGesture().onEnded {
+                            defer { daysLongPressed = false }
+                            guard !daysLongPressed else { return }
+                            handleDaysTap()
+                        })
+                    Spacer()
+                    HStack(spacing: 6) {
+                        ForEach(weekdayLabels, id: \.0) { num, sym in
+                            WeekdayChip(
+                                symbol: sym,
+                                isWeekend: num == 1 || num == 7,
+                                isSelected: selectedWeekdays.contains(num)
+                            ) {
+                                if selectedWeekdays.contains(num) {
+                                    selectedWeekdays.remove(num)
+                                } else {
+                                    selectedWeekdays.insert(num)
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, 20)
+                .frame(height: 56)
+
+                if showDaysHint {
+                    Text(LocalizedStringKey("alarm_days_hint"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(SunnyColors.leafFresh.opacity(0.85))
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
         }
     }
 
@@ -178,10 +254,6 @@ struct AlarmEditorView: View {
     private var dismissMethodCard: some View {
         WatercolorCard {
             VStack(alignment: .leading, spacing: 14) {
-                Text("關鬧鐘方式")
-                    .font(SunnyFonts.caption())
-                    .foregroundStyle(SunnyColors.sunnyGray)
-
                 Toggle(isOn: voiceDismissBinding) {
                     VStack(alignment: .leading, spacing: 3) {
                         Label("啟用口令關閉", systemImage: "mic.badge.checkmark")
@@ -225,6 +297,54 @@ struct AlarmEditorView: View {
         }
     }
 
+    // MARK: - Label / Days tap actions
+
+    /// 點 "標籤" 文字：填入目前設定的時間 / 再點清空
+    private func handleLabelTap() {
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
+        let h = comps.hour ?? 0
+        let m = comps.minute ?? 0
+        let timeStr: String
+        if settings.use24HourClock {
+            timeStr = String(format: "%02d:%02d", h, m)
+        } else {
+            let h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h)
+            timeStr = String(format: "%d:%02d %@", h12, m, h < 12 ? "AM" : "PM")
+        }
+        label = (label == timeStr) ? "" : timeStr
+    }
+
+    /// 點 "重覆" 文字：全選 / 全清除（交替）
+    private func handleDaysTap() {
+        let all: Set<Int> = [1, 2, 3, 4, 5, 6, 7]
+        selectedWeekdays = (selectedWeekdays == all) ? [] : all
+    }
+
+    // MARK: - Preview
+
+    private func togglePreview(_ row: String) {
+        if previewingRow == row {
+            previewPlayer.stop()
+            previewingRow = nil
+            return
+        }
+        previewPlayer.stop()
+        let url: URL?
+        if row == "builtin" {
+            url = Bundle.main.url(forResource: tempAlarm.soundFileName, withExtension: nil)
+        } else {
+            guard !tempAlarm.recordingName.isEmpty else { return }
+            let u = FileManager.default
+                .urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Recordings")
+                .appendingPathComponent(tempAlarm.recordingName + ".m4a")
+            url = FileManager.default.fileExists(atPath: u.path) ? u : nil
+        }
+        guard let url else { return }
+        previewingRow = row
+        previewPlayer.play(url: url, loop: false)
+    }
+
     // Whether the current soundFileName is a built-in bundled sound.
     private var isBuiltinSelected: Bool {
         !tempAlarm.soundFileName.hasPrefix("alarm_")
@@ -258,30 +378,30 @@ struct AlarmEditorView: View {
                     .padding(.bottom, 12)
 
                 // Row 1: built-in sounds
-                Button { showingBuiltinPicker = true } label: {
-                    ringtoneRow(
-                        icon: "music.note",
-                        iconColor: SunnyColors.wheatGold,
-                        title: "內建鈴聲",
-                        subtitle: builtinSubtitle,
-                        isSelected: isBuiltinSelected
-                    )
-                }
-                .buttonStyle(.plain)
+                ringtoneRow(
+                    icon: "music.note",
+                    iconColor: SunnyColors.wheatGold,
+                    title: "內建鈴聲",
+                    subtitle: builtinSubtitle,
+                    isSelected: isBuiltinSelected,
+                    isPreviewing: previewingRow == "builtin",
+                    onIconTap: { togglePreview("builtin") },
+                    onChevronTap: { showingBuiltinPicker = true }
+                )
 
                 Divider().padding(.leading, 62)
 
                 // Row 2: self-recorded clips
-                Button { showingCustomPicker = true } label: {
-                    ringtoneRow(
-                        icon: "mic.fill",
-                        iconColor: SunnyColors.leafFresh,
-                        title: "自定鈴聲(錄音)",
-                        subtitle: customSubtitle,
-                        isSelected: !isBuiltinSelected
-                    )
-                }
-                .buttonStyle(.plain)
+                ringtoneRow(
+                    icon: "mic.fill",
+                    iconColor: SunnyColors.leafFresh,
+                    title: "自定鈴聲(錄音)",
+                    subtitle: customSubtitle,
+                    isSelected: !isBuiltinSelected,
+                    isPreviewing: previewingRow == "custom",
+                    onIconTap: { togglePreview("custom") },
+                    onChevronTap: { showingCustomPicker = true }
+                )
                 .padding(.bottom, 4)
             }
         }
@@ -302,12 +422,27 @@ struct AlarmEditorView: View {
     }
 
     @ViewBuilder
-    private func ringtoneRow(icon: String, iconColor: Color, title: LocalizedStringKey, subtitle: Text, isSelected: Bool) -> some View {
+    private func ringtoneRow(
+        icon: String,
+        iconColor: Color,
+        title: LocalizedStringKey,
+        subtitle: Text,
+        isSelected: Bool,
+        isPreviewing: Bool,
+        onIconTap: @escaping () -> Void,
+        onChevronTap: @escaping () -> Void
+    ) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundStyle(iconColor)
-                .frame(width: 28)
+            // Left icon: tap to preview current sound
+            Button(action: onIconTap) {
+                Image(systemName: isPreviewing ? "stop.circle.fill" : icon)
+                    .font(.system(size: 26))
+                    .foregroundStyle(isPreviewing ? SunnyColors.lanternOrange : iconColor)
+                    .symbolEffect(.pulse, isActive: isPreviewing)
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(SunnyFonts.caption())
@@ -322,7 +457,11 @@ struct AlarmEditorView: View {
                     .font(.system(size: 18))
                     .foregroundStyle(SunnyColors.leafFresh)
             }
-            NavigationChevron()
+            // Right chevron: tap to navigate to picker
+            Button(action: onChevronTap) {
+                NavigationChevron()
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -369,18 +508,26 @@ struct AlarmEditorView: View {
 
 private struct WeekdayChip: View {
     let symbol: String
+    let isWeekend: Bool
     let isSelected: Bool
     let onTap: () -> Void
+
+    // Weekend selected = lighter jade; weekday = full jade
+    private var selectedFill: Color {
+        isWeekend ? SunnyColors.leafFresh.opacity(0.6) : SunnyColors.leafFresh
+    }
 
     var body: some View {
         Button(action: onTap) {
             Text(LocalizedStringKey(symbol))
-                .font(SunnyFonts.caption(14))
+                .font(.system(size: 11, weight: .semibold))
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
                 .foregroundStyle(isSelected ? .white : SunnyColors.sunnyGray)
-                .frame(width: 36, height: 36)
+                .frame(width: 34, height: 34)
                 .background(
                     Circle()
-                        .fill(isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12))
+                        .fill(isSelected ? selectedFill : SunnyColors.sunnyGray.opacity(0.12))
                 )
         }
         .ghibliButtonStyle()
