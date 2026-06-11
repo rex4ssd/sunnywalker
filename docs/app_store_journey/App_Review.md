@@ -57,3 +57,25 @@ Support
 ![](20260609_174306_015d.png)
 
 ![](20260609_174325_a4e0.png)
+
+# 2026-06-11
+Review Environment
+Submission ID: 36ba9a12-3079-4341-ad8b-66c64ae1bb5d
+Review date: June 11, 2026
+Review Device: iPad Air 11-inch (M3)
+Version reviewed: 1.0.20260610 (2)
+
+Guideline 2.1 - Information Needed
+
+Before we can proceed with the review of the app, we need additional information about how it complies with Guideline 1.3.
+
+Next Steps
+
+To help us proceed with the review of the app, please provide complete and detailed responses to the following questions.
+
+• Does the app include third-party analytics? If so, please provide details about what data is collected for this purpose.
+• Does the app include third-party advertising? If so, please provide a link to the ad network's publicly-documented practices and policies for kids apps.
+• Will the data be shared with any third parties? If so, for what purposes and where will this information be stored?
+• Is the app collecting any user or device data for purposes beyond third-party analytics or third-party advertising? If so, please provide a complete and clear explanation of all planned uses of this data.
+
+Once you reply to this message in App Store Connect with the requested information, we can proceed with the app's review.
