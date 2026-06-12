@@ -24,9 +24,18 @@ final class AlarmScheduler {
         let ns = await center.notificationSettings()
         print("🚦 AlarmScheduler: UN authStatus=\(ns.authorizationStatus.rawValue) alert=\(ns.alertSetting.rawValue) sound=\(ns.soundSetting.rawValue) lockScreen=\(ns.lockScreenSetting.rawValue) timeSensitive=\(ns.timeSensitiveSetting.rawValue) (2=enabled/authorized)")
 
-        // Remove any stale requests (all 7 possible weekday slots + bare UUID fallback)
-        let staleIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" } + [alarm.id.uuidString]
-        center.removePendingNotificationRequests(withIdentifiers: staleIDs)
+        // 2026-06-12 防 kill-race 根治：center.add() 本來就會【取代】同 identifier 的 pending
+        // request，所以「即將重排的 ID」不必先 remove——只移除不再使用的 slot（例如取消勾選的
+        // weekday、weekday↔一次性切換後的舊格式）。這讓排程沒有「已 remove、未 add 完成」的
+        // 空窗；之前 force-quit 卡在這個空窗會把通知整批清掉（見 issue 文件第二輪）。
+        let isNotificationMode = alarm.effectiveBackgroundMode == .notification
+        let allIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" } + [alarm.id.uuidString]
+        let keepIDs: Set<String> = isNotificationMode || !AlarmKitService.shared.isAuthorized
+            ? (alarm.weekdays.isEmpty
+                ? [alarm.id.uuidString]
+                : Set(alarm.weekdays.map { "\(alarm.id.uuidString)-\($0)" }))
+            : []  // AlarmKit 模式且已授權 → 此路徑只負責清掉殘留通知，全移除
+        center.removePendingNotificationRequests(withIdentifiers: allIDs.filter { !keepIDs.contains($0) })
 
         // AlarmKit is the single source of truth once authorized. Scheduling both an
         // AlarmKit alarm AND a UNNotification makes the device fire twice (full-screen
@@ -38,7 +47,6 @@ final class AlarmScheduler {
         //   故意走這條 UNNotification 路徑，即使 AlarmKit 已授權——因為它要的就是「響一次自動停、
         //   不用 AlarmKit 無限響」。這種鬧鐘不排 AlarmKit（syncAlarm 會跳過 + 移除既有 AlarmKit 條目），
         //   所以不會雙重響鈴。
-        let isNotificationMode = alarm.effectiveBackgroundMode == .notification
         guard isNotificationMode || !AlarmKitService.shared.isAuthorized else {
             print("🔔 AlarmScheduler: AlarmKit authorized — standing down (UNNotification cleared)")
             return

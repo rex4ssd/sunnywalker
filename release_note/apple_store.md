@@ -1,5 +1,21 @@
 # SunnyWalker — App Store Release Note
 
+## 1.1.20260612 (build 8) — 溫和提醒模式（per-alarm Time-Sensitive 通知）
+
+| 欄位 | 值 |
+|---|---|
+| 顯示版本 (Marketing Version) | **1.1.20260612**（新功能 → MINOR bump） |
+| Build (CFBundleVersion) | **8**（6、7 已被 1.0.20260612 佔用） |
+| 送審日期 | 2026-06-12 |
+| 前次紀錄 | 1.0.20260612 (7) 同日送審（錄音頁優化）；若仍在審需先 Remove from Review |
+| 本次重點 | per-alarm「溫和提醒模式」（Time-Sensitive 通知，響 30 秒自動停）；錄音 loop 填滿 30s + 輪間靜音；通知 body 顯示鬧鐘 label；點通知回主畫面不開關鬧鐘畫面；修復 entitlement 未進 binary 造成通知整顆被丟（issue/fix_issue__NOTIFICATION_MODE_NOT_FIRING.md） |
+| ASC 文案 | **What's New / Description / Keywords / Subtitle 中英文全套見 `docs/for_Apple_store/20260612_appstoreconnect_content.md`** |
+
+> ⚠️ Archive 前必跑 `xcodegen generate`（本次 entitlement 之雷即漏跑此步）。
+> 裝機抽查：設定 ▸ SunnyWalker ▸ 通知內頁要有「Time Sensitive」開關才代表 entitlement 在 binary。
+
+---
+
 ## 1.0.20260612 (build 7) — 錄音頁優化 + 在地化修正
 
 | 欄位 | 值 |
