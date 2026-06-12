@@ -66,7 +66,20 @@
       }
     },
     "%@ 秒" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sec"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 秒"
+          }
+        }
+      }
     },
     "%lld 分" : {
       "extractionState" : "stale",
@@ -1480,7 +1493,20 @@
       }
     },
     "最多只能設定 %@ 個鬧鐘，請先刪除一個再新增。" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can set up to %@ alarms. Please delete one before adding another."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最多只能設定 %@ 個鬧鐘，請先刪除一個再新增。"
+          }
+        }
+      }
     },
     "分享 / 匯出 Markdown" : {
       "extractionState" : "stale",
@@ -2409,6 +2435,7 @@
       }
     },
     "早安！☀️" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2597,6 +2624,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "準備好了嗎？"
+          }
+        }
+      }
+    },
+    "溫和提醒模式（自動停、省電）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gentle Reminder mode (auto-stop, battery-friendly)"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "溫和提醒模式（自動停、省電）"
+          }
+        }
+      }
+    },
+    "用通知響一次（≤30 秒）就自動停，不會一直響到沒電。可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings once as a notification (up to 30 sec), then stops on its own — it never rings until the battery dies. Breaks through Focus mode, but not the silent switch, so it's gentler on a sleeping child."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用通知響一次（≤30 秒）就自動停，不會一直響到沒電。可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。"
           }
         }
       }
@@ -3199,7 +3260,20 @@
       }
     },
     "這個動作無法復原。" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action cannot be undone."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這個動作無法復原。"
+          }
+        }
+      }
     },
     "這台裝置目前無法裁剪這個錄音。" : {
       "extractionState" : "stale",
@@ -3960,6 +4034,23 @@
         }
       }
     },
+    "預設：系統鬧鐘，破靜音、持續響直到關掉（最會叫醒人）。但 app 被滑掉殺掉後會一直響、較耗電。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default: system alarm — breaks silent mode and keeps ringing until turned off (the surest way to wake a child). If the app is swiped away, it may keep ringing and use more battery."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設：系統鬧鐘，破靜音、持續響直到關掉（最會叫醒人）。但 app 被滑掉殺掉後會一直響、較耗電。"
+          }
+        }
+      }
+    },
     "預設檔名：%@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4039,7 +4130,20 @@
       }
     },
     "點一下，吉祥物會跟你打招呼" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap me and I'll say hello!"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下，吉祥物會跟你打招呼"
+          }
+        }
+      }
     },
     "點下方「新增錄音」錄一段給孩子的鈴聲" : {
       "localizations" : {
@@ -4052,7 +4156,20 @@
       }
     },
     "點下方的 ＋ 來新增第一個吧！" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap + below to add your first one!"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點下方的 ＋ 來新增第一個吧！"
+          }
+        }
+      }
     },
     "點右下角的 + 來新增第一個吧！" : {
       "extractionState" : "stale",

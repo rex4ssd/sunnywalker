@@ -64,12 +64,12 @@ SunnyWalker 是專為孩子設計的兒童鬧鐘。錄下一句「寶貝，起�
 ‧ 不收集任何個人資料
 
 每天早晨，讓孩子在你的聲音裡醒來。
-下載 SunnyWalker，告別起床氣，迎接陽光 ☀️
+下載 SunnyWalker，告別起床氣，迎接陽光 
 ```
 
 **en**
 ```
-Your child wakes up to your gentle voice — not a jarring buzzer ☀️
+Your child wakes up to your gentle voice — not a jarring buzzer 
 
 SunnyWalker is an alarm clock made just for kids. Record a quick
 "Good morning, sweetheart — time to get up!" and tomorrow your child
@@ -97,7 +97,7 @@ PARENTS CAN RELAX
 • No personal data collected
 
 Every morning, let your child wake up inside your voice.
-Download SunnyWalker — goodbye morning battles, hello sunshine ☀️
+Download SunnyWalker — goodbye morning battles, hello sunshine 
 ```
 
 ---
