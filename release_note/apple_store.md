@@ -5,7 +5,7 @@
 | 欄位 | 值 |
 |---|---|
 | 顯示版本 (Marketing Version) | **1.1.20260612**（新功能 → MINOR bump） |
-| Build (CFBundleVersion) | **8**（6、7 已被 1.0.20260612 佔用） |
+| Build (CFBundleVersion) | **9**（6、7 被 1.0.20260612 佔用；8 缺 i18n 修正已上傳作廢——英文版會出現中文，ASC 版本頁換掛 build 9 即可） |
 | 送審日期 | 2026-06-12 |
 | 前次紀錄 | 1.0.20260612 (7) 同日送審（錄音頁優化）；若仍在審需先 Remove from Review |
 | 本次重點 | per-alarm「溫和提醒模式」（Time-Sensitive 通知，響 30 秒自動停）；錄音 loop 填滿 30s + 輪間靜音；通知 body 顯示鬧鐘 label；點通知回主畫面不開關鬧鐘畫面；修復 entitlement 未進 binary 造成通知整顆被丟（issue/fix_issue__NOTIFICATION_MODE_NOT_FIRING.md） |
