@@ -428,7 +428,48 @@ enum AlarmSoundExporter {
                 AVLinearPCMIsNonInterleaved: false
             ]
             let outFile = try AVAudioFile(forWriting: cafURL, settings: outSettings)
-            try outFile.write(from: buffer)
+            // 🔁 2026-06-12：UNNotification 音效「只播一次、上限 30s」。短錄音（如 3 秒）原樣輸出
+            //   會讓提醒模式「響 3 秒就停」。這裡把錄音 loop 填滿 ~29s（留 margin，>30s 會被 iOS
+            //   整顆 fallback 成預設音），單響拉滿 30 秒。AlarmKit 模式不受影響（系統本來就無限循環）。
+            let targetFrames = AVAudioFramePosition(format.sampleRate * 29)
+            let bufFrames = AVAudioFramePosition(buffer.frameLength)
+
+            // 輪與輪之間補 0.45s 靜音——語音頭尾相接重複 10 次聽起來很機械，
+            // 短停頓讓「爸媽的聲音」自然得多。明確 memset 歸零（AVAudioPCMBuffer 不保證零初始化）。
+            let gapBuffer: AVAudioPCMBuffer? = {
+                let gapFrames = AVAudioFrameCount(format.sampleRate * 0.45)
+                guard let g = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: gapFrames),
+                      let ch = g.floatChannelData else { return nil }
+                for c in 0..<Int(format.channelCount) {
+                    memset(ch[c], 0, Int(gapFrames) * MemoryLayout<Float>.size)
+                }
+                g.frameLength = gapFrames
+                return g
+            }()
+
+            // 寫到剛好貼齊 targetFrames；最後不足一輪時暫時縮短 frameLength 寫部分 buffer。
+            func writeCapped(_ b: AVAudioPCMBuffer, written: inout AVAudioFramePosition) throws {
+                let remaining = targetFrames - written
+                guard remaining > 0, b.frameLength > 0 else { return }
+                if AVAudioFramePosition(b.frameLength) <= remaining {
+                    try outFile.write(from: b)
+                    written += AVAudioFramePosition(b.frameLength)
+                } else {
+                    let saved = b.frameLength
+                    b.frameLength = AVAudioFrameCount(remaining)
+                    try outFile.write(from: b)
+                    b.frameLength = saved
+                    written += remaining
+                }
+            }
+
+            var written: AVAudioFramePosition = 0
+            while written < targetFrames && bufFrames > 0 {
+                try writeCapped(buffer, written: &written)
+                if written >= targetFrames { break }
+                if let gap = gapBuffer { try writeCapped(gap, written: &written) }
+            }
+            print("🎚️ Exporter: looped \(String(format: "%.1f", Double(bufFrames) / format.sampleRate))s recording (+0.45s gaps) to \(String(format: "%.1f", Double(written) / format.sampleRate))s CAF")
         } catch {
             print("🎚️ Exporter: m4a→caf export FAILED — \(error.localizedDescription)")
             return nil

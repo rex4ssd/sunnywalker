@@ -5,6 +5,7 @@
 
 import UserNotifications
 import Foundation
+import AVFAudio  // CAF duration check（短 CAF 自我修復用）
 
 @MainActor
 final class AlarmScheduler {
@@ -17,6 +18,12 @@ final class AlarmScheduler {
 
         print("🔔 AlarmScheduler.schedule: alarm=\(alarm.id.uuidString.prefix(8)) \(alarm.hour):\(String(format: "%02d", alarm.minute)) weekdays=\(alarm.weekdays) sound=\(alarm.soundFileName) AlarmKitAuthorized=\(AlarmKitService.shared.isAuthorized)")
 
+        // 🚦 通知權限診斷：通知模式要靠 UNUserNotificationCenter 授權（與 AlarmKit 授權是兩回事）。
+        //   若 authStatus≠2(authorized) 或 alert/sound≠2(enabled) → 通知不會出現/沒聲音，這才是
+        //   「提醒模式什麼都沒發生」的另一個可能源頭（去 設定>SunnyWalker>通知 開啟）。
+        let ns = await center.notificationSettings()
+        print("🚦 AlarmScheduler: UN authStatus=\(ns.authorizationStatus.rawValue) alert=\(ns.alertSetting.rawValue) sound=\(ns.soundSetting.rawValue) lockScreen=\(ns.lockScreenSetting.rawValue) timeSensitive=\(ns.timeSensitiveSetting.rawValue) (2=enabled/authorized)")
+
         // Remove any stale requests (all 7 possible weekday slots + bare UUID fallback)
         let staleIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" } + [alarm.id.uuidString]
         center.removePendingNotificationRequests(withIdentifiers: staleIDs)
@@ -26,9 +33,18 @@ final class AlarmScheduler {
         // alert + 30s banner). When AlarmKit is active this legacy path stands down and
         // only clears any leftover notifications. It still runs as a fallback on devices
         // where AlarmKit authorization was denied/unavailable.
-        guard !AlarmKitService.shared.isAuthorized else {
+        //
+        // ★ 2026-06-12 例外：per-alarm「通知模式」(effectiveBackgroundMode == .notification)
+        //   故意走這條 UNNotification 路徑，即使 AlarmKit 已授權——因為它要的就是「響一次自動停、
+        //   不用 AlarmKit 無限響」。這種鬧鐘不排 AlarmKit（syncAlarm 會跳過 + 移除既有 AlarmKit 條目），
+        //   所以不會雙重響鈴。
+        let isNotificationMode = alarm.effectiveBackgroundMode == .notification
+        guard isNotificationMode || !AlarmKitService.shared.isAuthorized else {
             print("🔔 AlarmScheduler: AlarmKit authorized — standing down (UNNotification cleared)")
             return
+        }
+        if isNotificationMode {
+            print("🔔 AlarmScheduler: NOTIFICATION-mode alarm \(alarm.id.uuidString.prefix(8)) — scheduling .timeSensitive UNNotification (AlarmKit deliberately not used)")
         }
 
         // Self-heal: alarms recorded before the CAF export existed still point at the bundled
@@ -44,9 +60,10 @@ final class AlarmScheduler {
 
         let content = UNMutableNotificationContent()
         content.title = L("起床囉！")
-        content.body = alarm.recordingName.isEmpty
-            ? L("早安！☀️ 快來聽鬧鐘")
-            : L("點開來聽：%@", alarm.recordingName)
+        // 2026-06-12 UX：body 顯示鬧鐘 label（專注提醒要做的事）。
+        // 之前顯示「點開來聽：<recordingName>」，但 recordingName 是內部 UUID，
+        // 鎖屏橫幅會出現一串亂碼（實機截圖證實）。沒設 label 就用通用早安語。
+        content.body = alarm.label.isEmpty ? L("早安！☀️") : alarm.label
         // Sound selection (this UNNotification path is the one that actually fires while
         // AlarmKit is unauthorized — i.e. before the entitlement is approved):
         //   • Custom recording → ring its exported Library/Sounds/*.caf directly from the banner,
@@ -69,8 +86,22 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: custom sound check → name=\(custom) existsInLibrarySounds=\(exists) path=\(cafPath)")
             print("🔔 AlarmScheduler: Library/Sounds contents = \(dirList)")
             if exists {
-                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: custom))
-                print("🔔 AlarmScheduler: using CUSTOM banner sound → \(custom)")
+                // 🔁 自我修復：2026-06-12 之前的 exporter 不 loop，CAF＝錄音原長（可能只有幾秒）。
+                //   通知音只播一次 → 短 CAF 會「響 3 秒就停」。偵測到 <28s 就用同一份錄音重匯出
+                //   成 ~29s loop 版（新 exporter），免使用者重錄。重匯出後 ≥29s，之後不會再觸發。
+                var effectiveName = custom
+                if let caf = try? AVAudioFile(forReading: URL(fileURLWithPath: cafPath)) {
+                    // length 的單位是檔案原生 sample frames → 用 fileFormat（processingFormat 通常同值，但 fileFormat 才語意正確）
+                    let secs = Double(caf.length) / caf.fileFormat.sampleRate
+                    if secs < 28,
+                       let looped = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.recordingName) {
+                        alarm.soundFileName = looped
+                        effectiveName = looped
+                        print("🔔 AlarmScheduler: short CAF (\(String(format: "%.1f", secs))s) re-exported as 29s loop → \(looped)")
+                    }
+                }
+                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: effectiveName))
+                print("🔔 AlarmScheduler: using CUSTOM banner sound → \(effectiveName)")
             } else {
                 content.sound = .default
                 print("🔔 AlarmScheduler: ⚠️ custom CAF missing — FALLING BACK to default. (re-record or re-save to regenerate)")
@@ -80,11 +111,30 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: using DEFAULT banner sound (custom=\(custom) recording=\(alarm.recordingName.isEmpty ? "none" : "yes"))")
         }
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
+        // 鬧鐘類通知優先 .timeSensitive：能突破「專注模式 / 勿擾」即時送達並亮屏。
+        // ⚠️ 注意：.timeSensitive 突破不了實體靜音開關（要破靜音得用 .critical + Apple entitlement）。
+        //
+        // 🔴 2026-06-12 實測（NOTIFICATION_MODE_NOT_FIRING）：entitlement【沒進 binary】時，
+        //   標了 .timeSensitive 的通知會被 iOS【整顆悄悄丟棄】——不顯示、不出聲、也不進
+        //   delivered 清單（不是想像中的「只降級」）。症狀＝pending=7 但到點完全沒反應。
+        //   因此這裡用 timeSensitiveSetting 做 runtime 防衛：
+        //   .notSupported(0)＝entitlement 不在 binary（漏跑 xcodegen generate / signing 拿掉）
+        //   .disabled(1)   ＝使用者在 設定>通知 把 Time Sensitive 關了
+        //   兩者都降回 .active，通知至少還會正常顯示，只是不破專注模式。
+        if ns.timeSensitiveSetting == .enabled {
+            content.interruptionLevel = .timeSensitive
+        } else {
+            content.interruptionLevel = .active
+            print("🚦 AlarmScheduler: ⚠️ timeSensitiveSetting=\(ns.timeSensitiveSetting.rawValue) (0=entitlement missing, 1=user disabled) — downgrading to .active so the notification still shows")
+        }
         // requireAppToStop travels with the banner so the ✕ (dismiss) handler in AppDelegate knows
         // whether this is strict mode. Non-strict → ✕ turns the alarm off; strict → nags persist.
         content.userInfo = [
             "alarmID": alarm.id.uuidString,
-            "requireAppToStop": alarm.effectiveRequireAppToStop
+            "requireAppToStop": alarm.effectiveRequireAppToStop,
+            // 2026-06-12：點擊路由用——提醒模式點橫幅只回主畫面，不開 AlarmRingView
+            //（聲音已播完自動停，沒有「關鬧鐘」的需求）。AppDelegate.didReceive 讀這個 key。
+            "backgroundMode": alarm.effectiveBackgroundMode.rawValue
         ]
 
         if alarm.weekdays.isEmpty {

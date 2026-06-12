@@ -2,11 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Intentionally EMPTY. AlarmKit does NOT use an entitlement — it is gated only by the
-	     NSAlarmKitUsageDescription key in Info.plist plus runtime AlarmManager.requestAuthorization().
-	     `com.apple.developer.alarmkit` is NOT a real/provisionable entitlement (it does not exist in
-	     the Developer Portal). Adding it here breaks automatic signing with:
-	       "Entitlement com.apple.developer.alarmkit not found and could not be included in profile."
-	     This file is left empty (and unreferenced by CODE_SIGN_ENTITLEMENTS) on purpose. -->
+	<!-- AlarmKit does NOT use an entitlement — gated only by NSAlarmKitUsageDescription +
+	     runtime AlarmManager.requestAuthorization(). `com.apple.developer.alarmkit` is NOT a
+	     real/provisionable entitlement; adding it breaks automatic signing. DO NOT add it. -->
+
+	<!-- Time-Sensitive Notifications：per-alarm「溫和提醒模式」用 .timeSensitive 通知所需。
+	     這是真正可自動佈建(auto-provisionable)的 capability（與 alarmkit 不同），automatic signing
+	     會自動處理。沒有它的話 .timeSensitive 不會 crash，只是降級成一般通知、突破不了專注模式。
+	     ⚠️ 若 build 時 signing 報「Time Sensitive ... not found」，把這個 key 拿掉 + 在 project.yml
+	     移除 CODE_SIGN_ENTITLEMENTS 即可回到原狀（功能仍可用，只少了破專注模式）。 -->
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
 </dict>
 </plist>

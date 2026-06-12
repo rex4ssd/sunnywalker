@@ -129,9 +129,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                     print("🔔 didReceive: ✕ handled (non-strict) — alarm \(uuid.uuidString.prefix(8)) OFF, routing suppressed")
                 }
             default:
-                // Tap on the banner body (or default action) → open the wake-up screen.
-                print("🔔 didReceive: tap → handleAlarmPayload")
-                self.handleAlarmPayload(userInfo)
+                // 2026-06-12 UX：提醒模式（.notification）的橫幅，聲音播完就自動停了，
+                // 沒有「關鬧鐘」需求 → 點橫幅只把 app 帶回主畫面（系統開 app 就是主畫面），
+                // 不設 pendingAlarmID、不發 .alarmFired、不開 AlarmRingView。
+                // AlarmKit / 舊 fallback 路徑維持原行為（開喚醒畫面）。
+                if (userInfo["backgroundMode"] as? String) == AlarmBackgroundMode.notification.rawValue {
+                    // 孩子已回應 → 取消殘留的 strict-mode nag 連發（以前由 AlarmRingView 開啟時取消，
+                    // 現在不開 ring view，得在這裡收掉，否則 nag 會繼續轟炸 N 分鐘）。
+                    if let alarmID, let uuid = UUID(uuidString: alarmID) {
+                        AlarmScheduler.shared.cancelNags(uuid)
+                    }
+                    print("🔔 didReceive: tap on NOTIFICATION-mode banner → home screen only (no ring view), nags cancelled")
+                } else {
+                    // Tap on the banner body (or default action) → open the wake-up screen.
+                    print("🔔 didReceive: tap → handleAlarmPayload")
+                    self.handleAlarmPayload(userInfo)
+                }
             }
         }
     }

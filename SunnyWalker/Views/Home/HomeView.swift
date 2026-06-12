@@ -143,6 +143,12 @@ struct HomeView: View {
                 // is re-armed the moment we leave the foreground (scenePhase handler) so the
                 // lock-screen / silent-mode alarm still works. See enterForegroundAlarmMode().
                 enterForegroundAlarmMode()
+                // ★ 2026-06-12：通知模式的鬧鐘在【前景啟動】時可靠地（補）排一次 .timeSensitive 通知。
+                //   背景轉場故意不排（remove-readd 會被 force-quit 中斷 → 通知遺失，就是「提醒模式
+                //   什麼都沒發生」的根因）。前景 add() 一定跑得完，所以放這裡補；repeats:true 會自己持續存在。
+                for alarm in alarms where alarm.isEnabled && alarm.effectiveBackgroundMode == .notification {
+                    try? await AlarmScheduler.shared.schedule(alarm: alarm)
+                }
             } else {
                 // AlarmKit unavailable → UNNotification fallback fires; re-arm on every launch.
                 print("🏠 HomeView.task: AlarmKit NOT authorized — re-arming \(alarms.count) alarms on UNNotification path")
@@ -243,7 +249,16 @@ struct HomeView: View {
                     //   (Killing the mic above already handles the issue#2 ducking culprit.)
                     if AlarmKitService.shared.isAuthorized,
                        AlarmAutoStopService.shared.keepAliveNeededNow() {
-                        print("🏠 HomeView.scenePhase → \(newPhase): stopped mic, KEEPING keep-alive audio session for AlarmAutoStop (prevCategory=\(prevCat.rawValue))")
+                        // ★ 2026-06-12：不只「保留 session」，而是立刻把 0 音量 keep-alive 音訊
+                        //   播起來，讓 audio background mode 在進背景第一時間就生效，撐過
+                        //   enterBackgroundAlarmMode 的 `await syncAllEnabled` IPC 空窗。
+                        //   原本要等那段 async 之後才 startSilentAudio，空窗期沒有正在播放的音訊 →
+                        //   app 可能在 keep-alive 啟動前就被 iOS suspend/terminate（真機 log：
+                        //   applicationWillTerminate 出現在 startSilentAudio 之前）。
+                        //   ⚠️ 注意：force-quit（上滑殺 app）此修法救不了——process 直接消失，
+                        //   沒有任何 app-side keep-alive 能撐住；那是 iOS 平台限制。
+                        AlarmAutoStopService.shared.ensureKeepAliveAudioNow()
+                        print("🏠 HomeView.scenePhase → \(newPhase): stopped mic, STARTED keep-alive audio NOW for AlarmAutoStop (prevCategory=\(prevCat.rawValue))")
                     } else {
                         try? sess.setActive(false, options: [.notifyOthersOnDeactivation])
                         print("🏠 HomeView.scenePhase → \(newPhase): released mic + audio session so the UN alarm sound isn't ducked (prevCategory=\(prevCat.rawValue), bgListenActive=\(BackgroundListeningManager.shared.isActive))")
@@ -376,6 +391,9 @@ struct HomeView: View {
             print("🏠 checkForegroundAlarm: now=\(h):\(String(format: "%02d", m)) wd=\(wd) enabledAlarms=[\(alarmSummary)]")
         }
         for a in alarms where a.isEnabled && a.hour == h && a.minute == m {
+            // 通知模式：響鈴交給 .timeSensitive 通知本身（前景由 willPresent 出 banner+sound 並自動停），
+            // 不在前景另外彈 in-app AlarmRingView，避免「通知音 + 鈴聲」雙重音效。點通知才開喚醒畫面。
+            if a.effectiveBackgroundMode == .notification { continue }
             let firesToday = a.weekdays.isEmpty || a.weekdays.contains(wd)
             guard firesToday else { continue }
             let key = "\(a.id.uuidString)-\(day)-\(h)-\(m)"
@@ -447,8 +465,15 @@ struct HomeView: View {
 
     /// Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm fires.
     private func enterBackgroundAlarmMode() {
-        guard AlarmKitService.shared.isAuthorized else { return }
+        let enabledCount = alarms.filter { $0.isEnabled }.count
+        guard AlarmKitService.shared.isAuthorized else {
+            // 🚦 trace：AlarmKit 沒授權 → 背景完全不重排、不啟動 keep-alive。
+            //   若「關app關屏鬧鐘響但停不了」且看到這行 → 走的是 UN-fallback，不是 AlarmKit 路徑。
+            print("🚦 enterBackgroundAlarmMode SKIPPED — AlarmKit NOT authorized (enabled alarms=\(enabledCount))")
+            return
+        }
         let snapshot = alarms
+        print("🚦 enterBackgroundAlarmMode ENTER — re-arming \(snapshot.count) alarms (enabled=\(enabledCount)) + will eval keep-alive window")
         // ★ 背景轉場保護：syncAllEnabled 走多次 AlarmKit IPC、之後還要啟動 keep-alive 音訊。
         // 沒有 UIApplication background task 的話，app 可能在完成前就被 suspend →
         // AlarmKit 沒排上 / Layer 2 沒啟動。必須在 scenePhase handler 內同步取得。
@@ -458,7 +483,11 @@ struct HomeView: View {
             // After sync, arm()/disarm() calls inside syncAlarm() have updated AlarmAutoStopService.
             // Now start audio keep-alive + DispatchTimers if any armed alarm fires within lookAheadMinutes.
             AlarmAutoStopService.shared.beginBackgroundLifecycle()
-            print("🏠 background mode: AlarmKit re-armed for lock/silent")
+            // 🚦 在「正要進背景」這一刻 dump 一次 armed + AlarmKit 狀態當基準。下次開 app 的
+            //   🔬 Forensics 對照這份基準，就能判斷 app 是「被 suspend（heartbeat 停在響鈴前）」
+            //   還是「被 force-quit（willTerminate 有值）」——這是區分「停不了」根因的關鍵。
+            AlarmAutoStopService.shared.logLifecycleForensics(context: "entering-background")
+            print("🚦 enterBackgroundAlarmMode DONE — AlarmKit re-armed for lock/silent (keep-alive decision logged above)")
             AlarmAutoStopService.shared.endTransitionProtection()
         }
     }

@@ -14,6 +14,11 @@ import Speech
 enum VoiceClipLimits {
     static var maxCount: Int { FeatureLimits.maxVoiceClips }
     static var maxDurationSeconds: Double { FeatureLimits.maxVoiceClipSeconds }
+
+    /// Max characters kept from a speech-recognised auto-name, per script.
+    /// CJK characters carry more meaning each, so the cap is lower than for Latin.
+    static let maxAutoNameCharsCJK = 8     // 中文
+    static let maxAutoNameCharsLatin = 16  // English
 }
 
 // MARK: - VoiceLibraryView
@@ -286,21 +291,26 @@ struct VoiceClipRecorderSheet: View {
             ZStack {
                 SunnyColors.cloudWhite.ignoresSafeArea()
 
-                VStack(spacing: 28) {
-                    Spacer()
+                VStack(spacing: 22) {
+                    Spacer(minLength: 8)
                     MascotView()
-                    statusArea
-                    recordButton
-                    if phase == .done { actionRow }
+                    headline
+                    recordControl
+                    if phase == .recording { countdownLabel }
+                    if phase == .done {
+                        nameCard
+                        actionRow
+                    }
                     if let msg = errorMessage {
                         Text(msg)
                             .font(SunnyFonts.caption(13))
                             .foregroundStyle(SunnyColors.lanternOrange)
                             .multilineTextAlignment(.center)
                     }
-                    Spacer()
+                    Spacer(minLength: 8)
                 }
                 .padding(.horizontal, 32)
+                .animation(.easeInOut(duration: 0.25), value: phase)
             }
             .navigationTitle("新增錄音 🎙️")
             .navigationBarTitleDisplayMode(.inline)
@@ -316,120 +326,143 @@ struct VoiceClipRecorderSheet: View {
     }
 
     // MARK: - Subviews
+    //
+    // One unified page: a single stable column (mascot → headline → record control →
+    // inline name/preview/save). The record button stays put across phases; the countdown
+    // ring wraps the button instead of being a separate element; after recording the big
+    // mic becomes a small "重新錄音 / Record again" pill so the recording step never feels
+    // like a different screen.
 
     @ViewBuilder
-    private var statusArea: some View {
+    private var headline: some View {
         switch phase {
         case .ready:
             Text("準備好了嗎？")
                 .font(SunnyFonts.title(22))
                 .foregroundStyle(SunnyColors.nightIndigo)
-
         case .recording:
-            VStack(spacing: 12) {
-                Text("錄音中…")
-                    .font(SunnyFonts.title(22))
-                    .foregroundStyle(SunnyColors.lanternOrange)
-
-                // Circular countdown
-                ZStack {
-                    Circle()
-                        .stroke(SunnyColors.lanternOrange.opacity(0.15), lineWidth: 7)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(countdown) / CGFloat(maxSeconds))
-                        .stroke(
-                            SunnyColors.lanternOrange,
-                            style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 1), value: countdown)
-                    Text("\(countdown)")
-                        .font(SunnyFonts.clock(32))
-                        .foregroundStyle(SunnyColors.lanternOrange)
-                        .contentTransition(.numericText())
-                        .animation(.easeInOut(duration: 0.3), value: countdown)
-                }
-                .frame(width: 88, height: 88)
-            }
-
+            Text("錄音中…")
+                .font(SunnyFonts.title(22))
+                .foregroundStyle(SunnyColors.lanternOrange)
         case .done:
-            VStack(spacing: 12) {
-                Text("錄好了！✅")
-                    .font(SunnyFonts.title(22))
-                    .foregroundStyle(SunnyColors.forestDeep)
-
-                TextField("幫這段錄音取個名字", text: $clipName)
-                    .font(SunnyFonts.title(16))
-                    .foregroundStyle(SunnyColors.nightIndigo)
-                    .tint(SunnyColors.leafFresh)
-                    .multilineTextAlignment(.center)
-                    .padding(12)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(SunnyColors.leafFresh.opacity(0.45), lineWidth: 1.5)
-                    )
-                    .colorScheme(.light)
-
-                // Manual auto-name button / spinner
-                Group {
-                    if isTranscribing {
-                        HStack(spacing: 6) {
-                            ProgressView().scaleEffect(0.75)
-                            Text("辨識中…")
-                                .font(.system(size: 12))
-                                .foregroundStyle(SunnyColors.sunnyGray)
-                        }
-                    } else {
-                        Button {
-                            let url = recordingURL(base: recordedBase)
-                            let current = clipName.trimmingCharacters(in: .whitespaces)
-                            let fallback = current.isEmpty ? L("我的錄音") : current
-                            transcribeForName(url: url, fallback: fallback)
-                        } label: {
-                            Label("辨識錄音內容", systemImage: "sparkles")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(SunnyColors.leafFresh)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 7)
-                                .background(SunnyColors.leafFresh.opacity(0.1))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(recordedBase.isEmpty)
-                    }
-                }
-                .animation(.easeInOut(duration: 0.2), value: isTranscribing)
-            }
+            Text("錄好了！✅")
+                .font(SunnyFonts.title(22))
+                .foregroundStyle(SunnyColors.forestDeep)
         }
     }
 
-    private var recordButton: some View {
-        Button { handleRecordTap() } label: {
-            ZStack {
-                Circle()
-                    .fill(
-                        phase == .recording
-                            ? SunnyColors.lanternOrange
-                            : SunnyColors.lanternOrange.opacity(0.12)
-                    )
-                    .frame(width: 92, height: 92)
-                    .shadow(
-                        color: SunnyColors.lanternOrange.opacity(phase == .recording ? 0.4 : 0.1),
-                        radius: 12, y: 6
-                    )
-
-                Image(systemName: phase == .recording ? "stop.fill" : "mic.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(
-                        phase == .recording ? .white : SunnyColors.lanternOrange
-                    )
+    /// Primary record/stop control. The countdown ring is drawn around the button while
+    /// recording; once done the control collapses into a compact "record again" pill.
+    @ViewBuilder
+    private var recordControl: some View {
+        if phase == .done {
+            Button { reRecord() } label: {
+                Label("重新錄音", systemImage: "arrow.counterclockwise")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(SunnyColors.sunnyGray.opacity(0.12)))
             }
+            .buttonStyle(.plain)
+        } else {
+            Button { handleRecordTap() } label: {
+                ZStack {
+                    if phase == .recording {
+                        Circle()
+                            .stroke(SunnyColors.lanternOrange.opacity(0.15), lineWidth: 7)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(countdown) / CGFloat(maxSeconds))
+                            .stroke(
+                                SunnyColors.lanternOrange,
+                                style: StrokeStyle(lineWidth: 7, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 1), value: countdown)
+                    }
+
+                    Circle()
+                        .fill(
+                            phase == .recording
+                                ? SunnyColors.lanternOrange
+                                : SunnyColors.lanternOrange.opacity(0.12)
+                        )
+                        .frame(width: 92, height: 92)
+                        .shadow(
+                            color: SunnyColors.lanternOrange.opacity(phase == .recording ? 0.4 : 0.1),
+                            radius: 12, y: 6
+                        )
+
+                    Image(systemName: phase == .recording ? "stop.fill" : "mic.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(
+                            phase == .recording ? .white : SunnyColors.lanternOrange
+                        )
+                }
+                .frame(width: 108, height: 108)
+            }
+            .animation(.easeInOut(duration: 0.2), value: phase == .recording)
         }
-        .disabled(phase == .done)
-        .opacity(phase == .done ? 0.25 : 1)
-        .animation(.easeInOut(duration: 0.2), value: phase == .recording)
+    }
+
+    /// Big remaining-seconds readout shown under the ring while recording (number only —
+    /// language-neutral, so no extra localized string needed).
+    private var countdownLabel: some View {
+        Text("\(countdown)")
+            .font(SunnyFonts.clock(30))
+            .foregroundStyle(SunnyColors.lanternOrange)
+            .contentTransition(.numericText())
+            .animation(.easeInOut(duration: 0.3), value: countdown)
+    }
+
+    /// Name field + manual auto-name (speech) button, revealed inline after recording.
+    private var nameCard: some View {
+        VStack(spacing: 12) {
+            TextField("幫這段錄音取個名字", text: $clipName)
+                .font(SunnyFonts.title(16))
+                .foregroundStyle(SunnyColors.nightIndigo)
+                .tint(SunnyColors.leafFresh)
+                .multilineTextAlignment(.center)
+                .padding(12)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(SunnyColors.leafFresh.opacity(0.45), lineWidth: 1.5)
+                )
+                .colorScheme(.light)
+
+            Group {
+                if isTranscribing {
+                    HStack(spacing: 6) {
+                        ProgressView().scaleEffect(0.75)
+                        Text("辨識中…")
+                            .font(.system(size: 12))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                    }
+                } else {
+                    Button {
+                        let url = recordingURL(base: recordedBase)
+                        let current = clipName.trimmingCharacters(in: .whitespaces)
+                        let fallback = current.isEmpty ? L("我的錄音") : current
+                        transcribeForName(url: url, fallback: fallback)
+                    } label: {
+                        // "辨識錄音內容" / en "Name from voice" — both localized in the
+                        // String Catalog so the English UI never shows Chinese (App Review).
+                        Label("辨識錄音內容", systemImage: "sparkles")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(SunnyColors.leafFresh)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(SunnyColors.leafFresh.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(recordedBase.isEmpty)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: isTranscribing)
+        }
     }
 
     private var actionRow: some View {
@@ -482,6 +515,23 @@ struct VoiceClipRecorderSheet: View {
         case .recording: stopRecording()
         case .done:      break
         }
+    }
+
+    /// Discard the just-recorded take and return to the ready state so the user can record
+    /// again in place (keeps the whole flow on one page). Deletes the orphaned audio file.
+    private func reRecord() {
+        player.stop()
+        speechTask?.cancel(); speechTask = nil
+        isTranscribing = false
+        if !recordedBase.isEmpty {
+            try? FileManager.default.removeItem(at: recordingURL(base: recordedBase))
+        }
+        recordedBase = ""
+        recordedDuration = 0
+        clipName = ""
+        errorMessage = nil
+        countdown = maxSeconds
+        phase = .ready
     }
 
     private func startRecording() {
@@ -556,7 +606,13 @@ struct VoiceClipRecorderSheet: View {
                 return
             }
             let text = result.bestTranscription.formattedString
-            let name = String(text.prefix(7)).trimmingCharacters(in: .whitespaces)
+            // Cap the auto-name length per language: Chinese 8 chars, English 16 letters.
+            let maxChars = SunnyLocalization.code == "en"
+                ? VoiceClipLimits.maxAutoNameCharsLatin
+                : VoiceClipLimits.maxAutoNameCharsCJK
+            let name = String(
+                text.trimmingCharacters(in: .whitespaces).prefix(maxChars)
+            ).trimmingCharacters(in: .whitespaces)
             Task { @MainActor in
                 timeoutTask.cancel()
                 self.speechTask = nil
@@ -777,7 +833,13 @@ private struct VoiceClipDetailSheet: View {
 
     private func detailRow(_ title: String, value: String, icon: String) -> some View {
         HStack {
-            Label(title, systemImage: icon)
+            // `title` is a String variable, so it would hit Label's verbatim (non-localized)
+            // overload — wrap in LocalizedStringKey so the catalog translation is used.
+            Label {
+                Text(LocalizedStringKey(title))
+            } icon: {
+                Image(systemName: icon)
+            }
                 .font(SunnyFonts.caption(14))
                 .foregroundStyle(SunnyColors.sunnyGray)
             Spacer()
@@ -1093,17 +1155,19 @@ private enum VoiceClipAudioEditorError: LocalizedError {
     case cancelled
 
     var errorDescription: String? {
+        // These are shown via Text(errorMessage), i.e. Text(String) which is verbatim
+        // (non-localized), so localize here with L() against the String Catalog.
         switch self {
         case .fileMissing:
-            return "找不到要裁剪的錄音檔。"
+            return L("找不到要裁剪的錄音檔。")
         case .invalidRange:
-            return "裁剪範圍太短，請至少保留 0.5 秒。"
+            return L("裁剪範圍太短，請至少保留 0.5 秒。")
         case .exportUnavailable:
-            return "這台裝置目前無法裁剪這個錄音。"
+            return L("這台裝置目前無法裁剪這個錄音。")
         case .exportFailed:
-            return "裁剪失敗，請再試一次。"
+            return L("裁剪失敗，請再試一次。")
         case .cancelled:
-            return "裁剪已取消。"
+            return L("裁剪已取消。")
         }
     }
 }

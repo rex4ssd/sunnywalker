@@ -239,7 +239,11 @@ final class AlarmKitService {
         for alarm in alarms where alarm.isEnabled {
             do {
                 try await syncAlarm(alarm)
-                successIDs.append(alarm.id)
+                // 只有「AlarmKit 模式」的鬧鐘才需要清掉殘留 UNNotification（避免雙重響）。
+                // 「通知模式」的鬧鐘故意保留它的 .timeSensitive UNNotification——那正是它的響鈴來源。
+                if alarm.effectiveBackgroundMode == .alarmKit {
+                    successIDs.append(alarm.id)
+                }
             } catch {
                 print("AlarmKitService: syncAlarm failed for \(alarm.id) — keeping UNNotification fallback. \(error)")
             }
@@ -265,6 +269,23 @@ final class AlarmKitService {
     func syncAlarm(_ alarm: Alarm) async throws {
         guard alarm.isEnabled else {
             try removeAlarm(alarm)
+            return
+        }
+
+        // ★ 2026-06-12 per-alarm 背景策略：「通知模式」不使用 AlarmKit（避免 force-quit 後無限響），
+        //   改排 .timeSensitive UNNotification（響一次自動停）。移除任何既有 AlarmKit 條目 + 解除
+        //   auto-stop keep-alive（這顆鬧鐘不需要背景保活）。UNNotification 由 AlarmScheduler 排。
+        if alarm.effectiveBackgroundMode == .notification {
+            try? manager.stop(id: alarm.id)      // 若上一版是 AlarmKit 模式且正在響 → 先靜音
+            try? manager.cancel(id: alarm.id)     // 從系統排程移除，否則會跟通知雙重響
+            AlarmAutoStopService.shared.disarm(alarmID: alarm.id)
+            // ⚠️ 2026-06-12 根因修正：這裡【故意不】呼叫 AlarmScheduler.schedule()。
+            //   syncAlarm 是在「進背景」時跑的，schedule() 會先 removePending 再 async add()；
+            //   user 上滑 force-quit 會在 remove 之後、add 完成之前殺掉 app → 通知被清掉又沒補回
+            //   → 「提醒模式什麼都沒發生」。.timeSensitive 通知是 repeats:true、會自己持續存在，
+            //   只需在【前景】(editor 儲存 / AlarmList 開關 / HomeView.task 啟動) 排一次即可，
+            //   背景不要再 remove-readd。這裡只負責把 AlarmKit 條目清乾淨。
+            print("AlarmKitService.syncAlarm: \(alarm.id.uuidString.prefix(8)) → NOTIFICATION mode; AlarmKit removed, UNNotification left intact (scheduled in foreground)")
             return
         }
 

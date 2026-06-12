@@ -16,6 +16,19 @@ enum AlarmTaskType: String, Codable {
     case math
 }
 
+// MARK: - Background ring mode
+
+/// 鬧鐘在「背景 / 鎖屏 / app 被殺」時用哪個機制響鈴。Stored as raw String（SwiftData migration-safe）。
+enum AlarmBackgroundMode: String, Codable {
+    /// 系統鬧鐘（AlarmKit）：破靜音/專注模式、持續響直到停。**預設**。
+    /// 缺點：app 被 force-quit（上滑殺掉）後，app 端無法自動停 → 會一直響、耗電（iOS 平台限制）。
+    case alarmKit
+    /// Time-Sensitive 通知：響一次（自訂音效 ≤30 秒）後**自動停**、不耗電、可破專注模式。
+    /// 缺點：破不了實體靜音開關（要破靜音需 .critical entitlement，需 Apple 審核），
+    /// 音效短、較不會吵醒熟睡的孩子。適合「提醒型、錯過也沒嚴重後果」的鬧鐘。
+    case notification
+}
+
 // MARK: - Alarm model
 
 @Model
@@ -46,6 +59,10 @@ final class Alarm {
     /// 讀取請用 `effectiveCustomPhrases`。
     var customDismissPhrase: String? = nil
 
+    /// 背景/鎖屏/被殺時的響鈴策略。Optional + default nil 配合 SwiftData lightweight migration
+    /// （舊資料 nil → 走 `.alarmKit` 預設，行為完全不變）。讀取請用 `effectiveBackgroundMode`。
+    var backgroundRingMode: AlarmBackgroundMode? = nil
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -64,6 +81,9 @@ final class Alarm {
 
     /// Always resolves to a concrete value — nil (pre-Day-16 rows) → `.voice`.
     var effectiveTaskType: AlarmTaskType { taskType ?? .voice }
+
+    /// 背景響鈴策略——nil（舊資料 / 未設定）→ `.alarmKit`（維持原行為）。請一律用這個讀取。
+    var effectiveBackgroundMode: AlarmBackgroundMode { backgroundRingMode ?? .alarmKit }
 
     /// 「貪睡模式 / strict mode」已於 2026-06-10 移除：它原本承諾「一定要開 App 才能關」，但
     /// AlarmKit 系統鬧鐘的實體鍵(音量/側鍵)由 iOS 直接 map 成「停止」，第三方攔不到，承諾無法兌現；

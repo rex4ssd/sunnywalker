@@ -26,6 +26,8 @@ struct AlarmEditorView: View {
     @State private var showingBuiltinPicker = false
     @State private var showingCustomPicker = false
     @State private var customPhrase = ""
+    /// 背景響鈴模式：false = AlarmKit（預設，強力叫醒）；true = Time-Sensitive 通知（溫和、自動停）。
+    @State private var useNotificationMode = false
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
     // Label tap/long-press
@@ -52,6 +54,7 @@ struct AlarmEditorView: View {
             _selectedWeekdays = State(initialValue: Set(a.weekdays))
             _selectedTaskType = State(initialValue: a.recordingName.isEmpty ? .button : a.effectiveTaskType)
             _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
+            _useNotificationMode = State(initialValue: a.effectiveBackgroundMode == .notification)
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
@@ -73,6 +76,7 @@ struct AlarmEditorView: View {
                         weekdayPicker
                         ringtoneCard
                         dismissMethodCard
+                        backgroundModeCard
                     }
                     .padding(24)
                 }
@@ -297,6 +301,31 @@ struct AlarmEditorView: View {
         }
     }
 
+    /// 背景/鎖屏/被殺時的響鈴策略。預設關（AlarmKit 強力叫醒）；開啟＝溫和的 Time-Sensitive 通知，
+    /// 響一次自動停、不耗電——適合「提醒型、就算沒人理也不會一直響到沒電」。UI 對齊「啟用口令關閉」。
+    private var backgroundModeCard: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 14) {
+                Toggle(isOn: $useNotificationMode) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Label("溫和提醒模式（自動停、省電）",
+                              systemImage: useNotificationMode ? "bell.badge" : "alarm.fill")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        Text(useNotificationMode
+                             ? LocalizedStringKey("用通知響一次（≤30 秒）就自動停，不會一直響到沒電。可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。")
+                             : LocalizedStringKey("預設：系統鬧鐘，破靜音、持續響直到關掉（最會叫醒人）。但 app 被滑掉殺掉後會一直響、較耗電。"))
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                    }
+                }
+                .tint(SunnyColors.lanternOrange)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+    }
+
     // MARK: - Label / Days tap actions
 
     /// 點 "標籤" 文字：填入目前設定的時間 / 再點清空
@@ -483,6 +512,7 @@ struct AlarmEditorView: View {
         // 自定口令：trim 後空字串存 nil（effectiveCustomPhrases 回空陣列）。
         let phrase = customPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
         tempAlarm.customDismissPhrase = phrase.isEmpty ? nil : phrase
+        tempAlarm.backgroundRingMode = useNotificationMode ? .notification : .alarmKit
 
         if !isEditing {
             modelContext.insert(tempAlarm)

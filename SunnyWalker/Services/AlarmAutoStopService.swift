@@ -166,6 +166,11 @@ final class AlarmAutoStopService {
         center.getPendingNotificationRequests { pending in
             print("🔬   UN pending=\(pending.count) ids=\(pending.map { $0.identifier }.prefix(8))")
         }
+        // 🔬 通知授權狀態：通知模式靠這個。authStatus≠2 或 alert/sound=disabled(0) → 通知不會顯示/沒聲音，
+        //    就是「提醒模式什麼都沒有」的最後一個可能源頭（去 設定▸SunnyWalker▸通知 全開）。
+        center.getNotificationSettings { s in
+            print("🔬   UN authStatus=\(s.authorizationStatus.rawValue) alert=\(s.alertSetting.rawValue) sound=\(s.soundSetting.rawValue) lockScreen=\(s.lockScreenSetting.rawValue) timeSensitive=\(s.timeSensitiveSetting.rawValue)  (authStatus 2=authorized；其餘 2=enabled,0=disabled)")
+        }
     }
 
     private func queueTimeoutRecord(for entry: ArmedEntry, stoppedAt: Date = Date()) {
@@ -285,12 +290,46 @@ final class AlarmAutoStopService {
     /// the session through the whole ring), and after `stopAt` the alarm is disarmed → returns false.
     func keepAliveNeededNow() -> Bool {
         let now = Date()
-        let upcoming = armedAlarms.values.filter { $0.stopAt > now }
-        guard !upcoming.isEmpty else { return false }
+        let all = armedAlarms.values
+        let upcoming = all.filter { $0.stopAt > now }
+        guard !upcoming.isEmpty else {
+            // 🚦 trace：沒有任何「stopAt 還在未來」的 armed 鬧鐘 → 不需要 keep-alive。
+            //   若你「設了鬧鐘卻看到這行」＝鬧鐘根本沒被 arm()（syncAlarm 沒跑 / nextFireDate=nil），
+            //   那才是停不下來的源頭，不是停鈴邏輯。
+            print("🚦 keepAliveNeededNow=false — no upcoming armed alarms (total armed=\(all.count))")
+            return false
+        }
         let nearestFire = upcoming
             .map { $0.stopAt.addingTimeInterval(-Double($0.ringSeconds ?? 0)) }
             .min()!
-        return nearestFire.timeIntervalSince(now) <= lookAheadMinutes * 60
+        let secs = nearestFire.timeIntervalSince(now)
+        let need = secs <= lookAheadMinutes * 60
+        // 🚦 trace：keep-alive 要不要留，看「最近一顆 fire 距現在多久」。
+        //   need=true  → HomeView 會保留 .playback keep-alive session（背景能精準 stop）。
+        //   need=false → 鬧鐘離現在 > \(Int(lookAheadMinutes)) 分 → 不保活、app 會 suspend，
+        //               第一段響鈴只剩 best-effort BGTask（這就是「關app關屏、隔很久才響→停不了」的已知路徑）。
+        print("🚦 keepAliveNeededNow=\(need) — nearest fire in \(Int(secs))s (window=\(Int(lookAheadMinutes * 60))s), upcoming=\(upcoming.count)/\(all.count)")
+        return need
+    }
+
+    /// ★ 2026-06-12 修法（純鎖屏、未 force-quit 情境的可靠性）：
+    /// 進背景的「第一時間」就同步把 0 音量 keep-alive 音訊播起來，**不要**等
+    /// `await syncAllEnabled`（多次 AlarmKit IPC）跑完才在 beginBackgroundLifecycle 啟動。
+    /// 原本那段 IPC 空窗裡「沒有正在播放的音訊」，`audio` background mode 形同未生效 →
+    /// iOS 可在 keep-alive 真正啟動前就 suspend/terminate（真機 log：applicationWillTerminate
+    /// 出現在 startSilentAudio 之前）。由 HomeView scenePhase→background 的 keep gate
+    /// （已停麥克風後）同步呼叫。
+    /// idempotent：startSilentAudio 有 `silentPlayer == nil` guard、observer 也有 nil guard，
+    /// 之後 beginBackgroundLifecycle 再呼叫不會重啟，只會補上 DispatchTimers + watchdog。
+    func ensureKeepAliveAudioNow() {
+        registerInterruptionObserver()   // 中斷復活先武裝，AlarmKit 響鈴的那一瞬間才接得住
+        guard silentPlayer == nil else {
+            print("🚦 ensureKeepAliveAudioNow: already playing — no-op")
+            return
+        }
+        print("🚦 ensureKeepAliveAudioNow: starting 0-vol keep-alive NOW (before re-arm) to survive the syncAllEnabled IPC gap")
+        startSilentAudio()
+        recordHeartbeat("keep-alive-early")
     }
 
     /// scenePhase → .active 時呼叫：前景不需要 keep-alive，全部收掉。

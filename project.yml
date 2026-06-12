@@ -12,8 +12,8 @@ settings:
     # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
-    MARKETING_VERSION: "1.0.20260610"
-    CURRENT_PROJECT_VERSION: 6   # bump on every upload (App Store rejects duplicate build numbers). ASC 已有 build 5 → 下次 archive 用 6
+    MARKETING_VERSION: "1.0.20260612"
+    CURRENT_PROJECT_VERSION: 7   # bump on every upload (App Store rejects duplicate build numbers). ASC 已有 build 6 (1.0.20260612) → 本次用 7
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
@@ -72,7 +72,12 @@ targets:
         # com.apple.developer.alarmkit is NOT a real/provisionable entitlement (absent from the
         # Developer Portal); putting it in an entitlements file makes automatic signing fail with
         # "Entitlement com.apple.developer.alarmkit not found and could not be included in profile".
-        # So we deliberately do NOT set CODE_SIGN_ENTITLEMENTS.
+        #
+        # ★ 2026-06-12：per-alarm「溫和提醒模式」用 .timeSensitive 通知，需要 Time-Sensitive
+        #   Notifications capability。它與 alarmkit 不同——是真正可自動佈建的 entitlement，所以這裡
+        #   指向 entitlements 檔（內含 com.apple.developer.usernotifications.time-sensitive）。
+        #   若 signing 報錯，移除這行 + 清空 entitlements 檔即可回到原狀（.timeSensitive 會降級但不 crash）。
+        CODE_SIGN_ENTITLEMENTS: SunnyWalker/SunnyWalker.entitlements
   SunnyWalkerTests:
     type: bundle.unit-test
     platform: iOS

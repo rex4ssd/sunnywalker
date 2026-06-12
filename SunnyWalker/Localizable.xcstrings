@@ -1226,6 +1226,23 @@
         }
       }
     },
+    "停止試聽" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop preview"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止試聽"
+          }
+        }
+      }
+    },
     "停止錄音 ⏹" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1307,6 +1324,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "儲存名稱"
+          }
+        }
+      }
+    },
+    "儲存裁剪結果" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save trim"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存裁剪結果"
           }
         }
       }
@@ -1472,6 +1506,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Share to other apps"
+          }
+        }
+      }
+    },
+    "分享到其他應用程式" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share to other apps"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享到其他應用程式"
           }
         }
       }
@@ -1747,6 +1798,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "好的，知道了"
+          }
+        }
+      }
+    },
+    "存檔中…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "存檔中…"
           }
         }
       }
@@ -2060,6 +2128,23 @@
         }
       }
     },
+    "建立時間" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立時間"
+          }
+        }
+      }
+    },
     "從剪貼簿貼上" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2156,6 +2241,23 @@
         }
       }
     },
+    "找不到要裁剪的錄音檔。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't find the recording to trim."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到要裁剪的錄音檔。"
+          }
+        }
+      }
+    },
     "按這裡起床 🌟" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2186,6 +2288,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "按鈕關 👆"
+          }
+        }
+      }
+    },
+    "播放錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放錄音"
           }
         }
       }
@@ -2285,6 +2404,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "日"
+          }
+        }
+      }
+    },
+    "早安！☀️" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good morning! ☀️"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "早安！☀️"
           }
         }
       }
@@ -2650,6 +2785,57 @@
         }
       }
     },
+    "裁剪失敗，請再試一次。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trimming failed. Please try again."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裁剪失敗，請再試一次。"
+          }
+        }
+      }
+    },
+    "裁剪已取消。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trimming was canceled."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裁剪已取消。"
+          }
+        }
+      }
+    },
+    "裁剪範圍太短，請至少保留 0.5 秒。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selection is too short — keep at least 0.5 seconds."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "裁剪範圍太短，請至少保留 0.5 秒。"
+          }
+        }
+      }
+    },
     "裁剪錄音" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2980,10 +3166,57 @@
       }
     },
     "辨識中…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transcribing…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辨識中…"
+          }
+        }
+      }
+    },
+    "辨識錄音內容" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name from voice"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辨識錄音內容"
+          }
+        }
+      }
     },
     "這個動作無法復原。" : {
 
+    },
+    "這台裝置目前無法裁剪這個錄音。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This device can't trim this recording right now."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這台裝置目前無法裁剪這個錄音。"
+          }
+        }
+      }
     },
     "週一 → 週三 → 週五" : {
       "extractionState" : "stale",
@@ -3249,6 +3482,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新命名自錄鈴聲"
+          }
+        }
+      }
+    },
+    "重新錄音" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record again"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新錄音"
           }
         }
       }
