@@ -24,12 +24,12 @@ Wake your kids with your voice
 
 **zh-Hant**
 ```
-孩子聽到的不是鬧鈴，是爸媽的聲音 ☀️ 全新「溫和提醒模式」：響 30 秒自動安靜，不吵醒全家。告別起床氣、告別賴床，讓孩子養成自己起床的好習慣！
+孩子聽到的不是鬧鈴，是爸媽的聲音 全新「溫和提醒模式」：響 30 秒自動安靜，不吵醒全家。告別起床氣、告別賴床，讓孩子養成自己起床的好習慣！
 ```
 
 **en**
 ```
-Your child wakes up to YOUR voice, not a buzzer ☀️ New Gentle Reminder mode rings for 30 seconds then stops on its own — no more morning battles, no more snooze fights.
+Your child wakes up to YOUR voice, not a buzzer New Gentle Reminder mode rings for 30 seconds then stops on its own — no more morning battles, no more snooze fights.
 ```
 
 ---
@@ -38,7 +38,7 @@ Your child wakes up to YOUR voice, not a buzzer ☀️ New Gentle Reminder mode 
 
 **zh-Hant**
 ```
-孩子聽到的不是刺耳鬧鈴，是爸媽溫柔的聲音 ☀️
+孩子聽到的不是刺耳鬧鈴，是爸媽溫柔的聲音
 
 SunnyWalker 是專為孩子設計的兒童鬧鐘。錄下一句「寶貝，起床囉！」，
 明天早上，孩子就會在你的聲音中醒來——即使你還在廚房忙早餐。

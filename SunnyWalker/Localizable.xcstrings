@@ -2389,6 +2389,23 @@
         }
       }
     },
+    "播放" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
+        }
+      }
+    },
     "播放錄音" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2551,6 +2568,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "早安！新的一天開始囉 ☀️"
+          }
+        }
+      }
+    },
+    "暫停" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停"
           }
         }
       }
@@ -3912,6 +3946,22 @@
         }
       }
     },
+    "長按停止" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press to stop"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按停止"
+          }
+        }
+      }
+    },
     "長頸鹿" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4309,54 +4359,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "龍貓"
-          }
-        }
-      }
-    },
-    "播放" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Play"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "播放"
-          }
-        }
-      }
-    },
-    "暫停" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pause"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫停"
-          }
-        }
-      }
-    },
-    "長按停止" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Long-press to stop"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "長按停止"
           }
         }
       }

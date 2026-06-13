@@ -12,8 +12,8 @@ settings:
     # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
-    MARKETING_VERSION: "1.1.20260612"   # 1.1 = 新功能「溫和提醒模式」（MINOR bump per version scheme）
-    CURRENT_PROJECT_VERSION: 9   # bump on every upload (App Store rejects duplicate build numbers). build 8 缺 i18n 修正（英文版出現中文）已上傳作廢 → 本次用 9
+    MARKETING_VERSION: "1.2.20260613"   # 1.2 = 切段30s + 設定頁錄音管理 + 自訂鈴聲操作優化（MINOR bump；1.1.20260612 train 已被 Apple 關閉/核准，必須換新 train）
+    CURRENT_PROJECT_VERSION: 10   # bump on every upload (App Store rejects duplicate build numbers). 9 已被 1.1.20260612 佔用 → 本次用 10
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
