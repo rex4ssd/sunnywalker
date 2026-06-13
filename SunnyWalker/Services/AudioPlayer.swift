@@ -13,6 +13,9 @@ final class AudioPlayer: NSObject, ObservableObject {
     private var currentVolume: Float = 1.0   // preserved across loop restarts so a duck survives
     private var interruptionObserver: NSObjectProtocol?
     @Published var isPlaying = false
+    /// true = playback is suspended via `pause()` and can be resumed (distinct from stopped, where
+    /// the player is torn down). Lets a UI keep "this clip is loaded" while paused. Non-loop previews.
+    @Published var isPaused = false
 
     // MARK: - Public API
 
@@ -121,6 +124,26 @@ final class AudioPlayer: NSObject, ObservableObject {
         print("🔊 AudioPlayer.unduck → 1.0")
     }
 
+    /// Suspend playback, keeping the player primed so `resume()` continues from the same spot.
+    /// Used by the voice-clip rows (tap ▶ → ‖ → tap again resumes). ⚠️ Set `isPaused` BEFORE
+    /// `isPlaying` so a subscriber reacting to `isPlaying == false` can tell pause from stop.
+    func pause() {
+        guard let player, player.isPlaying else { return }
+        loopTask?.cancel(); loopTask = nil   // don't let a queued loop restart while paused
+        player.pause()
+        isPaused = true
+        isPlaying = false
+    }
+
+    /// Resume a `pause()`d playback. No-op if not paused.
+    func resume() {
+        guard let player, isPaused else { return }
+        if player.play() {
+            isPaused = false
+            isPlaying = true
+        }
+    }
+
     func stop() {
         loopTask?.cancel()
         loopTask = nil
@@ -129,6 +152,7 @@ final class AudioPlayer: NSObject, ObservableObject {
         looping = false
         currentURL = nil
         isPlaying = false
+        isPaused = false
         if let obs = interruptionObserver {
             NotificationCenter.default.removeObserver(obs)
             interruptionObserver = nil
@@ -149,6 +173,7 @@ final class AudioPlayer: NSObject, ObservableObject {
             p.play()
             player = p
             isPlaying = true
+            isPaused = false
         } catch {
             print("🔊 AudioPlayer.startOnce: playback FAILED — \(error.localizedDescription)")
         }
