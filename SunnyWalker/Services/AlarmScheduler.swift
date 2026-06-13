@@ -139,6 +139,9 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: using DEFAULT banner sound (custom=\(custom) recording=\(alarm.recordingName.isEmpty ? "none" : "yes"))")
         }
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
+        // 同一顆鬧鐘的所有通知（baseline + 切段 burst 的 rep-k）共用同一個 threadIdentifier，
+        // 讓通知中心把它們「收成一組」而不是一整排散開的「起床囉！」（修圖1的堆疊觀感）。
+        content.threadIdentifier = alarm.id.uuidString
         // 鬧鐘類通知優先 .timeSensitive：能突破「專注模式 / 勿擾」即時送達並亮屏。
         // ⚠️ 注意：.timeSensitive 突破不了實體靜音開關（要破靜音得用 .critical + Apple entitlement）。
         //
@@ -183,7 +186,10 @@ final class AlarmScheduler {
             )
             try await center.add(request)
             await scheduleNagsIfNeeded(alarm: alarm, content: content, fireDate: fireDate, center: center)
-            await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: fireDate, voiceSeconds: cafSeconds, center: center)
+            // 切段（segmentedBurst）開啟才堆疊響滿 ~30s；關閉＝只響一下（單通知），避免圖1的整排通知。
+            if alarm.effectiveSegmentedBurst {
+                await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: fireDate, voiceSeconds: cafSeconds, center: center)
+            }
             return
         }
 
@@ -206,7 +212,10 @@ final class AlarmScheduler {
         // gentle-repeat burst 也只鋪「下一次發生」（一次性），每次 re-arm 重排。
         if let next = nextOccurrence(for: alarm) {
             await scheduleNagsIfNeeded(alarm: alarm, content: content, fireDate: next, center: center)
-            await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: next, voiceSeconds: cafSeconds, center: center)
+            // 切段開啟才堆疊；關閉＝只響一下。
+            if alarm.effectiveSegmentedBurst {
+                await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: next, voiceSeconds: cafSeconds, center: center)
+            }
         }
     }
 

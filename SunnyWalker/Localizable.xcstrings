@@ -1553,6 +1553,40 @@
         }
       }
     },
+    "切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone may shut the segments off within seconds — a full 30s isn't guaranteed."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。"
+          }
+        }
+      }
+    },
+    "切段響滿 30 秒" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ring ~30s in segments"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段響滿 30 秒"
+          }
+        }
+      }
+    },
     "刪除" : {
       "localizations" : {
         "en" : {
@@ -2304,6 +2338,23 @@
         }
       }
     },
+    "把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Splits the voice into segments and stacks notifications to ring for about 30s; when off it rings just once (shorter)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。"
+          }
+        }
+      }
+    },
     "按這裡起床 🌟" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2661,6 +2712,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "溫和提醒模式（自動停、省電）"
+          }
+        }
+      }
+    },
+    "用通知響一下就自動停、不會一直響到沒電；可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rings once via a notification, then auto-stops — it won't keep ringing until the battery dies. Cuts through Focus, but not the physical silent switch, so it's less likely to wake a deeply sleeping child."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用通知響一下就自動停、不會一直響到沒電；可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。"
           }
         }
       }
@@ -4241,6 +4309,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "龍貓"
+          }
+        }
+      }
+    },
+    "播放" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放"
+          }
+        }
+      }
+    },
+    "暫停" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫停"
+          }
+        }
+      }
+    },
+    "長按停止" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press to stop"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按停止"
           }
         }
       }

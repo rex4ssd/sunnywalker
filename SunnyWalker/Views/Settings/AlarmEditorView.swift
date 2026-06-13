@@ -28,6 +28,8 @@ struct AlarmEditorView: View {
     @State private var customPhrase = ""
     /// 背景響鈴模式：false = AlarmKit（預設，強力叫醒）；true = Time-Sensitive 通知（溫和、自動停）。
     @State private var useNotificationMode = false
+    /// 切段：溫和提醒模式下，是否把語音堆成 ~30s（gentle-repeat burst）。預設 off，只響一次。
+    @State private var segmentedBurst = false
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
     // Label tap/long-press
@@ -55,6 +57,7 @@ struct AlarmEditorView: View {
             _selectedTaskType = State(initialValue: a.recordingName.isEmpty ? .button : a.effectiveTaskType)
             _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
             _useNotificationMode = State(initialValue: a.effectiveBackgroundMode == .notification)
+            _segmentedBurst = State(initialValue: a.effectiveSegmentedBurst)
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
@@ -320,13 +323,39 @@ struct AlarmEditorView: View {
                             .font(SunnyFonts.caption())
                             .foregroundStyle(SunnyColors.nightIndigo)
                         Text(useNotificationMode
-                             ? LocalizedStringKey("用通知響一次（≤30 秒）就自動停，不會一直響到沒電。可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。")
+                             ? LocalizedStringKey("用通知響一下就自動停、不會一直響到沒電；可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。")
                              : LocalizedStringKey("預設：系統鬧鐘，破靜音、持續響直到關掉（最會叫醒人）。但 app 被滑掉殺掉後會一直響、較耗電。"))
                             .font(SunnyFonts.caption(13))
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                     }
                 }
                 .tint(SunnyColors.lanternOrange)
+
+                // 切段子開關：只在溫和提醒開啟時出現，預設 off。off = 只響一下（單通知、不堆疊，避免圖1的整排通知）；
+                // on = 用秒級錯開的多顆通知把語音堆到 ~30s。中英字串都明確進 Localizable.xcstrings。
+                if useNotificationMode {
+                    Divider()
+                    Toggle(isOn: $segmentedBurst) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Label("切段響滿 30 秒",
+                                  systemImage: segmentedBurst ? "waveform.badge.plus" : "waveform")
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(SunnyColors.nightIndigo)
+                            Text(LocalizedStringKey("把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。"))
+                                .font(SunnyFonts.caption(13))
+                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                        }
+                    }
+                    .tint(SunnyColors.lanternOrange)
+
+                    // 警告只在切段「開啟」時出現——關閉時是單通知、可靠響一下，沒什麼好警告的。
+                    if segmentedBurst {
+                        Label(LocalizedStringKey("切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。"),
+                              systemImage: "exclamationmark.triangle.fill")
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
+                    }
+                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -520,6 +549,8 @@ struct AlarmEditorView: View {
         let phrase = customPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
         tempAlarm.customDismissPhrase = phrase.isEmpty ? nil : phrase
         tempAlarm.backgroundRingMode = useNotificationMode ? .notification : .alarmKit
+        // 切段只在溫和提醒模式下有意義；非通知模式一律存 false。
+        tempAlarm.segmentedBurst = useNotificationMode ? segmentedBurst : false
 
         if !isEditing {
             modelContext.insert(tempAlarm)

@@ -63,6 +63,12 @@ final class Alarm {
     /// （舊資料 nil → 走 `.alarmKit` 預設，行為完全不變）。讀取請用 `effectiveBackgroundMode`。
     var backgroundRingMode: AlarmBackgroundMode? = nil
 
+    /// 溫和提醒模式下是否「切段」：把語音用多顆秒級錯開的通知堆到 ~30 秒（gentle-repeat burst）。
+    /// 預設 nil → false：只響一次（單通知、不堆疊），避免通知中心出現一整排「起床囉！」。
+    /// 開啟才排 burst（響滿 ~30s，但 iOS 可能幾秒內就把它收掉，不保證響滿）。
+    /// Optional + default nil 配合 SwiftData lightweight migration。讀取請用 `effectiveSegmentedBurst`。
+    var segmentedBurst: Bool? = nil
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -84,6 +90,9 @@ final class Alarm {
 
     /// 背景響鈴策略——nil（舊資料 / 未設定）→ `.alarmKit`（維持原行為）。請一律用這個讀取。
     var effectiveBackgroundMode: AlarmBackgroundMode { backgroundRingMode ?? .alarmKit }
+
+    /// 溫和提醒「切段響滿 30s」是否開啟。nil（舊資料 / 未設）→ false（只響一次、不堆疊通知）。
+    var effectiveSegmentedBurst: Bool { segmentedBurst ?? false }
 
     /// 「貪睡模式 / strict mode」已於 2026-06-10 移除：它原本承諾「一定要開 App 才能關」，但
     /// AlarmKit 系統鬧鐘的實體鍵(音量/側鍵)由 iOS 直接 map 成「停止」，第三方攔不到，承諾無法兌現；

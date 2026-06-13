@@ -758,6 +758,7 @@ struct SettingsView: View {
     @ObservedObject private var bedSide = BedSideManager.shared
 
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
+    @State private var showingVoiceLib  = false
     @State private var showingHistory   = false
     @State private var showingIO        = false
     @State private var unlockNow = Date()
@@ -766,6 +767,20 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // 錄音管理 — first row。功能「複製」到新增鬧鐘頁，設定頁同樣保留這個入口
+                // （同一個 VoiceLibraryView，不是搬移）。
+                Section {
+                    Button { showingVoiceLib = true } label: {
+                        HStack {
+                            Label("錄音管理", systemImage: "mic.circle.fill")
+                                .foregroundStyle(SunnyColors.skyBlue)
+                                .font(SunnyFonts.caption())
+                            Spacer()
+                            NavigationChevron()
+                        }
+                    }
+                }
+
                 // Clock format
                 Section(header: Text("time_format_section")) {
                     Toggle(isOn: $settings.use24HourClock) {
@@ -795,17 +810,6 @@ struct SettingsView: View {
                         }
                     }
                 }
-
-                #if DEBUG
-                // 🔬 暫時：找 iOS 自訂通知音「完整播放」真實上限。按一下排 5 顆探針，殺 App+關屏逐顆聽。
-                //   只在 Debug build 編入，App Store archive 不含此區。測完可整段刪。
-                Section(header: Text("🔬 DEBUG — notification sound cutoff")) {
-                    Button("排 Cutoff Probe（8 / 12 / 16 / 20 / 24s，now+1…+5 分）") {
-                        Task { await AlarmScheduler.shared.scheduleCutoffProbe() }
-                    }
-                    .foregroundStyle(.red)
-                }
-                #endif
 
                 // Alarm ring duration
                 Section(
@@ -928,6 +932,7 @@ struct SettingsView: View {
             unlockNow = now
             settings.clearExpiredParentalUnlockIfNeeded(referenceDate: now)
         }
+        .sheet(isPresented: $showingVoiceLib)  { VoiceLibraryView() }
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
     }
