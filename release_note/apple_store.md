@@ -1,5 +1,64 @@
 # SunnyWalker — App Store Release Note
 
+## 1.2.20260613 (build 10) — 切段響滿 30s（通知模式）+ 設定頁錄音管理 + 自訂鈴聲操作優化
+
+> 🆓 **本次為免費版更新**。付費解鎖（alarm 數量／錄音長度）的 IAP 不在此版，留待之後另發。
+> 來源：`main`（3 項優化）+ 從 `feature/pro-iap-lifetime` **選擇性合併**——只取一般改進
+> （AudioPlayer 暫停/續播、VoiceLibraryView 操作優化），**未取**任何付費門檻
+> （StoreService / ProUpgradeView / Configuration.storekit / FeatureLimits 付費鎖）。
+
+| 欄位 | 值 |
+|---|---|
+| 顯示版本 (Marketing Version) | **1.2.20260613**（新功能 → MINOR bump；⚠️ 版本號請自行確認，若視為延伸亦可用 1.1.20260613） |
+| Build (CFBundleVersion) | **10**（9 已被 1.1.20260612 佔用） |
+| 送審日期 | 2026-06-13 |
+| 前次紀錄 | 1.1.20260612 (9) — 溫和提醒模式 |
+| 本次重點 | (1) 溫和提醒模式新增 per-alarm「切段響滿 30 秒」開關：開啟後，**關屏／關 App** 也能用秒級錯開的堆疊通知把語音重複響到約 30 秒；**預設關閉＝只響一下**（不堆疊、不再出現一整排通知）。同一鬧鐘的通知用 `threadIdentifier` 收成一組。(2)「錄音管理」回到設定頁第一項（與新增鬧鐘頁同一入口）。(3) 自訂鈴聲試聽：點一下播放／暫停、長按停止；錄到上限自動保留。(4) 移除設定頁 DEBUG probe。中英字串齊備。 |
+
+> ⚠️ Archive 前必跑 `xcodegen generate`。
+> ⚠️ 既有「溫和提醒」鬧鐘升級後切段預設＝off → 會從「響約 30s」變「只響一下」；要 30s 請逐顆鬧鐘開「切段」。
+> 裝機抽查：設定 ▸ SunnyWalker ▸ 通知內頁要有「Time Sensitive」開關才代表 entitlement 在 binary。
+
+### App Store「版本說明 / What's New」
+
+#### 繁體中文（zh-Hant）
+
+```
+這次更新讓叫醒提示更貼心：
+
+‧「溫和提醒」模式新增「切段響滿 30 秒」：開啟後，就算關螢幕或關掉 App，也能把叫醒語音重複響到約 30 秒，更不容易錯過（預設關閉、只響一下）
+‧「錄音管理」回到設定頁，隨時整理你的鈴聲
+‧ 自訂鈴聲試聽更好操作：點一下播放／暫停、長按停止
+‧ 其他小優化，使用更順手
+
+謝謝你陪 SunnyWalker 一起長大 ☀️
+```
+
+#### English (en)
+
+```
+A warmer, more reliable wake-up nudge:
+
+• Gentle Reminder mode adds "Ring ~30s in segments": when on, the wake-up voice repeats for about 30 seconds even with the screen off or the app closed, so it's harder to miss (off by default — rings just once)
+• "Recordings" is back in Settings, so you can tidy up your sounds anytime
+• Easier voice-clip preview: tap to play/pause, long-press to stop
+• Other small refinements for a smoother experience
+
+Thanks for growing up with SunnyWalker ☀️
+```
+
+### 送審前最終確認（本次更新）
+
+- [ ] `project.yml`：MARKETING_VERSION `1.2.20260613`、CURRENT_PROJECT_VERSION `10`
+- [ ] `xcodegen generate` 後再 Archive（Any iOS Device / arm64）
+- [ ] **確認沒帶進 Pro/IAP 檔**：`StoreService.swift`、`ProUpgradeView.swift`、`Configuration.storekit`（free 版不應有）
+- [ ] Xcode Organizer → Distribute → App Store Connect → Upload（build 10）
+- [ ] ASC「+ Version」建立 `1.2.20260613`，附 build 10，貼上方 What's New（中／英）
+- [ ] Age Rating、App Privacy（Data Not Collected）、Privacy Policy URL 沿用前版
+- [ ] Submit for Review（Made for Kids 更新仍需審核）
+
+---
+
 ## 1.1.20260612 (build 9) — 溫和提醒模式（per-alarm Time-Sensitive 通知）
 
 | 欄位 | 值 |
