@@ -1,5 +1,7 @@
 // SunnyWalker — VoiceLibraryView.swift
-// Standalone voice-clip library: browse / play / delete / record new clips.
+// Voice-clip library: browse / play / rename / trim / delete / record new clips.
+// Also used as the custom-ringtone picker in AlarmEditorView (pass onSelect to enter
+// selection mode — checkmark circle on each row picks the clip and dismisses the sheet).
 // Max 5 clips × 5 seconds each (free tier). Raise the constants below for paid upgrades.
 
 import SwiftUI
@@ -24,6 +26,15 @@ enum VoiceClipLimits {
 // MARK: - VoiceLibraryView
 
 struct VoiceLibraryView: View {
+    // MARK: - Selection-mode support (optional — default = management-only)
+    /// Pass the alarm's current soundFileName so the matching clip shows a checkmark.
+    var currentFileName: String = ""
+    /// When set, the view acts as a clip picker: tapping the circle button calls this closure
+    /// with the exported CAF name + clip info, then dismisses the sheet.
+    var onSelect: ((String, SelectedRecordingInfo?) -> Void)? = nil
+
+    private var isSelectionMode: Bool { onSelect != nil }
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \VoiceClip.createdAt, order: .reverse) private var clips: [VoiceClip]
@@ -36,6 +47,12 @@ struct VoiceLibraryView: View {
     @State private var showDeleteConfirm = false
 
     private var canAddMore: Bool { clips.count < VoiceClipLimits.maxCount }
+
+    // LocalizedStringKey return type — ensures the xcstrings lookup fires instead of verbatim
+    // String rendering (same pattern as RingtonePickerSheet.navigationTitle).
+    private var navigationTitle: LocalizedStringKey {
+        isSelectionMode ? "自定鈴聲(錄音) 🎤" : "錄音管理 🎙️"
+    }
 
     var body: some View {
         NavigationStack {
@@ -71,13 +88,14 @@ struct VoiceLibraryView: View {
                         .padding(.bottom, 32)
                 }
             }
-            .navigationTitle("錄音管理 🎙️")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("完成") { dismiss() }
+                    // Stop player before dismissing — prevents audio tail when sheet closes.
+                    Button(isSelectionMode ? "取消" : "完成") { player.stop(); dismiss() }
                         .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.forestDeep)
+                        .foregroundStyle(isSelectionMode ? SunnyColors.sunnyGray : SunnyColors.forestDeep)
                 }
             }
         }
@@ -135,7 +153,9 @@ struct VoiceLibraryView: View {
                         playingID = nil
                         selectedClip = clip
                     },
-                    onDelete: { deleteTarget = clip; showDeleteConfirm = true }
+                    onDelete: { deleteTarget = clip; showDeleteConfirm = true },
+                    isSelected: isSelectionMode && isClipSelected(clip),
+                    onPickToUse: isSelectionMode ? { selectClip(clip) } : nil
                 )
                 .listRowBackground(Color.white.opacity(0.75))
                 .listRowSeparatorTint(SunnyColors.leafFresh.opacity(0.3))
@@ -193,6 +213,24 @@ struct VoiceLibraryView: View {
         try? FileManager.default.removeItem(at: clip.recordingsURL)
         modelContext.delete(clip)
     }
+
+    // MARK: - Selection-mode helpers
+
+    private func isClipSelected(_ clip: VoiceClip) -> Bool {
+        // The alarm stores a CAF filename derived from the clip's base name.
+        let base = String(clip.fileName.dropLast(4))  // strip ".m4a"
+        return currentFileName.hasPrefix("alarm_\(base)_")
+    }
+
+    private func selectClip(_ clip: VoiceClip) {
+        player.stop()
+        playingID = nil
+        let base = String(clip.fileName.dropLast(4))
+        if let cafName = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base) {
+            onSelect?(cafName, SelectedRecordingInfo(baseName: base, displayName: clip.name))
+        }
+        dismiss()
+    }
 }
 
 // MARK: - VoiceClipRow
@@ -201,8 +239,10 @@ private struct VoiceClipRow: View {
     let clip: VoiceClip
     let isPlaying: Bool
     let onPlay: () -> Void
-    let onSelect: () -> Void
+    let onSelect: () -> Void           // opens VoiceClipDetailSheet
     let onDelete: () -> Void
+    var isSelected: Bool = false       // true = this clip is the alarm's current ringtone
+    var onPickToUse: (() -> Void)? = nil  // non-nil → selection mode; tap to choose & dismiss
 
     var body: some View {
         HStack(spacing: 14) {
@@ -239,23 +279,45 @@ private struct VoiceClipRow: View {
 
             Spacer()
 
-            // 編輯 + 刪除 兩顆 icon，中間留 22pt 間隔避免按錯（小孩 / 大拇指誤觸）。
-            HStack(spacing: 22) {
-                Button(action: onSelect) {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 24))
-                        .foregroundStyle(SunnyColors.forestDeep.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("編輯"))
+            if let onPickToUse {
+                // Selection mode: delete + pick-circle
+                // 編輯詳情仍可透過點擊 name 區進入；右側保留刪除 + 選取圓圈。
+                HStack(spacing: 18) {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash.circle")
+                            .font(.system(size: 26))
+                            .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("刪除"))
 
-                Button(action: onDelete) {
-                    Image(systemName: "trash.circle")
-                        .font(.system(size: 26))
-                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
+                    Button(action: onPickToUse) {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 28))
+                            .foregroundStyle(isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.4))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isSelected ? Text("已選取") : Text("選取"))
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("刪除"))
+            } else {
+                // Management mode: edit + delete（原有行為，兩顆 icon 留 22pt 間隔）
+                HStack(spacing: 22) {
+                    Button(action: onSelect) {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 24))
+                            .foregroundStyle(SunnyColors.forestDeep.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("編輯"))
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash.circle")
+                            .font(.system(size: 26))
+                            .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("刪除"))
+                }
             }
         }
         .padding(.vertical, 6)
@@ -1180,8 +1242,13 @@ private func formatSeconds(_ seconds: Double) -> String {
 
 // MARK: - Previews
 
-#Preview("Library — empty") {
+#Preview("Library — management (empty)") {
     VoiceLibraryView()
+        .modelContainer(for: VoiceClip.self, inMemory: true)
+}
+
+#Preview("Library — picker (selection mode)") {
+    VoiceLibraryView(currentFileName: "alarm_my-recording_12345678.caf") { _, _ in }
         .modelContainer(for: VoiceClip.self, inMemory: true)
 }
 

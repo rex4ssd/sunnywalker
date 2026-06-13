@@ -1,6 +1,6 @@
 # SunnyWalker — App Store Release Note
 
-## 1.1.20260612 (build 8) — 溫和提醒模式（per-alarm Time-Sensitive 通知）
+## 1.1.20260612 (build 9) — 溫和提醒模式（per-alarm Time-Sensitive 通知）
 
 | 欄位 | 值 |
 |---|---|

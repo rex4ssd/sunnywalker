@@ -442,7 +442,7 @@ struct AlarmEditorView: View {
             }
         }
         .sheet(isPresented: $showingCustomPicker) {
-            RingtonePickerSheet(currentFileName: tempAlarm.soundFileName, mode: .custom) { chosenSoundFile, chosenRecording in
+            VoiceLibraryView(currentFileName: tempAlarm.soundFileName) { chosenSoundFile, chosenRecording in
                 tempAlarm.soundFileName = chosenSoundFile
                 tempAlarm.recordingName = chosenRecording?.baseName ?? ""
                 tempAlarm.recordingDisplayName = chosenRecording?.displayName

@@ -758,7 +758,6 @@ struct SettingsView: View {
     @ObservedObject private var bedSide = BedSideManager.shared
 
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
-    @State private var showingVoiceLib  = false
     @State private var showingHistory   = false
     @State private var showingIO        = false
     @State private var unlockNow = Date()
@@ -767,19 +766,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Voice Library — first row
-                Section {
-                    Button { showingVoiceLib = true } label: {
-                        HStack {
-                            Label("錄音管理", systemImage: "mic.circle.fill")
-                                .foregroundStyle(SunnyColors.skyBlue)
-                                .font(SunnyFonts.caption())
-                            Spacer()
-                            NavigationChevron()
-                        }
-                    }
-                }
-
                 // Clock format
                 Section(header: Text("time_format_section")) {
                     Toggle(isOn: $settings.use24HourClock) {
@@ -931,7 +917,6 @@ struct SettingsView: View {
             unlockNow = now
             settings.clearExpiredParentalUnlockIfNeeded(referenceDate: now)
         }
-        .sheet(isPresented: $showingVoiceLib)  { VoiceLibraryView() }
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
     }
