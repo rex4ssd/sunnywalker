@@ -796,6 +796,17 @@ struct SettingsView: View {
                     }
                 }
 
+                #if DEBUG
+                // 🔬 暫時：找 iOS 自訂通知音「完整播放」真實上限。按一下排 5 顆探針，殺 App+關屏逐顆聽。
+                //   只在 Debug build 編入，App Store archive 不含此區。測完可整段刪。
+                Section(header: Text("🔬 DEBUG — notification sound cutoff")) {
+                    Button("排 Cutoff Probe（8 / 12 / 16 / 20 / 24s，now+1…+5 分）") {
+                        Task { await AlarmScheduler.shared.scheduleCutoffProbe() }
+                    }
+                    .foregroundStyle(.red)
+                }
+                #endif
+
                 // Alarm ring duration
                 Section(
                     header: Text("響鈴時長"),

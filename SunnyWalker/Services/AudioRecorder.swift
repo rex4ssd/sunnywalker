@@ -428,48 +428,14 @@ enum AlarmSoundExporter {
                 AVLinearPCMIsNonInterleaved: false
             ]
             let outFile = try AVAudioFile(forWriting: cafURL, settings: outSettings)
-            // 🔁 2026-06-12：UNNotification 音效「只播一次、上限 30s」。短錄音（如 3 秒）原樣輸出
-            //   會讓提醒模式「響 3 秒就停」。這裡把錄音 loop 填滿 ~29s（留 margin，>30s 會被 iOS
-            //   整顆 fallback 成預設音），單響拉滿 30 秒。AlarmKit 模式不受影響（系統本來就無限循環）。
-            let targetFrames = AVAudioFramePosition(format.sampleRate * 29)
-            let bufFrames = AVAudioFramePosition(buffer.frameLength)
-
-            // 輪與輪之間補 0.45s 靜音——語音頭尾相接重複 10 次聽起來很機械，
-            // 短停頓讓「爸媽的聲音」自然得多。明確 memset 歸零（AVAudioPCMBuffer 不保證零初始化）。
-            let gapBuffer: AVAudioPCMBuffer? = {
-                let gapFrames = AVAudioFrameCount(format.sampleRate * 0.45)
-                guard let g = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: gapFrames),
-                      let ch = g.floatChannelData else { return nil }
-                for c in 0..<Int(format.channelCount) {
-                    memset(ch[c], 0, Int(gapFrames) * MemoryLayout<Float>.size)
-                }
-                g.frameLength = gapFrames
-                return g
-            }()
-
-            // 寫到剛好貼齊 targetFrames；最後不足一輪時暫時縮短 frameLength 寫部分 buffer。
-            func writeCapped(_ b: AVAudioPCMBuffer, written: inout AVAudioFramePosition) throws {
-                let remaining = targetFrames - written
-                guard remaining > 0, b.frameLength > 0 else { return }
-                if AVAudioFramePosition(b.frameLength) <= remaining {
-                    try outFile.write(from: b)
-                    written += AVAudioFramePosition(b.frameLength)
-                } else {
-                    let saved = b.frameLength
-                    b.frameLength = AVAudioFrameCount(remaining)
-                    try outFile.write(from: b)
-                    b.frameLength = saved
-                    written += remaining
-                }
-            }
-
-            var written: AVAudioFramePosition = 0
-            while written < targetFrames && bufFrames > 0 {
-                try writeCapped(buffer, written: &written)
-                if written >= targetFrames { break }
-                if let gap = gapBuffer { try writeCapped(gap, written: &written) }
-            }
-            print("🎚️ Exporter: looped \(String(format: "%.1f", Double(bufFrames) / format.sampleRate))s recording (+0.45s gaps) to \(String(format: "%.1f", Double(written) / format.sampleRate))s CAF")
+            // 2026-06-13：不再 loop 成 29s。真機證實 iOS 會把「長的」自訂通知音整顆退成 ~2s 預設音，
+            //   但「短的」（如 4.6s 原始錄音）照播完整。提醒模式改走「短 CAF＋堆疊多顆通知」鋪滿 ~30s
+            //   （見 AlarmScheduler.scheduleGentleRepeatBurst），所以這裡只寫一輪原始錄音（已 cap ≤30s）。
+            //   AlarmKit 模式系統本來就會自己無限 loop，短 CAF 同樣 OK。
+            //   ⚠️ 家長若錄超長（超過 iOS 的自訂音截斷點），單顆通知音仍可能被 iOS 截短；多數叫醒語很短，
+            //      且「響滿 30s」交給堆疊負責，故此處不再人工補長（補長只會重蹈 29s→2s 之雷）。
+            try outFile.write(from: buffer)
+            print("🎚️ Exporter: wrote \(String(format: "%.1f", Double(buffer.frameLength) / format.sampleRate))s recording (no loop) → short CAF")
         } catch {
             print("🎚️ Exporter: m4a→caf export FAILED — \(error.localizedDescription)")
             return nil
@@ -487,4 +453,59 @@ enum AlarmSoundExporter {
         }
         return cafName
     }
+
+    #if DEBUG
+    /// 🔬 暫時：合成「每秒一聲嗶」的尺規音（mono 16-bit PCM 44100，與正式通知音同格式），
+    /// 長度 = seconds（cap ≤29，因 >30 會被 iOS 整顆退預設）。5 的倍數那聲用高音、較長，方便數。
+    /// 用途：殺 App+關屏下逐顆聽，找出 iOS「完整播放自訂通知音」的真實上限。測完整個 #if DEBUG 可刪。
+    static func makeProbeBeepCAF(seconds: Int) -> String? {
+        let fm = FileManager.default
+        let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Sounds", isDirectory: true)
+        try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
+
+        let sr = 44100.0
+        let dur = min(max(seconds, 1), 29)
+        let totalFrames = AVAudioFrameCount(sr * Double(dur) + sr * 0.3)   // +margin 給最後一聲
+        guard let fmt = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sr, channels: 1, interleaved: false),
+              let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: totalFrames),
+              let ch = buf.floatChannelData else { return nil }
+        buf.frameLength = totalFrames
+        let p = ch[0]
+        memset(p, 0, Int(totalFrames) * MemoryLayout<Float>.size)
+        for k in 1...dur {
+            let emph = (k % 5 == 0)
+            let freq = emph ? 1568.0 : 784.0
+            let beepLen = Int(sr * (emph ? 0.22 : 0.10))
+            let start = Int(Double(k) * sr)
+            for i in 0..<beepLen {
+                let idx = start + i
+                if idx >= Int(totalFrames) { break }
+                let env = sin(Double.pi * Double(i) / Double(beepLen))   // 0→1→0 包絡避免爆音
+                p[idx] = Float(0.5 * env * sin(2.0 * Double.pi * freq * Double(i) / sr))
+            }
+        }
+
+        let outSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: sr,
+            AVNumberOfChannelsKey: 1,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false
+        ]
+        let cafName = "debug_probe_\(dur)s_\(Int(Date().timeIntervalSince1970)).caf"
+        let cafURL = soundsDir.appendingPathComponent(cafName)
+        do {
+            let outFile = try AVAudioFile(forWriting: cafURL, settings: outSettings)
+            try outFile.write(from: buf)
+        } catch {
+            print("🔬 Probe: make \(dur)s CAF failed — \(error.localizedDescription)")
+            return nil
+        }
+        print("🔬 Probe: wrote \(dur)s beep ruler → \(cafName)")
+        return cafName
+    }
+    #endif
 }

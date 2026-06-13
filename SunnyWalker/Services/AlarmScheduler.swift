@@ -29,7 +29,11 @@ final class AlarmScheduler {
         // weekday、weekday↔一次性切換後的舊格式）。這讓排程沒有「已 remove、未 add 完成」的
         // 空窗；之前 force-quit 卡在這個空窗會把通知整批清掉（見 issue 文件第二輪）。
         let isNotificationMode = alarm.effectiveBackgroundMode == .notification
-        let allIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" } + [alarm.id.uuidString]
+        // rep-k（gentle-repeat burst）一律列入清掃：它們是「下一次發生」的一次性 slot，
+        // 不放進 keepIDs → 每次排程先清掉舊的，再由 scheduleGentleRepeatBurst 重排新的。
+        let allIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" }
+            + (1...Self.maxRepeatSlots).map { "\(alarm.id.uuidString)-rep-\($0)" }
+            + [alarm.id.uuidString]
         let keepIDs: Set<String> = isNotificationMode || !AlarmKitService.shared.isAuthorized
             ? (alarm.weekdays.isEmpty
                 ? [alarm.id.uuidString]
@@ -79,12 +83,16 @@ final class AlarmScheduler {
         //     The export (AlarmSoundExporter) writes a mono 16-bit PCM CAF ≤30s — the format
         //     UNNotificationSound plays reliably (stereo/long CAFs are what used to fall through).
         //   • Otherwise → system default tone.
+        // 量到的 CAF 長度（秒）— 餵給 gentle-repeat burst 算「下一顆通知」的秒級間距。預設 5。
+        var cafSeconds: Double = 5
         let custom = alarm.soundFileName
         let wantsCustom = !custom.isEmpty && custom != "sunny_wake.caf" && !alarm.recordingName.isEmpty
         if wantsCustom {
             // Verify the CAF actually exists in Library/Sounds — UNNotificationSound(named:)
-            // SILENTLY falls back to the default tone if the file is missing, wrong format, or
-            // >30s. Checking here turns that invisible failure into a visible log line.
+            // SILENTLY falls back to the default tone if the file is missing or wrong format.
+            // ⚠️ 2026-06-13 真機實證：iOS 對「過長」的自訂通知音也會悄悄退成 ~2s 預設音，門檻【遠低於】
+            //   文件寫的 30s（實測 29s 就掛、只驗到 4.6s 安全）。所以下面用短 CAF + 反向自我修復處理。
+            //   Checking here turns that invisible failure into a visible log line.
             let fm = FileManager.default
             let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent("Sounds", isDirectory: true)
@@ -94,18 +102,30 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: custom sound check → name=\(custom) existsInLibrarySounds=\(exists) path=\(cafPath)")
             print("🔔 AlarmScheduler: Library/Sounds contents = \(dirList)")
             if exists {
-                // 🔁 自我修復：2026-06-12 之前的 exporter 不 loop，CAF＝錄音原長（可能只有幾秒）。
-                //   通知音只播一次 → 短 CAF 會「響 3 秒就停」。偵測到 <28s 就用同一份錄音重匯出
-                //   成 ~29s loop 版（新 exporter），免使用者重錄。重匯出後 ≥29s，之後不會再觸發。
+                // 2026-06-13：CAF 現在是「短的原始錄音」（exporter 不再 loop 成 29s）。
+                //   原因：真機證實 iOS 會把長的自訂通知音整顆退成 ~2s 預設音，短的才照播完整。
+                //   「響滿 ~30s」改由 scheduleGentleRepeatBurst 用秒級錯開的多顆通知堆出來。
+                //   這裡量長度（餵 burst 算間距）並印 measure log。
                 var effectiveName = custom
                 if let caf = try? AVAudioFile(forReading: URL(fileURLWithPath: cafPath)) {
-                    // length 的單位是檔案原生 sample frames → 用 fileFormat（processingFormat 通常同值，但 fileFormat 才語意正確）
+                    // length 單位是檔案原生 sample frames → 用 fileFormat 才語意正確
                     let secs = Double(caf.length) / caf.fileFormat.sampleRate
-                    if secs < 28,
-                       let looped = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.recordingName) {
-                        alarm.soundFileName = looped
-                        effectiveName = looped
-                        print("🔔 AlarmScheduler: short CAF (\(String(format: "%.1f", secs))s) re-exported as 29s loop → \(looped)")
+                    let cafBytes = ((try? FileManager.default.attributesOfItem(atPath: cafPath))?[.size] as? Int) ?? -1
+                    cafSeconds = max(1, secs)
+                    print("🔬 AlarmScheduler: CAF measure → \(String(format: "%.1f", secs))s frames=\(caf.length) sr=\(caf.fileFormat.sampleRate) bytes=\(cafBytes)")
+
+                    // 🔁 反向自我修復：舊版（2026-06-12 以前）把 CAF loop 成 ~29s，會被 iOS 截成 ~2s。
+                    //   偵測到「過長」(≥25s) 就用原始錄音重匯出成短 CAF（新 exporter 不 loop），
+                    //   讓既有鬧鐘自動痊癒、免使用者一顆顆重選。新短 CAF 之後不會再觸發（<25s）。
+                    if secs >= 25, !alarm.recordingName.isEmpty,
+                       let short = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.recordingName) {
+                        effectiveName = short
+                        alarm.soundFileName = short
+                        // 重新量短檔長度給 burst 用（不然 burst 會拿舊的 29s 算出超大間距而不排）。
+                        if let c2 = try? AVAudioFile(forReading: soundsDir.appendingPathComponent(short)) {
+                            cafSeconds = max(1, Double(c2.length) / c2.fileFormat.sampleRate)
+                        }
+                        print("🔔 AlarmScheduler: old long CAF (\(String(format: "%.1f", secs))s) auto-healed → short \(short) (\(String(format: "%.1f", cafSeconds))s)")
                     }
                 }
                 content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: effectiveName))
@@ -163,6 +183,7 @@ final class AlarmScheduler {
             )
             try await center.add(request)
             await scheduleNagsIfNeeded(alarm: alarm, content: content, fireDate: fireDate, center: center)
+            await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: fireDate, voiceSeconds: cafSeconds, center: center)
             return
         }
 
@@ -182,8 +203,10 @@ final class AlarmScheduler {
         }
         // Strict mode for a repeating alarm: nag for the NEXT occurrence (one-shot). Renews on the
         // next app launch / re-arm. Keeps us well under the 64 pending-notification limit.
+        // gentle-repeat burst 也只鋪「下一次發生」（一次性），每次 re-arm 重排。
         if let next = nextOccurrence(for: alarm) {
             await scheduleNagsIfNeeded(alarm: alarm, content: content, fireDate: next, center: center)
+            await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: next, voiceSeconds: cafSeconds, center: center)
         }
     }
 
@@ -214,6 +237,62 @@ final class AlarmScheduler {
         print("🔔 AlarmScheduler: strict mode — scheduled \(n) nag(s) after \(fireDate)")
     }
 
+    // MARK: - 溫和提醒「響滿 ~30s」堆疊（gentle-repeat burst）
+
+    private static let maxRepeatSlots = 12   // 清理 {uuid}-rep-k 用的列舉上限
+
+    /// 提醒模式「響滿 ~30s」：真機證實 iOS 只完整播「短的」自訂通知音，單顆只響一段語音。
+    /// 這裡對【下一次發生】加排數顆秒級錯開的一次性通知（`{uuid}-rep-k`），把語音重複鋪到 ~30s，
+    /// 之後沒有更多通知 → 自然停（溫和、不續電）。每次 `schedule()` 都重排下一次的 burst
+    /// （app 前景/背景常 re-arm）。即使被殺多天沒開 app，baseline 那顆 repeating 仍會響一段完整語音。
+    /// ⚠️ iOS 每 app pending 上限 64：用 runtime pending 計數自我設限，先到先得，後面的鬧鐘自動少排。
+    private func scheduleGentleRepeatBurst(
+        alarm: Alarm,
+        content: UNNotificationContent,
+        fireDate: Date,
+        voiceSeconds: Double,
+        center: UNUserNotificationCenter
+    ) async {
+        // 兩顆通知 fire 時間的間距（秒）＝一段語音長度 + 使用者設定的靜音間隔（recordingGapSeconds，預設 2）。
+        let gap = max(0, AppSettings.shared.recordingGapSeconds)
+        let period = max(2, Int(ceil(voiceSeconds)) + gap)
+        let targetSpan = 30   // 目標總響鈴長度（秒）
+
+        // slot 0 = baseline 那顆（已在 fireDate 第 0 秒排好），這裡只補 slot 1…N。
+        // 秒位須 < 60（留在同一分鐘內，避免跨分鐘 DateComponents 複雜化），且不超過 targetSpan。
+        var offsets: [Int] = []
+        var t = period
+        while t <= targetSpan && t < 60 {
+            offsets.append(t)
+            t += period
+        }
+        guard !offsets.isEmpty else { return }
+
+        // 64 上限防衛：看現在還剩多少額度，最多補這麼多顆（留 2 顆 margin）。
+        let pendingNow = await center.pendingNotificationRequests().count
+        let budget = max(0, 64 - pendingNow - 2)
+        guard budget > 0 else {
+            print("🔔 AlarmScheduler: gentle-repeat burst SKIPPED — pending=\(pendingNow) near 64 limit")
+            return
+        }
+        let slots = Array(offsets.prefix(min(budget, Self.maxRepeatSlots)))
+
+        let cal = Calendar.current
+        var added = 0
+        for (i, off) in slots.enumerated() {
+            guard let slotDate = cal.date(byAdding: .second, value: off, to: fireDate) else { continue }
+            let parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: slotDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+            let req = UNNotificationRequest(
+                identifier: "\(alarm.id.uuidString)-rep-\(i + 1)", content: content, trigger: trigger
+            )
+            do { try await center.add(req); added += 1 } catch {
+                print("🔔 AlarmScheduler: gentle-repeat slot \(i + 1) add failed — \(error.localizedDescription)")
+            }
+        }
+        print("🔔 AlarmScheduler: gentle-repeat burst → \(added) extra slot(s), every \(period)s over ~\(targetSpan)s (voice=\(String(format: "%.1f", voiceSeconds))s gap=\(gap)s pendingWas=\(pendingNow))")
+    }
+
     /// Soonest future fire date across an alarm's weekdays (for scheduling strict-mode nags).
     private func nextOccurrence(for alarm: Alarm) -> Date? {
         var comps = DateComponents()
@@ -236,7 +315,9 @@ final class AlarmScheduler {
     /// Cancel only the strict-mode nag notifications for an alarm (leaves the main alarm intact so
     /// a repeating alarm still fires next time). Called when the app opens for the ringing alarm.
     func cancelNags(_ alarmID: UUID) {
+        // 連 gentle-repeat burst 一起清——app 為這顆鬧鐘開起來＝小孩醒了，後續語音不該再響。
         let ids = (1...9).map { "\(alarmID.uuidString)-nag-\($0)" }
+            + (1...Self.maxRepeatSlots).map { "\(alarmID.uuidString)-rep-\($0)" }
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ids)
         center.removeDeliveredNotifications(withIdentifiers: ids)
@@ -246,6 +327,7 @@ final class AlarmScheduler {
     func cancel(_ alarmID: UUID) {
         let identifiers = (1...7).map { "\(alarmID.uuidString)-\($0)" }
             + (1...9).map { "\(alarmID.uuidString)-nag-\($0)" }
+            + (1...Self.maxRepeatSlots).map { "\(alarmID.uuidString)-rep-\($0)" }
             + [alarmID.uuidString]
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
@@ -260,4 +342,30 @@ final class AlarmScheduler {
             cancel(alarm.id)
         }
     }
+
+    #if DEBUG
+    /// 🔬 暫時：排 5 顆一次性 timeSensitive 通知（now+1…+5 分），長度 8/12/16/20/24s 的「每秒嗶」尺規音。
+    /// 殺 App+關屏逐顆聽：播滿≈該秒數＝該長度 OK；只剩~2s＝被 iOS 截/退預設。最大「播滿」者＝安全上限。
+    /// 由 Settings 的 DEBUG 按鈕觸發。測完整段（含 makeProbeBeepCAF / 按鈕）可刪。
+    func scheduleCutoffProbe() async {
+        let center = UNUserNotificationCenter.current()
+        let ns = await center.notificationSettings()
+        let lengths = [8, 12, 16, 20, 24]
+        for (i, L) in lengths.enumerated() {
+            guard let caf = AlarmSoundExporter.makeProbeBeepCAF(seconds: L) else { continue }
+            let content = UNMutableNotificationContent()
+            content.title = "🔬 Cutoff probe \(L)s"
+            content.body = "數嗶聲：播滿≈\(L) 聲(秒) 還是只剩 ~2s？"
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: caf))
+            content.interruptionLevel = (ns.timeSensitiveSetting == .enabled) ? .timeSensitive : .active
+            let fireDate = Date().addingTimeInterval(Double((i + 1) * 60))
+            let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+            let req = UNNotificationRequest(identifier: "cutoff-probe-\(L)", content: content, trigger: trigger)
+            do { try await center.add(req); print("🔬 Probe: scheduled \(L)s at \(fireDate)") }
+            catch { print("🔬 Probe: schedule \(L)s failed — \(error.localizedDescription)") }
+        }
+        print("🔬 Probe: 5 顆已排（now+1…+5 分）。殺 App、關屏，逐顆聽嗶聲數到幾。")
+    }
+    #endif
 }

@@ -1727,6 +1727,23 @@
         }
       }
     },
+    "口令關閉需保持螢幕開啟，不可關屏。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phrase dismiss needs the screen to stay on — please don’t lock the screen."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "口令關閉需保持螢幕開啟，不可關屏。"
+          }
+        }
+      }
+    },
     "右側保留到" : {
       "localizations" : {
         "en" : {
@@ -2040,6 +2057,9 @@
           }
         }
       }
+    },
+    "已選取" : {
+
     },
     "已選自錄鈴聲，可以開啟口令關閉。" : {
       "extractionState" : "stale",
@@ -3444,6 +3464,9 @@
           }
         }
       }
+    },
+    "選取" : {
+
     },
     "選擇鈴聲 🎵" : {
       "extractionState" : "stale",

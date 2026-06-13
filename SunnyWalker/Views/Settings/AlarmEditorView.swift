@@ -273,6 +273,13 @@ struct AlarmEditorView: View {
                 .tint(SunnyColors.lanternOrange)
                 .disabled(!voiceDismissAvailable)
 
+                // 口令關閉只在前景/亮屏（App 沒被殺、螢幕沒關）時有效——靠麥克風即時辨識關鍵字。
+                // 關屏或關閉 App 走的是自動停的提醒模式，沒有麥克風可聽口令。必須對 user 講清楚。
+                // 中英獨立字串：en/zh-Hant 都在 Localizable.xcstrings 明確給值，避免英文版掉回中文。
+                Label(LocalizedStringKey("口令關閉需保持螢幕開啟，不可關屏。"), systemImage: "exclamationmark.triangle.fill")
+                    .font(SunnyFonts.caption(12))
+                    .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
+
                 // 自定口令輸入 — 只在口令關閉開啟時顯示。自定 + 預設詞都認。
                 if isVoiceDismissEnabled {
                     VStack(alignment: .leading, spacing: 6) {
