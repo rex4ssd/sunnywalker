@@ -74,6 +74,72 @@ final class VoiceClipTests: XCTestCase {
     }
 }
 
+// MARK: - Pro / FeatureLimits
+
+/// `FeatureLimits.isPro` is UserDefaults-backed, so toggling it here flips every cap. Snapshot and
+/// restore the real value so these tests don't leak Pro state into the rest of the suite.
+final class FeatureLimitsTests: XCTestCase {
+    private var previousPro = false
+
+    override func setUp() {
+        super.setUp()
+        previousPro = FeatureLimits.isPro
+    }
+    override func tearDown() {
+        FeatureLimits.isPro = previousPro
+        super.tearDown()
+    }
+
+    func testFreeTierCaps() {
+        FeatureLimits.isPro = false
+        XCTAssertEqual(FeatureLimits.maxAlarms, 6)
+        XCTAssertEqual(FeatureLimits.maxVoiceClips, 5)
+        XCTAssertEqual(FeatureLimits.maxVoiceClipSeconds, 5)
+        XCTAssertEqual(FeatureLimits.maxAlarmRecordingSeconds, 180)
+        XCTAssertTrue(FeatureLimits.maxAlarmRecordingSeconds.isFinite)
+    }
+
+    func testProTierCaps() {
+        FeatureLimits.isPro = true
+        XCTAssertEqual(FeatureLimits.maxAlarms, .max)
+        XCTAssertEqual(FeatureLimits.maxVoiceClips, .max)
+        XCTAssertEqual(FeatureLimits.maxVoiceClipSeconds, 30)
+        XCTAssertFalse(FeatureLimits.maxAlarmRecordingSeconds.isFinite)   // .infinity → no auto-stop
+    }
+
+    func testIsProRoundTripsThroughUserDefaults() {
+        FeatureLimits.isPro = true
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: StoreService.proUnlockedKey))
+        FeatureLimits.isPro = false
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: StoreService.proUnlockedKey))
+    }
+}
+
+/// Grandfathering: a clean install is NOT detected as existing; any legacy settings key flips it.
+final class GrandfatherSignalTests: XCTestCase {
+
+    private func freshDefaults() -> UserDefaults {
+        let suite = "test.grandfather.\(UUID().uuidString)"
+        let d = UserDefaults(suiteName: suite)!
+        d.removePersistentDomain(forName: suite)
+        return d
+    }
+
+    func testCleanDefaultsHaveNoLegacySignal() {
+        let d = freshDefaults()
+        XCTAssertFalse(StoreService.hasLegacyInstallSignal(in: d))
+    }
+
+    func testAnyLegacyKeyTriggersSignal() {
+        for key in StoreService.legacyInstallKeys {
+            let d = freshDefaults()
+            d.set("x", forKey: key)
+            XCTAssertTrue(StoreService.hasLegacyInstallSignal(in: d),
+                          "legacy key \(key) should mark the install as existing")
+        }
+    }
+}
+
 @MainActor
 final class AudioPlayerTests: XCTestCase {
 

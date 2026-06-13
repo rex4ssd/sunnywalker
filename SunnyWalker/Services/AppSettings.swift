@@ -13,20 +13,34 @@ import SwiftUI
 /// Semantics: `Int.max` / `.infinity` mean "effectively unlimited" — call sites that schedule a
 /// timer or pass a duration MUST check `.isFinite` before using the recording caps.
 enum FeatureLimits {
-    /// Whether the user owns Pro. Currently always false (free). Wire to StoreKit before shipping Pro.
-    static var isPro: Bool = false
+    /// Whether the user owns Pro. Backed by UserDefaults("isProUnlocked"), which is set from the
+    /// StoreKit entitlement OR the one-time grandfather grant for pre-paid installs. See `StoreService`.
+    /// WRITE ONLY through `StoreService` (the sole owner of entitlement state); tests may toggle it.
+    /// Read here (not @Published) so off-main code — AudioRecorder, schedulers — sees the same value.
+    static var isPro: Bool {
+        get { UserDefaults.standard.bool(forKey: StoreService.proUnlockedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: StoreService.proUnlockedKey) }
+    }
+
+    // Free-tier baselines + the one finite Pro value. Named so the caps below AND the Pro upsell
+    // copy (ProUpgradeView) read the same numbers — no literal cap is hardcoded in any view.
+    static let freeMaxAlarms = 6
+    static let freeMaxVoiceClips = 5
+    static let freeMaxVoiceClipSeconds: Double = 5
+    static let proMaxVoiceClipSeconds: Double = 30
+    static let freeMaxAlarmRecordingSeconds: TimeInterval = 180
 
     /// Max number of alarms a parent can keep at once.
-    static var maxAlarms: Int { isPro ? .max : 6 }
+    static var maxAlarms: Int { isPro ? .max : freeMaxAlarms }
 
     /// Max number of saved voice clips in the library ("自定鈴聲").
-    static var maxVoiceClips: Int { isPro ? .max : 5 }
+    static var maxVoiceClips: Int { isPro ? .max : freeMaxVoiceClips }
 
     /// Max length of a single library voice clip, in seconds.
-    static var maxVoiceClipSeconds: Double { isPro ? 30 : 5 }
+    static var maxVoiceClipSeconds: Double { isPro ? proMaxVoiceClipSeconds : freeMaxVoiceClipSeconds }
 
     /// Max length of a per-alarm parent recording, in seconds. `.infinity` for Pro (no auto-stop).
-    static var maxAlarmRecordingSeconds: TimeInterval { isPro ? .infinity : 180 }
+    static var maxAlarmRecordingSeconds: TimeInterval { isPro ? .infinity : freeMaxAlarmRecordingSeconds }
 }
 
 // MARK: - Mascot theme

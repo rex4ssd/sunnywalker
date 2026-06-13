@@ -1,0 +1,46 @@
+{
+  "identifier" : "69ff4e45-7679-42d4-af79-34757c6c486b",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1.49",
+      "familyShareable" : true,
+      "internalID" : "4533e3d0-75b0-4f73-88c2-359ace01c750",
+      "localizations" : [
+        {
+          "description" : "Lifetime unlock: unlimited alarms, unlimited voice clips, longer recordings. One-time purchase, yours forever.",
+          "displayName" : "SunnyWalker Pro",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "終身解鎖：鬧鐘數量、自定鈴聲數量與長度、錄音長度全部無上限。一次購買，永久使用。",
+          "displayName" : "SunnyWalker Pro",
+          "locale" : "zh_TW"
+        }
+      ],
+      "productID" : "app.rexcode.sunnywalker.pro.lifetime",
+      "referenceName" : "SunnyWalker Pro Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6775802674",
+    "_developerTeamID" : "NHY8MKW8NH",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "zh_TW",
+    "_storefront" : "TWN",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

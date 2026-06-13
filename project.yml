@@ -12,8 +12,8 @@ settings:
     # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
-    MARKETING_VERSION: "1.1.20260612"   # 1.1 = 新功能「溫和提醒模式」（MINOR bump per version scheme）
-    CURRENT_PROJECT_VERSION: 9   # bump on every upload (App Store rejects duplicate build numbers). build 8 缺 i18n 修正（英文版出現中文）已上傳作廢 → 本次用 9
+    MARKETING_VERSION: "1.2.20260613"   # 1.2 = 新功能「SunnyWalker Pro」NT$50 終身 IAP（MINOR bump per version scheme）
+    CURRENT_PROJECT_VERSION: 10   # bump on every upload (App Store rejects duplicate build numbers). 1.1=build 9 → 1.2=build 10
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
@@ -30,7 +30,14 @@ targets:
     type: application
     platform: iOS
     sources:
+      # Exclude the StoreKit local-test config from the folder glob and re-add it with no build
+      # phase — otherwise xcodegen treats the unknown .storekit type as a resource and embeds it
+      # in the shipping bundle. The scheme below references it for local Transaction Manager testing.
       - path: SunnyWalker
+        excludes:
+          - "Configuration.storekit"
+      - path: SunnyWalker/Configuration.storekit
+        buildPhase: none
     dependencies:
       - package: ConfettiSwiftUI
     info:
@@ -89,3 +96,26 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: app.rexcode.sunnywalkertests
+
+# Explicit shared scheme so Run uses the local StoreKit config (Xcode Transaction Manager: simulate
+# purchase / Ask-to-Buy pending+approve / refund without touching App Store Connect). The test action
+# is wired in so ⌘U keeps running SunnyWalkerTests through this scheme.
+schemes:
+  SunnyWalker:
+    build:
+      targets:
+        SunnyWalker: all
+        SunnyWalkerTests: [test]
+    run:
+      config: Debug
+      storeKitConfiguration: SunnyWalker/Configuration.storekit
+    test:
+      config: Debug
+      targets:
+        - SunnyWalkerTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

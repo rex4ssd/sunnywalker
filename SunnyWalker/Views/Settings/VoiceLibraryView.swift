@@ -99,9 +99,10 @@ struct VoiceLibraryView: View {
                 }
             }
         }
-        // Stop player when a clip finishes
+        // Clear the row highlight when playback truly ends — but NOT on pause (isPaused keeps the
+        // clip "loaded" so the same row can resume).
         .onReceive(player.$isPlaying) { playing in
-            if !playing { playingID = nil }
+            if !playing && !player.isPaused { playingID = nil }
         }
         .sheet(isPresented: $showingRecorder) {
             VoiceClipRecorderSheet { clip in
@@ -146,8 +147,9 @@ struct VoiceLibraryView: View {
             ForEach(clips) { clip in
                 VoiceClipRow(
                     clip: clip,
-                    isPlaying: playingID == clip.id,
-                    onPlay: { togglePlay(clip) },
+                    isPlaying: playingID == clip.id && player.isPlaying,
+                    onPlayPause: { playOrPause(clip) },
+                    onStop: { stopPlayback() },
                     onSelect: {
                         player.stop()
                         playingID = nil
@@ -195,17 +197,25 @@ struct VoiceLibraryView: View {
 
     // MARK: - Actions
 
-    private func togglePlay(_ clip: VoiceClip) {
+    /// Tap behaviour: ▶ starts this clip; ‖ (already playing this clip) pauses; tapping a paused
+    /// clip resumes. Tapping a different clip switches to it. (Long-press → stopPlayback.)
+    private func playOrPause(_ clip: VoiceClip) {
         if playingID == clip.id {
-            player.stop()
-            playingID = nil
+            if player.isPlaying { player.pause() }
+            else { player.resume() }
         } else {
             player.stop()
-            playingID = clip.id
             let url = clip.recordingsURL
             guard FileManager.default.fileExists(atPath: url.path) else { return }
+            playingID = clip.id
             player.play(url: url, loop: false)
         }
+    }
+
+    /// Long-press behaviour: fully stop and clear the row.
+    private func stopPlayback() {
+        player.stop()
+        playingID = nil
     }
 
     private func deleteClip(_ clip: VoiceClip) {
@@ -237,8 +247,9 @@ struct VoiceLibraryView: View {
 
 private struct VoiceClipRow: View {
     let clip: VoiceClip
-    let isPlaying: Bool
-    let onPlay: () -> Void
+    let isPlaying: Bool                 // true = actively playing this clip (not paused/stopped)
+    let onPlayPause: () -> Void         // tap: ▶ play · ‖ pause · resume if paused
+    let onStop: () -> Void             // long-press: stop
     let onSelect: () -> Void           // opens VoiceClipDetailSheet
     let onDelete: () -> Void
     var isSelected: Bool = false       // true = this clip is the alarm's current ringtone
@@ -246,14 +257,17 @@ private struct VoiceClipRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Play / pause toggle
-            Button(action: onPlay) {
-                Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 38))
-                    .foregroundStyle(isPlaying ? SunnyColors.lanternOrange : SunnyColors.leafFresh)
-                    .symbolEffect(.pulse, isActive: isPlaying)
-            }
-            .buttonStyle(.plain)
+            // Tap = play / pause (resume); long-press = stop. Plain Image + gestures (not a Button)
+            // so the tap and the long-press can coexist without the Button swallowing the press.
+            Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                .font(.system(size: 38))
+                .foregroundStyle(isPlaying ? SunnyColors.lanternOrange : SunnyColors.leafFresh)
+                .symbolEffect(.pulse, isActive: isPlaying)
+                .contentShape(Circle())
+                .onTapGesture { onPlayPause() }
+                .onLongPressGesture(minimumDuration: 0.45) { onStop() }
+                .accessibilityLabel(Text(isPlaying ? "暫停" : "播放"))
+                .accessibilityHint(Text("長按停止"))
 
             // Name + meta
             Button(action: onSelect) {
@@ -610,7 +624,10 @@ struct VoiceClipRecorderSheet: View {
         }
     }
 
-    private func stopRecording() {
+    /// - Parameter autoSaved: true when the time cap fired (not a manual stop). In that case the
+    ///   take is persisted immediately so it can never be lost just because the parent didn't reach
+    ///   the 「儲存」button — the recording is saved with the default name and can be renamed later.
+    private func stopRecording(autoSaved: Bool = false) {
         countdownTimer?.invalidate(); countdownTimer = nil
         recorder.stop()
         phase = .done
@@ -623,7 +640,9 @@ struct VoiceClipRecorderSheet: View {
         }
 
         // Set default name; user can tap ✨ to auto-name from voice content.
-        if clipName.isEmpty { clipName = L("我的錄音") }
+        if clipName.trimmingCharacters(in: .whitespaces).isEmpty { clipName = L("我的錄音") }
+
+        if autoSaved { saveClip() }   // cap reached → save by itself, never drop the take
     }
 
     /// Transcribe `url` using SFSpeechURLRecognitionRequest (on-device, no network).
@@ -693,7 +712,7 @@ struct VoiceClipRecorderSheet: View {
                 if self.countdown <= 0 {
                     t.invalidate()
                     self.countdownTimer = nil
-                    self.stopRecording()
+                    self.stopRecording(autoSaved: true)   // 時間到 → 自動存檔，不遺失
                 }
             }
         }
