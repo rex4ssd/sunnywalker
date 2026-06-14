@@ -13,6 +13,7 @@
 		019276FB701C56D377901176 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */; };
 		0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD068A8949D465654B55698 /* AlarmAutoStopService.swift */; };
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
+		1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */; };
 		1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05356F2D5C177271D275559D /* BedSideManager.swift */; };
 		29BD4F65DED2C01951CEDFF1 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */; };
 		2A6E1323194D61C957BA4877 /* MascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9262BFA4C34750865DE277 /* MascotView.swift */; };
@@ -89,6 +90,7 @@
 		17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLibraryView.swift; sourceTree = "<group>"; };
+		24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperTexture.swift; sourceTree = "<group>"; };
 		26E49492007B21D867DE139A /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
 		2BD64995B72CADA3B22DB510 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		2C81D51ADB7CD8DC5347513F /* timeout_sad.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = timeout_sad.wav; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 			children = (
 				AA53A610E2DB728EE983DA9A /* Sounds */,
 				1025175993B11094CCAC30F5 /* Animations.swift */,
+				24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */,
 				D43882E1C62C0E0AF8608822 /* SunnyColors.swift */,
 				7D68BD8FA689AB6E344E0DFA /* SunnyFonts.swift */,
 			);
@@ -455,6 +458,7 @@
 				F5649E1A09CA9E061FA1E461 /* Localization.swift in Sources */,
 				2DA0605B3066C673363408B3 /* MarkdownAlarmIO.swift in Sources */,
 				2A6E1323194D61C957BA4877 /* MascotView.swift in Sources */,
+				1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */,
 				F611542339033C21D36F581C /* ParentalGateView.swift in Sources */,
 				EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */,
 				002BA53BDAF65EF7827240D8 /* RecordingView.swift in Sources */,

@@ -14,9 +14,27 @@ struct WatercolorCard<Content: View>: View {
     var body: some View {
         content()
             .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(SunnyColors.cloudWhite.opacity(0.92))
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.white.opacity(0.96),
+                                    SunnyColors.cloudWhite.opacity(0.90),
+                                    SunnyColors.wheatGold.opacity(0.11)
+                                ],
+                                center: .topLeading,
+                                startRadius: 8,
+                                endRadius: 360
+                            )
+                        )
+                    PaperTextureOverlay(tint: SunnyColors.lanternOrange, density: 420)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .strokeBorder(SunnyColors.forestDeep.opacity(0.10), lineWidth: 1)
+                        .blur(radius: 0.35)
+                }
+                .shadow(color: .black.opacity(0.06), radius: 18, x: 0, y: 6)
             )
     }
 }

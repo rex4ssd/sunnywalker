@@ -4,6 +4,11 @@
 -----------------------------------------------------------------
 ## 吉卜力風格升級 — 技術規格（給 Sonnet 實作）  草案 2026-06-14
 
+> 實作狀態：`done-20260614_2240`（本批核心完成）
+> - 已完成：A1 紙紋理、A2 水彩卡片、A3 體積雲、A4 時段粒子、A6 遠山／前景植物、A7 三色色彩分級與過渡、B1 共用呼吸、B2 夜間狀態、B3 背景共用風、C 卡片時段圖示。
+> - 已驗證：動畫集中於 `TimelineView + Canvas`、背景時暫停、Reduce Motion 靜態退化、裝飾層無障礙隱藏、無新增 asset、無碰觸 audio session。
+> - 後續評估：A5 CoreMotion、A8 授權字型、B1 各 avatar 瞳孔／專屬動作、B4 彩蛋、B5/P2、C peek mascot。
+>
 > 目標：讓 SunnyWalker 從「可愛的扁平鬧鐘」進化成「會呼吸的吉卜力手繪世界」，更討小孩與家庭喜歡。
 > 本次重點（Rex 指定）：**① 氛圍視覺打磨** + **② 會呼吸的世界**。聲音情境與起床儀式感先不做（另列 backlog）。
 > 實作原則：**全部用程式生成（向量 / Canvas / SwiftUI shape）為主，盡量零美術素材**，維持現有「無 asset」哲學（見 `MascotView`、`SunnyAlarmAvatar` 的做法）。所有改動要尊重 `@Environment(\.accessibilityReduceMotion)`，動畫一律可被關閉（參考 `RewardView` 既有寫法）。

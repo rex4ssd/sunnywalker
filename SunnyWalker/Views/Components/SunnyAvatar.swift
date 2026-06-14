@@ -3,6 +3,7 @@
 import SwiftUI
 
 struct SunnyAvatar: View {
+    var forceBlink = false
     @State private var isBlinking = false
 
     // Timer.publish per spec §3.3 — drives the 5-second blink cadence
@@ -41,22 +42,26 @@ struct SunnyAvatar: View {
         .onReceive(blinkTimer) { _ in
             withAnimation(SunnyAnimations.blinkClose) { isBlinking = true }
             // 120 ms delay before reopening — GCD one-shot is the right tool here
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                 withAnimation(SunnyAnimations.blinkOpen) { isBlinking = false }
             }
         }
     }
 
+    @ViewBuilder
     private var eye: some View {
-        Capsule()
-            .fill(Color.white)
-            .frame(width: 18, height: isBlinking ? 2 : 18)
-            .overlay(
+        if isBlinking || forceBlink {
+            ClosedEye(color: Color.black.opacity(0.78), width: 18, height: 9, lineWidth: 2.4)
+        } else {
+            Circle()
+                .fill(Color.white)
+                .frame(width: 18, height: 18)
+                .overlay(
                 Circle()
                     .fill(Color.black)
                     .frame(width: 10, height: 10)
-                    .opacity(isBlinking ? 0 : 1)
-            )
+                )
+        }
     }
 
     private var ear: some View {

@@ -5,6 +5,7 @@
 import SwiftUI
 
 struct GiraffeAvatar: View {
+    var forceBlink = false
     @State private var isBlinking = false
     private let blinkTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
@@ -112,7 +113,7 @@ struct GiraffeAvatar: View {
         .accessibilityHint("SunnyWalker 吉祥物")
         .onReceive(blinkTimer) { _ in
             withAnimation(.easeIn(duration: 0.07))  { isBlinking = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                 withAnimation(.easeOut(duration: 0.07)) { isBlinking = false }
             }
         }
@@ -120,16 +121,20 @@ struct GiraffeAvatar: View {
 
     // MARK: - Parts
 
+    @ViewBuilder
     private var eye: some View {
-        Capsule()
-            .fill(Color.white)
-            .frame(width: 14, height: isBlinking ? 2 : 14)
-            .overlay(
+        if isBlinking || forceBlink {
+            ClosedEye(color: spotColor.opacity(0.9), width: 15, height: 8, lineWidth: 2.2)
+        } else {
+            Circle()
+                .fill(Color.white)
+                .frame(width: 14, height: 14)
+                .overlay(
                 Circle()
                     .fill(Color.black)
                     .frame(width: 7, height: 7)
-                    .opacity(isBlinking ? 0 : 1)
-            )
+                )
+        }
     }
 
     private var ossicone: some View {

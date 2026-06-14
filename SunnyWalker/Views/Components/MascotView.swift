@@ -8,13 +8,15 @@ struct MascotView: View {
     /// When true, tapping the mascot plays a cheerful greeting + a little bounce. Off by default so
     /// the mascot on the recording screens never steals the audio session (they use .playAndRecord).
     var tappable: Bool = false
+    var scene: DaytimeScene? = nil
 
     @ObservedObject private var settings = AppSettings.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bounce = false
 
     var body: some View {
         if tappable {
-            avatar
+            livingAvatar
                 .scaleEffect(bounce ? 1.08 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.5), value: bounce)
                 .contentShape(Rectangle())
@@ -22,18 +24,56 @@ struct MascotView: View {
                 .accessibilityAddTraits(.isButton)
                 .accessibilityHint(Text("點一下，吉祥物會跟你打招呼"))
         } else {
-            avatar
+            livingAvatar
         }
     }
 
+    private var effectiveScene: DaytimeScene {
+        scene ?? DaytimeScene.current(hour: Calendar.current.component(.hour, from: Date()))
+    }
+
+    private var livingAvatar: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: reduceMotion)) { timeline in
+            let t = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
+            let pace = effectiveScene == .dusk || effectiveScene == .night ? 0.72 : 1.0
+            let breath = reduceMotion ? 1.0 : 1.0 + sin(t * .pi / 2 * pace) * 0.018
+            let sleepyNod = effectiveScene == .night && !reduceMotion ? sin(t * 1.1) * 2.2 : 0
+            // Drive blinking from this shared timeline so child avatar state cannot be reset by
+            // TimelineView redraws. A 0.42s closed phase makes the hand-drawn arc clearly visible.
+            let blinkPhase = t.truncatingRemainder(dividingBy: 3.2)
+            let forceBlink = !reduceMotion && blinkPhase < 0.42
+
+            avatar(forceBlink: forceBlink)
+                .scaleEffect(x: 1, y: breath, anchor: .bottom)
+                .rotationEffect(.degrees(sleepyNod), anchor: .bottom)
+                .saturation(effectiveScene == .night ? 0.72 : 1)
+                .brightness(effectiveScene == .night ? -0.12 : effectiveScene == .dusk ? -0.03 : 0)
+                .overlay(alignment: .topTrailing) {
+                    if effectiveScene == .night && !reduceMotion {
+                        sleepyMarks(time: t)
+                    }
+                }
+        }
+    }
+
+    private func sleepyMarks(time: TimeInterval) -> some View {
+        let phase = time.truncatingRemainder(dividingBy: 4.4) / 4.4
+        return Text("z")
+            .font(SunnyFonts.title(18))
+            .foregroundStyle(SunnyColors.starGold)
+            .offset(x: CGFloat(8 + phase * 12), y: CGFloat(-8 - phase * 28))
+            .opacity(sin(phase * .pi))
+            .accessibilityHidden(true)
+    }
+
     @ViewBuilder
-    private var avatar: some View {
+    private func avatar(forceBlink: Bool) -> some View {
         switch settings.mascotTheme {
-        case .sunnyAlarm: SunnyAlarmAvatar()
-        case .sunny:   SunnyAvatar()
-        case .giraffe: GiraffeAvatar()
-        case .bunny:   BunnyAvatar()
-        case .bear:    BearAvatar()
+        case .sunnyAlarm: SunnyAlarmAvatar(forceBlink: forceBlink)
+        case .sunny:   SunnyAvatar(forceBlink: forceBlink)
+        case .giraffe: GiraffeAvatar(forceBlink: forceBlink)
+        case .bunny:   BunnyAvatar(forceBlink: forceBlink)
+        case .bear:    BearAvatar(forceBlink: forceBlink)
         }
     }
 
@@ -89,6 +129,7 @@ final class MascotVoice {
 /// Built from primitive shapes (same approach as the other avatars) so it scales crisply and needs
 /// no asset. Blinks on a timer; the bells give a gentle idle "ring" wiggle.
 private struct SunnyAlarmAvatar: View {
+    var forceBlink = false
     @State private var isBlinking = false
     @State private var ring = false
     private let blinkTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
@@ -117,7 +158,7 @@ private struct SunnyAlarmAvatar: View {
         .accessibilityLabel("小鬧晴")
         .onReceive(blinkTimer) { _ in
             withAnimation(.easeIn(duration: 0.07)) { isBlinking = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                 withAnimation(.easeOut(duration: 0.07)) { isBlinking = false }
             }
         }
@@ -208,16 +249,20 @@ private struct SunnyAlarmAvatar: View {
         }
     }
 
+    @ViewBuilder
     private var eye: some View {
-        Capsule()
-            .fill(ink)
-            .frame(width: 11, height: isBlinking ? 2 : 13)
-            .overlay(
+        if isBlinking || forceBlink {
+            ClosedEye(color: ink.opacity(0.86), width: 14, height: 8, lineWidth: 2.4)
+        } else {
+            Capsule()
+                .fill(ink)
+                .frame(width: 11, height: 13)
+                .overlay(
                 Circle().fill(Color.white.opacity(0.9))
                     .frame(width: 3.5, height: 3.5)
                     .offset(x: 2, y: -3)
-                    .opacity(isBlinking ? 0 : 1)
-            )
+                )
+        }
     }
 
     // Tiny mic held to the lower-right — the icon's signature prop.
@@ -250,6 +295,7 @@ private struct SunnyAlarmAvatar: View {
 }
 
 private struct BunnyAvatar: View {
+    var forceBlink = false
     @State private var isBlinking = false
     private let blinkTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
@@ -290,22 +336,26 @@ private struct BunnyAvatar: View {
         .accessibilityLabel("小兔子")
         .onReceive(blinkTimer) { _ in
             withAnimation(.easeIn(duration: 0.07)) { isBlinking = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                 withAnimation(.easeOut(duration: 0.07)) { isBlinking = false }
             }
         }
     }
 
+    @ViewBuilder
     private var eye: some View {
-        Capsule()
-            .fill(Color.white)
-            .frame(width: 14, height: isBlinking ? 2 : 14)
-            .overlay(
+        if isBlinking || forceBlink {
+            ClosedEye(color: Color.black.opacity(0.72), width: 15, height: 8, lineWidth: 2.2)
+        } else {
+            Circle()
+                .fill(Color.white)
+                .frame(width: 14, height: 14)
+                .overlay(
                 Circle()
                     .fill(Color.black)
                     .frame(width: 7, height: 7)
-                    .opacity(isBlinking ? 0 : 1)
-            )
+                )
+        }
     }
 
     private var bunnyEar: some View {
@@ -321,6 +371,7 @@ private struct BunnyAvatar: View {
 }
 
 private struct BearAvatar: View {
+    var forceBlink = false
     @State private var isBlinking = false
     private let blinkTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
@@ -370,22 +421,52 @@ private struct BearAvatar: View {
         .accessibilityLabel("小熊")
         .onReceive(blinkTimer) { _ in
             withAnimation(.easeIn(duration: 0.07)) { isBlinking = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.20) {
                 withAnimation(.easeOut(duration: 0.07)) { isBlinking = false }
             }
         }
     }
 
+    @ViewBuilder
     private var eye: some View {
-        Capsule()
-            .fill(Color.white)
-            .frame(width: 14, height: isBlinking ? 2 : 14)
-            .overlay(
+        if isBlinking || forceBlink {
+            ClosedEye(color: Color.black.opacity(0.78), width: 15, height: 8, lineWidth: 2.2)
+        } else {
+            Circle()
+                .fill(Color.white)
+                .frame(width: 14, height: 14)
+                .overlay(
                 Circle()
                     .fill(Color.black)
                     .frame(width: 7, height: 7)
-                    .opacity(isBlinking ? 0 : 1)
+                )
+        }
+    }
+}
+
+/// A soft downward arc used by every mascot so a blink reads clearly as a hand-drawn closed eye.
+struct ClosedEye: View {
+    let color: Color
+    var width: CGFloat = 16
+    var height: CGFloat = 8
+    var lineWidth: CGFloat = 2.2
+
+    var body: some View {
+        ClosedEyeShape()
+            .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+            .frame(width: width, height: height)
+    }
+}
+
+private struct ClosedEyeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addQuadCurve(
+                to: CGPoint(x: rect.maxX, y: rect.minY),
+                control: CGPoint(x: rect.midX, y: rect.maxY)
             )
+        }
     }
 }
 

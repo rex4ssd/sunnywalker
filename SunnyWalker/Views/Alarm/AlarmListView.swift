@@ -123,7 +123,8 @@ private struct AlarmCard: View {
                 Button {
                     showingEditor = true
                 } label: {
-                    HStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        DaytimeAlarmIcon(scene: DaytimeScene.current(hour: alarm.hour))
                         VStack(alignment: .leading, spacing: 6) {
                             Text(alarm.formattedTime(use24h: settings.use24HourClock))
                                 .font(SunnyFonts.clock(40))
@@ -146,7 +147,7 @@ private struct AlarmCard: View {
                         }
                         Spacer()
                     }
-                    .padding(.leading, 20)
+                    .padding(.leading, 14)
                     .padding(.trailing, 12)
                     .padding(.vertical, 18)
                     .contentShape(Rectangle())
@@ -205,6 +206,41 @@ private struct AlarmCard: View {
             }
             .tint(SunnyColors.forestDeep)
         }
+    }
+}
+
+// MARK: - Time-of-day story icon
+
+private struct DaytimeAlarmIcon: View {
+    let scene: DaytimeScene
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(iconColor.opacity(0.14))
+                .frame(width: 46, height: 46)
+
+            switch scene {
+            case .dawn, .morning:
+                Image(systemName: "sunrise.fill")
+                    .foregroundStyle(SunnyColors.lanternOrange, SunnyColors.wheatGold)
+            case .noon:
+                Image(systemName: "sun.max.fill")
+                    .foregroundStyle(SunnyColors.wheatGold)
+            case .dusk:
+                Image(systemName: "lamp.desk.fill")
+                    .foregroundStyle(SunnyColors.lanternOrange)
+            case .night:
+                Image(systemName: "moon.stars.fill")
+                    .foregroundStyle(SunnyColors.nightIndigo, SunnyColors.starGold)
+            }
+        }
+        .font(.system(size: 22, weight: .medium))
+        .accessibilityHidden(true)
+    }
+
+    private var iconColor: Color {
+        scene == .night ? SunnyColors.nightIndigo : SunnyColors.lanternOrange
     }
 }
 

@@ -70,7 +70,8 @@ struct HomeView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             background
-            CloudBackground()
+            CloudBackground(scene: scene, isActive: scenePhase == .active)
+            PaperTextureOverlay(tint: scene.colorGrade)
             if sizeClass == .regular {
                 // iPad: GeometryReader distinguishes landscape (width > height) from portrait.
                 // The prior sizeClass == .regular && vSizeClass == .compact condition was dead code
@@ -83,7 +84,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
-                                MascotView(tappable: true)
+                                MascotView(tappable: true, scene: scene)
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
@@ -98,7 +99,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
-                                MascotView(tappable: true)
+                                MascotView(tappable: true, scene: scene)
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
@@ -118,7 +119,7 @@ struct HomeView: View {
                             ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                 .padding(.top, 56)
                                 .padding(.bottom, 12)
-                            MascotView(tappable: true)
+                            MascotView(tappable: true, scene: scene)
                                 .padding(.bottom, 8)
                         }
                         // List row 預設靠左對齊 → 撐滿寬度才會水平置中（時鐘 / 日期 / 小動物）。
@@ -538,11 +539,19 @@ struct HomeView: View {
     // MARK: - Background
 
     private var background: some View {
-        LinearGradient(
-            colors: scene.gradientColors,
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        ZStack {
+            LinearGradient(
+                stops: zip([0.0, 0.55, 1.0], scene.gradientColors).map {
+                    Gradient.Stop(color: $0.1, location: $0.0)
+                },
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            scene.colorGrade
+                .opacity(scene.colorGradeOpacity)
+                .blendMode(.softLight)
+        }
+        .animation(.easeInOut(duration: 1.5), value: scene)
         .ignoresSafeArea()
     }
 

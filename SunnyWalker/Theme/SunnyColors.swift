@@ -4,8 +4,10 @@ import SwiftUI
 
 enum SunnyColors {
     // Sky: sunny morning sky
+    static let skyDeep       = Color(red: 0.50, green: 0.75, blue: 0.85)  // #7FBFD8
     static let skyBlue       = Color(red: 0.62, green: 0.82, blue: 0.91)  // #9ED1E8
     static let cloudWhite    = Color(red: 0.98, green: 0.97, blue: 0.93)  // #FAF8ED
+    static let cloudShadow   = Color(red: 0.88, green: 0.87, blue: 0.80)  // #E1DECD
 
     // Forest: lush garden, morning green
     static let forestDeep    = Color(red: 0.27, green: 0.43, blue: 0.34)  // #456E57
