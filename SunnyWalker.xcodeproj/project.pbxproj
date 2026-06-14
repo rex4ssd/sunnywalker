@@ -15,6 +15,7 @@
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
 		1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */; };
 		1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05356F2D5C177271D275559D /* BedSideManager.swift */; };
+		2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */; };
 		29BD4F65DED2C01951CEDFF1 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */; };
 		2A6E1323194D61C957BA4877 /* MascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9262BFA4C34750865DE277 /* MascotView.swift */; };
 		2DA0605B3066C673363408B3 /* MarkdownAlarmIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9980AB76E88D93B5F47148F /* MarkdownAlarmIO.swift */; };
@@ -33,6 +34,7 @@
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
 		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */; };
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
@@ -108,6 +110,7 @@
 		4ECB4C11C43AEB5AB6279680 /* mascot_greet_03.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_03.aiff; sourceTree = "<group>"; };
 		5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEditorView.swift; sourceTree = "<group>"; };
 		5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */ = {isa = PBXFileReference; path = sunny_wake.caf; sourceTree = "<group>"; };
+		5F22F1B4D12C2ACE8FDC02DE /* Configuration.storekit */ = {isa = PBXFileReference; path = Configuration.storekit; sourceTree = "<group>"; };
 		5F6D67B3B5D9C27FB3D0E4A5 /* WakeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeRecord.swift; sourceTree = "<group>"; };
 		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
 		6A42B2A278FAC5F1A781F640 /* mascot_greet_07.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_07.aiff; sourceTree = "<group>"; };
@@ -125,7 +128,9 @@
 		93963ADBD63660CB7F06E3F9 /* mascot_greet_06.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_06.aiff; sourceTree = "<group>"; };
 		9A1D83BDF0D7A50AA1D837D3 /* mascot_greet_01.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_01.aiff; sourceTree = "<group>"; };
 		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
+		9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
 		9CE7FA83B8576CE1FFA1F10E /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
+		A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
 		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A78A4E3EF2804681F00AFC87 /* mascot_greet_08.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_08.aiff; sourceTree = "<group>"; };
 		A9494AECBCB0F791E7F24F12 /* DaytimeScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaytimeScene.swift; sourceTree = "<group>"; };
@@ -180,6 +185,7 @@
 				5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */,
 				26E49492007B21D867DE139A /* AlarmIOView.swift */,
 				3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */,
+				A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */,
 				892C0B175BB78C133BDF4A9A /* RecordingView.swift */,
 				3A9A3B1D0C7F32B69EB73774 /* RingtonePickerSheet.swift */,
 				24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */,
@@ -215,6 +221,7 @@
 				2819B31AAA627270102010BD /* Theme */,
 				6E2FDA7104A9144C4D64DBF5 /* Views */,
 				8A39961C2B11BD747210DF5F /* Assets.xcassets */,
+				5F22F1B4D12C2ACE8FDC02DE /* Configuration.storekit */,
 				B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */,
 				7BD2360682B2434A47F2021F /* Info.plist */,
 				E0D014C1458197C25E160373 /* InfoPlist.xcstrings */,
@@ -312,6 +319,7 @@
 				A9980AB76E88D93B5F47148F /* MarkdownAlarmIO.swift */,
 				8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */,
 				3B95C4905637E5F644D212ED /* SpeechRecognizer.swift */,
+				9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -461,11 +469,13 @@
 				1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */,
 				F611542339033C21D36F581C /* ParentalGateView.swift in Sources */,
 				EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */,
+				2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */,
 				002BA53BDAF65EF7827240D8 /* RecordingView.swift in Sources */,
 				B89E35BE8DA029C56D5E300A /* RewardView.swift in Sources */,
 				52FC735515496B3E7138A958 /* RingtonePickerSheet.swift in Sources */,
 				C4C00C3A9B2D5847BE43516A /* SpeechRecognizer.swift in Sources */,
 				6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */,
+				6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */,
 				579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */,
 				019276FB701C56D377901176 /* SunnyButton.swift in Sources */,
 				C714C087A1B5D9F0B11DECAB /* SunnyColors.swift in Sources */,

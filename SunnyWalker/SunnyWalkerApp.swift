@@ -23,6 +23,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // ⚠️ MUST be the first thing we do. Decides ONCE — and freezes — whether this device already
+        // had SunnyWalker before the paid build, granting those users lifetime Pro for free. It reads
+        // pre-existing on-device state (SwiftData store, Recordings folder, settings keys); running it
+        // before any other launch code keeps those signals from being polluted by first-launch writes.
+        StoreService.resolveGrandfatheredEntitlement()
+
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
 
@@ -200,6 +206,10 @@ struct SunnyWalkerApp: App {
                 // from Localizable.xcstrings whenever the chosen language changes.
                 .environment(\.locale, localization.locale)
                 .task {
+                    // Open the StoreKit Transaction.updates listener + refresh entitlement BEFORE any
+                    // purchase UI. Missing the listener loses async transactions (Ask-to-Buy approval,
+                    // Family Sharing, refund/revocation). Safe to call repeatedly — start() is idempotent.
+                    StoreService.shared.start()
                     // Request mic + speech permissions (v1 path)
                     await PermissionManager.shared.requestAllPermissions()
                     // Request AlarmKit authorization — HomeView.onAppear will then

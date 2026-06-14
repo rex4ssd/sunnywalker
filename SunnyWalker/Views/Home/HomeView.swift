@@ -765,11 +765,13 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var bedSide = BedSideManager.shared
+    @ObservedObject private var store = StoreService.shared
 
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
     @State private var showingVoiceLib  = false
     @State private var showingHistory   = false
     @State private var showingIO        = false
+    @State private var showingPro       = false
     @State private var unlockNow = Date()
     private let unlockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -923,6 +925,30 @@ struct SettingsView: View {
                             .foregroundStyle(SunnyColors.leafFresh)
                     }
                 }
+
+                // SunnyWalker Pro — the very last section. Deliberately quiet: no banner, no promo,
+                // no limit-hit nag elsewhere. Lives only here, behind the parental gate (Guideline 1.3).
+                Section {
+                    if store.isPro {
+                        // Already unlocked → static, non-tappable row, NO purchase control (Apple checks).
+                        Label("pro_settings_unlocked", systemImage: "checkmark.seal.fill")
+                            .foregroundStyle(SunnyColors.forestDeep)
+                    } else {
+                        Button { showingPro = true } label: {
+                            HStack {
+                                Label("pro_settings_row", systemImage: "sun.max.fill")
+                                    .foregroundStyle(SunnyColors.wheatGold)
+                                Spacer()
+                                // Price only when loaded; never hardcode / show 0 when offline.
+                                if let price = store.product?.displayPrice {
+                                    Text(verbatim: price)
+                                        .font(SunnyFonts.caption(14))
+                                        .foregroundStyle(SunnyColors.sunnyGray)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle(Text("settings_label"))
             .navigationBarTitleDisplayMode(.inline)
@@ -944,6 +970,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showingVoiceLib)  { VoiceLibraryView() }
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
+        .sheet(isPresented: $showingPro)       { ProUpgradeView() }
     }
 
     private var isTemporarilyUnlocked: Bool {
