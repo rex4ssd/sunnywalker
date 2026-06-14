@@ -154,7 +154,7 @@
 
 做法（P1）：
 1. **大氣層放固定背景，不要放 header**：A4 `AtmosphereLayer`、A3 雲、A4 god ray 一律放進 `HomeView` ZStack 的背景層（和 `CloudBackground` 同層），**絕不可**塞進 List 的 `header` row，否則捲動時整個世界會跟著消失。驗收：捲到第 10 張卡，天空仍在呼吸、粒子仍在飄。
-2. **吉祥物不缺席（peek mascot）**：偵測 header 是否捲出可視範圍（iOS 17 `onScrollGeometryChange` 或 `scrollPosition`，舊版用 `GeometryReader` + preference key），header 一離開就在角落（雲後探頭／蹲在 FAB 旁）**淡入一隻迷你吉祥物**，維持 B1 呼吸＋偶爾眨眼；捲回頂端再淡出。讓「角色」永遠在場。peek 與 header 的 mascot **共用同一個 B1 idle driver**，不要各開 timer。
+2. **吉祥物不缺席（peek mascot）**：偵測 header 是否捲出可視範圍。**本專案 deployment target 已是 iOS 26**（AlarmKit 需求，見 `project.yml`），所以直接用 `onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y }` 監看捲動量即可，不必做舊版 `GeometryReader`+preferenceKey 的 fallback。header 一離開就在角落（雲後探頭／蹲在 FAB 旁）**淡入一隻迷你吉祥物**，維持 B1 呼吸＋偶爾眨眼；捲回頂端再淡出。讓「角色」永遠在場。peek 與 header 的 mascot **共用同一個 B1 idle driver**，不要各開 timer。
 3. **卡片視覺節奏（破解「試算表感」）**：每張卡左側加一個**隨該鬧鐘時間變化的小手繪圖示**（晨＝朝陽、午＝向日葵、傍晚＝燈籠、夜＝月亮），卡片暖色調依時段微調，讓 10 張卡讀起來像「一天的時間軸」而非清單。入場用 stagger（每張延遲 ~0.03s 上浮淡入，呼應 B5）。
 4. **時段分組（可選 P2）**：鬧鐘按 早晨／下午／傍晚／夜晚 分段，段首一條手繪細線＋小標（楷體字）。多情境家庭一眼分群。注意 `@Query` 目前依 hour/minute 排序，分組可在 view 層 group by 時段，不必動 model。
 5. **捲動微互動（P2）**：捲動時雲做輕微視差位移、吉祥物離場前揮手、peek 狀態看著你捲。純視覺、無副作用。
@@ -201,6 +201,7 @@
 時段切換 crossfade：色彩用 `approach(cur,target, dt*2.2)` 線性逼近（≈ 1.2–1.5s 到位），對應 `withAnimation(.easeInOut(duration:1.5))`。
 
 #### 2. 吉祥物（sun-clock mascot，viewBox 132×150，中心 (66,78)）
+> ⚠️ 下表的幾何座標是**預覽 demo 重畫版**的值。真機已有 `SunnyAlarmAvatar`（`MascotView.swift`），它自己的座標不同（花瓣 `offset(y:-50)`、雙眼 `HStack(spacing:20)`、鈴鐺 ring `4°` + `repeatCount(6)`）。**請在既有 `SunnyAlarmAvatar` 上改**，只新增「呼吸 / 掃視 / 夜晚想睡」這幾個行為，**不要**照 demo 座標重畫整隻。下面的動畫時間/幅度才是要採用的重點。
 | 動作 | 參數 |
 |---|---|
 | 呼吸 | `scaleY` 1.0↔1.03，週期 **4s** ease-in-out，origin = 中心底部（`transform-box: fill-box`） |
