@@ -1,5 +1,96 @@
 # SunnyWalker — App Store Release Note
 
+## 1.3.20260614 (build 11) — SunnyWalker Pro（NT$50 終身解鎖 IAP）
+
+> 💰 **本次為「付費解鎖版」**：合併 `feature/pro-iap-lifetime` 的 StoreKit 2 一次性買斷
+> （non-consumable，家庭共享）。免費版叫醒功能不變；Pro 解除四個上限。
+> ⚠️ 既有用戶（裝過舊版）會被 **grandfather 自動免費升 Pro**，只有全新安裝才付費。
+
+| 欄位 | 值 |
+|---|---|
+| 顯示版本 (Marketing Version) | **1.3.20260614**（新功能「SunnyWalker Pro」→ MINOR bump；main 已用掉 1.2，故進 1.3） |
+| Build (CFBundleVersion) | **11**（10 已被 1.2.20260613 佔用） |
+| 送審日期 | 2026-06-14 |
+| 前次紀錄 | 1.2.20260613 (10) — 免費版（切段 30s + 錄音管理） |
+| Bundle ID | `app.rexcode.sunnywalker`　/　ASC App ID `6775802674`　/　Team `NHY8MKW8NH` |
+| IAP Product ID | `app.rexcode.sunnywalker.pro.lifetime`（Non-Consumable，Family Shareable） |
+| 價格 | **NT$50（≈ US$1.49）一次買斷** — `.storekit` displayPrice 1.49；實際價格在 ASC 設定，⚠️ 早期規劃文件曾寫 NT$90/120，**以本次 NT$50 為準，送審前自行確認** |
+| Pro 解除的上限 | 鬧鐘 6→∞、自定鈴聲 5→∞、單段鈴聲 5s→30s、家長錄音 3 分鐘→∞（單一來源 `FeatureLimits`） |
+| 購買入口 | 設定 → 家長驗證（ParentalGateView）後 → 「SunnyWalker Pro」→ ProUpgradeView（含 Restore） |
+
+### 🔀 合併步驟（在 Mac 上做，sandbox 無法安全 merge）
+
+> Cowork 的 Linux sandbox 無法刪 `.git/*.lock`、也無 Xcode/xcodegen，**不要在 sandbox merge**。
+> 此 merge 有 6 個衝突檔，其中 pbxproj / xcstrings 必須用 Xcode/xcodegen 重生，務必在 Mac 上做。
+
+```bash
+cd ~/Documents/SunnyWalker
+rm -f .git/index.lock .git/HEAD.lock .git/objects/maintenance.lock   # 清 sandbox 殘留 lock
+git checkout main && git status            # 必須乾淨；目前 main 領先 origin 3 個 commit
+git merge --no-ff --no-commit feature/pro-iap-lifetime
+```
+
+預期 6 個衝突檔，逐檔處理：
+
+| 衝突檔 | 怎麼解 |
+|---|---|
+| `project.yml` | **兩邊都留**：保留 pro 的 StoreKit/IAP 設定 + main 其他設定；版本改成 **`MARKETING_VERSION: "1.3.20260614"`、`CURRENT_PROJECT_VERSION: 11`** |
+| `SunnyWalker.xcodeproj/project.pbxproj` | **別手解**。先 `git checkout --theirs` 取 pro 版，解完 `project.yml` 後跑 `xcodegen generate` 整個重生，再 `git add` |
+| `SunnyWalker/Localizable.xcstrings` | 先 `git checkout --theirs`（pro 含全部 `pro_*` key），再用 Xcode build 一次讓字串抽取補回 main 端的 key，確認每個 key 中(zh-Hant)英(en)都齊（verify script 會掃缺漏） |
+| `SunnyWalker/Views/Home/HomeView.swift` | **手解**：同時保留 main 的吉卜力改動（`MascotView(scene:)` 等）＋ pro 的 `showingPro` / 設定頁 Pro 列 / `ProUpgradeView` sheet / `StoreService` 注入 |
+| `SunnyWalker/Views/Settings/VoiceLibraryView.swift` | **手解**：main 已先併入 pro 的非 IAP 部分（commit 9ce1dfb），衝突多半是「到上限」的付費判斷 → 保留 pro 走 `FeatureLimits` 的版本，別讓 UI 重複 |
+| `SunnyWalker/Services/AudioPlayer.swift` | main 已併入 pro 的暫停/續播（9ce1dfb），衝突多半瑣碎 → 確認暫停/續播只留一份即可 |
+
+解完後：
+
+```bash
+bash scripts/verify_pro_iap.sh     # 清 lock → xcodegen → build → unit tests → xcstrings/FeatureLimits 掃描
+# Xcode → Scheme → Run → Options → StoreKit Configuration 設為 Configuration.storekit（本機測購買）
+git commit                          # 保留 merge commit 訊息
+```
+
+### App Store「版本說明 / What's New」
+
+#### 繁體中文（zh-Hant）
+
+```
+SunnyWalker Pro 來了 ✨
+
+‧ 一次購買、永久解鎖：鬧鐘數量、自定鈴聲數量與長度、爸媽錄音長度，全部無上限
+‧ 支援家庭共享，一人購買、全家共用
+‧ 購買入口放在「設定」的家長驗證之後，孩子不會誤觸
+‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro、全功能無上限 ☀️
+
+基本的叫醒功能永遠免費；Pro 是給需要更多鬧鐘與更長錄音的家庭。
+完全離線、零廣告、不收集任何資料。
+```
+
+#### English (en)
+
+```
+Meet SunnyWalker Pro ✨
+
+• One-time purchase, unlocked forever: unlimited alarms, unlimited voice clips, longer clips, and longer parent recordings — no caps
+• Family Sharing supported — buy once, share with the whole family
+• The upgrade lives in Settings behind a parental gate, so kids can't tap to buy
+• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free ☀️
+
+The core wake-up features stay free forever; Pro is for families who want more.
+Fully offline, zero ads, no data collected.
+```
+
+### 送審前最終確認（本次更新）
+
+- [ ] merge 完成、`scripts/verify_pro_iap.sh` 全綠（含 xcstrings 雙語、FeatureLimits 唯一來源）
+- [ ] `project.yml`：MARKETING_VERSION `1.3.20260614`、CURRENT_PROJECT_VERSION `11` → `xcodegen generate`
+- [ ] 真機驗收 IAP：設定 → **家長驗證後**才看得到「SunnyWalker Pro」→ 購買 → 上限解除；Restore 可還原；StoreKit Transaction Manager 測退款後上限回鎖
+- [ ] grandfather：用「裝過舊版」的裝置更新 → 應自動為 Pro（免費）；全新安裝 → 應看到付費頁
+- [ ] App Store Connect 先建好 IAP（見 `03_todo_fectures/appstoreconnect/20260614_Pro_IAP_appstoreconnect.md`）並**與本版本一起送審**（首個 IAP 必須隨 binary 審核）
+- [ ] Age Rating（Made for Kids 6–8）、App Privacy（Data Not Collected）、Privacy Policy URL 沿用
+- [ ] Xcode Organizer → Distribute → Upload（build 11）→ ASC「+ Version」1.3.20260614 掛 build 11 + 貼上方 What's New → Submit（IAP 一併勾選送審）
+
+---
+
 ## 1.2.20260613 (build 10) — 切段響滿 30s（通知模式）+ 設定頁錄音管理 + 自訂鈴聲操作優化
 
 > 🆓 **本次為免費版更新**。付費解鎖（alarm 數量／錄音長度）的 IAP 不在此版，留待之後另發。
