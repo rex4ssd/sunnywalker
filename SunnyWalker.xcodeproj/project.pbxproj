@@ -34,6 +34,7 @@
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
 		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */; };
 		6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */; };
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
@@ -107,6 +108,7 @@
 		46A29B4B7C206E35F4EB5B97 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
 		46A37A57C8FCFE4F4D092654 /* AlarmRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmRingView.swift; sourceTree = "<group>"; };
 		46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyButton.swift; sourceTree = "<group>"; };
+		4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioImporter.swift; sourceTree = "<group>"; };
 		4ECB4C11C43AEB5AB6279680 /* mascot_greet_03.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_03.aiff; sourceTree = "<group>"; };
 		5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmEditorView.swift; sourceTree = "<group>"; };
 		5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */ = {isa = PBXFileReference; path = sunny_wake.caf; sourceTree = "<group>"; };
@@ -312,6 +314,7 @@
 				3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */,
 				888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */,
 				0B16896DF5A7D7F278398889 /* AppSettings.swift */,
+				4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */,
 				C6A487603264A6DA88C647F8 /* AudioPlayer.swift */,
 				402591D9D880D83E7903B948 /* AudioRecorder.swift */,
 				05356F2D5C177271D275559D /* BedSideManager.swift */,
@@ -455,6 +458,7 @@
 				6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */,
 				443AE8609D04C19C84D54B4A /* Animations.swift in Sources */,
 				498581084950B53F336D6AC6 /* AppSettings.swift in Sources */,
+				5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */,
 				3BC8F8E87CABFEF31FB088DA /* AudioPlayer.swift in Sources */,
 				DD467670A8B05840FBB95018 /* AudioRecorder.swift in Sources */,
 				1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */,
@@ -560,7 +564,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -575,7 +579,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.20260614;
+				MARKETING_VERSION = 1.3.20260615;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -656,7 +660,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -677,7 +681,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.20260614;
+				MARKETING_VERSION = 1.3.20260615;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

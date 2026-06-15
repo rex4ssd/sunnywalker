@@ -1,6 +1,80 @@
 # SunnyWalker — App Store Release Note
 
-## 1.3.20260614 (build 11) — SunnyWalker Pro（NT$50 終身解鎖 IAP）
+## 1.3.20260615 (build 13) — 修內建鈴聲 + 從檔案匯入音檔當鈴聲（承接 Pro IAP）
+
+> 📦 **同一顯示版本 `1.3.20260615` 同日多次打包**：build 11(放棄)、build 12(已上傳，僅 bug fix)、
+> **本版 build 13** 在 build 12 之上再加「從檔案匯入音檔當鈴聲」新功能 → **以 build 13 送審**，
+> build 12 由 build 13 取代（同版本頁改掛 build 13 即可）。What's New 涵蓋 Pro + bug fix + 匯入功能。
+
+| 欄位 | 值 |
+|---|---|
+| 顯示版本 (Marketing Version) | **1.3.20260615**（沿用 1.3 Pro train，只換打包日期） |
+| Build (CFBundleVersion) | **13**（11、12 皆已上傳佔用 → 進 13） |
+| 送審日期 | 2026-06-15 |
+| 前次紀錄 | 1.3.20260615 (12) — 已上傳（bug fix）；1.3.20260614 (11) — 已上傳後放棄；1.2.20260613 (10) — 免費版 |
+| Bundle ID | `app.rexcode.sunnywalker`　/　ASC App ID `6775802674`　/　Team `NHY8MKW8NH` |
+| 內含 | 承接 SunnyWalker Pro（NT$50 終身 IAP、家庭共享、grandfather 自動免費升級）＋下列修正與新功能 |
+
+### 🐞 本版修正
+
+- **內建鈴聲在「溫和提醒（通知）模式」終於會響。** 之前選內建鈴聲（陽光起床／樹葉沙沙）在通知模式只會「咚」一聲系統預設音、聽不到內建鈴聲本身——root cause 是 `AlarmScheduler` 的選音邏輯只替「自錄聲」設真正的 `UNNotificationSound`，內建鈴聲一律落到 `.default`。本版新增內建鈴聲分支：把 bundle 內 18–20s 的 CAF 修剪成 4.5s 短 CAF（避開 iOS「長自訂通知音鎖屏退成 ~2s」的雷），再交給既有的「切段響滿 30 秒」堆疊機制鋪滿。自錄聲行為不變。
+  - 改動檔：`SunnyWalker/Services/AlarmScheduler.swift`（新增 `isBundledSelection` 分支）、`SunnyWalker/Services/AudioRecorder.swift`（新增 `AlarmSoundExporter.exportBundledShortCAF`）。
+
+### ✨ 本版新功能
+
+- **從「檔案」匯入手機內音檔當鈴聲。** 在「選鈴聲」與「錄音管理」新增「匯入音檔」：用 `.fileImporter` 從 檔案 App／iCloud Drive 選 mp3/wav/m4a/aiff → security-scoped 複製到 tmp → `AVAssetExportSession`（AppleM4A、iOS 18+ 的 `export(to:as:)`）轉檔並從頭裁到長度上限 → 存成 `Documents/Recordings/<UUID>.m4a`，與錄音同佈局，下游（清單／試聽／設為鈴聲／通知音 CAF／切段堆疊）全部沿用。裁切＝取前 N 秒（免費 5s／Pro 30s）；匯入算進「自訂鈴聲 5 個」同一上限。⚠️ DRM 保護的歌（Apple Music／iTunes 購買）匯不進來，會跳友善錯誤。
+  - 新增檔：`SunnyWalker/Services/AudioImporter.swift`。改動：`RingtonePickerSheet.swift`、`VoiceLibraryView.swift`（各加「匯入音檔」鈕 + 錯誤 alert）、`Localizable.xcstrings`（中英字串）。
+  - ⚠️ **有新增檔** → Archive 前**務必** `xcodegen generate` 把 `AudioImporter.swift` 註冊進 pbxproj，否則不會編進 target。
+
+### App Store「版本說明 / What's New」
+
+#### 繁體中文（zh-Hant）
+
+```
+SunnyWalker Pro 來了，還能用你自己的音檔當鈴聲 ✨
+
+‧ 新增：可以從「檔案」匯入手機裡的音檔（mp3／wav 等）當叫醒鈴聲
+‧ 修正：在「溫和提醒」模式選用內建鈴聲時，現在會正確響起鈴聲（先前只會響一聲系統提示音）
+‧ SunnyWalker Pro：一次購買、永久解鎖——鬧鐘數量、自定鈴聲數量與長度、爸媽錄音長度全部無上限
+‧ 支援家庭共享，一人購買、全家共用；購買入口放在「設定」的家長驗證之後，孩子不會誤觸
+‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro ☀️
+
+基本的叫醒功能永遠免費。完全離線、零廣告、不收集任何資料。
+```
+
+#### English (en)
+
+```
+Meet SunnyWalker Pro — and set your own audio as a ringtone ✨
+
+• New: import an audio file from Files (mp3, wav, and more) to use as a wake-up sound
+• Fixed: built-in ringtones now play correctly in Gentle Reminder mode (previously you'd only hear a single system alert tone)
+• SunnyWalker Pro: one-time purchase, unlocked forever — unlimited alarms, unlimited voice clips, longer clips, and longer parent recordings
+• Family Sharing supported; the upgrade lives in Settings behind a parental gate so kids can't tap to buy
+• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free ☀️
+
+The core wake-up features stay free forever. Fully offline, zero ads, no data collected.
+```
+
+### 送審前最終確認（本次更新）
+
+- [ ] `project.yml`：MARKETING_VERSION `1.3.20260615`、CURRENT_PROJECT_VERSION `13` → **`xcodegen generate`**（套版號 **+ 註冊新檔 `AudioImporter.swift`**）
+- [ ] 真機驗收新功能：選鈴聲／錄音管理 → 匯入音檔 → 挑一首 mp3 → 出現在自訂鈴聲、可試聽、可設為鬧鈴；到 5 個上限時鈕變鎖頭；DRM 歌曲跳友善錯誤
+- [ ] 真機驗收 bug fix：溫和提醒模式 + 內建鈴聲 → 殺 App／關屏 → 應聽到內建鈴聲（非「咚」一聲）；切段堆疊正常；自錄聲不變
+- [ ] 真機驗收 IAP：設定 → 家長驗證後才看得到「SunnyWalker Pro」→ 購買 → 上限解除；Restore 可還原；grandfather 舊用戶自動免費
+- [ ] App Store Connect：`1.3.20260615` 版本頁改掛 **build 13**，貼上方 What's New
+- [ ] Age Rating（Made for Kids 6–8）、App Privacy（Data Not Collected）、Privacy Policy URL 沿用
+- [ ] Xcode Organizer → Distribute → Upload（build 13）→ Submit（首個 IAP 隨 binary 一併送審）
+
+---
+
+## 1.3.20260615 (build 12) — 修復內建鈴聲在溫和提醒模式不響（承接 Pro IAP）　⚠️ 已上傳，由 build 13 取代（加匯入音檔）
+
+> 🐞 已上傳 ASC，但隨即由 **build 13**（再加「匯入音檔」功能）取代。內容＝SunnyWalker Pro + 內建鈴聲通知音修正。
+
+---
+
+## 1.3.20260614 (build 11) — SunnyWalker Pro（NT$50 終身解鎖 IAP）　⚠️ 已上傳後放棄，由 1.3.20260615 (build 13) 取代
 
 > 💰 **本次為「付費解鎖版」**：合併 `feature/pro-iap-lifetime` 的 StoreKit 2 一次性買斷
 > （non-consumable，家庭共享）。免費版叫醒功能不變；Pro 解除四個上限。

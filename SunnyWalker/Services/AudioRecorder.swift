@@ -454,6 +454,71 @@ enum AlarmSoundExporter {
         return cafName
     }
 
+    /// iOS 對「長的」自訂通知音會在鎖屏/被殺時整顆悄悄退成 ~2s 預設音（真機實證：4.6s 播完整、~29s 掛）。
+    /// 內建鈴聲（sunny_wake.caf 18s、leaf_rustle.caf 20s）若直接餵 UNNotificationSound 就會中這條雷。
+    /// 安全長度上限（秒）— 取在已驗證安全的 4.6s 之下留 margin。改這裡前先用 scheduleCutoffProbe 量測真機上限。
+    static let bundledSafeSeconds: Double = 4.5
+
+    /// Export a bundled CAF (e.g. "sunny_wake.caf") → a SHORT `Library/Sounds/*.caf` safe for
+    /// `UNNotificationSound`. Mirrors the recording path: trim to `bundledSafeSeconds`, then let
+    /// `AlarmScheduler.scheduleGentleRepeatBurst` stack it to ~30s. The bundle assets never change at
+    /// runtime, so the short export is content-stable → cached (reused if it already exists).
+    /// - Returns: the short CAF filename in Library/Sounds, or nil on failure.
+    static func exportBundledShortCAF(bundledName: String) -> String? {
+        let fm = FileManager.default
+        guard let src = Bundle.main.url(forResource: bundledName, withExtension: nil) else {
+            print("🎚️ Exporter: bundled sound \(bundledName) NOT in bundle — abort")
+            return nil
+        }
+        let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Sounds", isDirectory: true)
+        try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
+
+        // Name encodes the bundle base + safe-length so a future bundledSafeSeconds change re-exports
+        // (old length stays cached but unused). e.g. bundled_sunny_wake_45.caf
+        let base = (bundledName as NSString).deletingPathExtension
+        let shortName = "bundled_\(base)_\(Int(bundledSafeSeconds * 10)).caf"
+        let shortURL = soundsDir.appendingPathComponent(shortName)
+        if fm.fileExists(atPath: shortURL.path) {
+            print("🎚️ Exporter: bundled short cache hit → \(shortName)")
+            return shortName
+        }
+
+        do {
+            let inFile = try AVAudioFile(forReading: src)
+            let format = inFile.processingFormat
+            let maxFrames = AVAudioFramePosition(format.sampleRate * bundledSafeSeconds)
+            let frames = min(inFile.length, maxFrames)
+            guard frames > 0,
+                  let buffer = AVAudioPCMBuffer(
+                      pcmFormat: format,
+                      frameCapacity: AVAudioFrameCount(frames)
+                  ) else {
+                print("🎚️ Exporter: bundled buffer alloc failed (frames=\(frames)) — abort")
+                return nil
+            }
+            try inFile.read(into: buffer, frameCount: AVAudioFrameCount(frames))
+
+            // 16-bit linear PCM CAF — the format UNNotificationSound reliably accepts (same as recordings).
+            let outSettings: [String: Any] = [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: format.sampleRate,
+                AVNumberOfChannelsKey: format.channelCount,
+                AVLinearPCMBitDepthKey: 16,
+                AVLinearPCMIsFloatKey: false,
+                AVLinearPCMIsBigEndianKey: false,
+                AVLinearPCMIsNonInterleaved: false
+            ]
+            let outFile = try AVAudioFile(forWriting: shortURL, settings: outSettings)
+            try outFile.write(from: buffer)
+            print("🎚️ Exporter: bundled \(bundledName) → short \(shortName) (\(String(format: "%.1f", Double(buffer.frameLength) / format.sampleRate))s)")
+        } catch {
+            print("🎚️ Exporter: bundled short export FAILED — \(error.localizedDescription)")
+            return nil
+        }
+        return shortName
+    }
+
     #if DEBUG
     /// 🔬 暫時：合成「每秒一聲嗶」的尺規音（mono 16-bit PCM 44100，與正式通知音同格式），
     /// 長度 = seconds（cap ≤29，因 >30 會被 iOS 整顆退預設）。5 的倍數那聲用高音、較長，方便數。

@@ -87,6 +87,11 @@ final class AlarmScheduler {
         var cafSeconds: Double = 5
         let custom = alarm.soundFileName
         let wantsCustom = !custom.isEmpty && custom != "sunny_wake.caf" && !alarm.recordingName.isEmpty
+        // 內建鈴聲選擇＝有 soundFileName、沒有 recordingName、且檔案在 app bundle 裡（sunny_wake.caf / leaf_rustle.caf）。
+        // 這條跟 wantsCustom 互斥：錄音走上面、內建走下面、其餘（沒選/舊資料）落 .default。
+        let isBundledSelection = !custom.isEmpty
+            && alarm.recordingName.isEmpty
+            && Bundle.main.url(forResource: custom, withExtension: nil) != nil
         if wantsCustom {
             // Verify the CAF actually exists in Library/Sounds — UNNotificationSound(named:)
             // SILENTLY falls back to the default tone if the file is missing or wrong format.
@@ -133,6 +138,22 @@ final class AlarmScheduler {
             } else {
                 content.sound = .default
                 print("🔔 AlarmScheduler: ⚠️ custom CAF missing — FALLING BACK to default. (re-record or re-save to regenerate)")
+            }
+        } else if isBundledSelection {
+            // 內建鈴聲（陽光起床 / 樹葉沙沙）走通知模式：以前這裡漏接 → 一律 .default（系統「咚」一聲），
+            // 內建音從來沒響過。現在比照錄音路徑：把 bundle 裡的 18–20s CAF 修剪成短 CAF（避開 iOS 對
+            // 長自訂通知音「鎖屏退成 ~2s」的雷），存進 Library/Sounds，再交給 gentle-repeat burst 鋪滿 ~30s。
+            if let shortName = AlarmSoundExporter.exportBundledShortCAF(bundledName: custom) {
+                let soundsDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("Sounds", isDirectory: true)
+                if let caf = try? AVAudioFile(forReading: soundsDir.appendingPathComponent(shortName)) {
+                    cafSeconds = max(1, Double(caf.length) / caf.fileFormat.sampleRate)
+                }
+                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: shortName))
+                print("🔔 AlarmScheduler: using BUNDLED banner sound → \(custom) via short \(shortName) (\(String(format: "%.1f", cafSeconds))s)")
+            } else {
+                content.sound = .default
+                print("🔔 AlarmScheduler: ⚠️ bundled short export failed for \(custom) — FALLING BACK to default")
             }
         } else {
             content.sound = .default

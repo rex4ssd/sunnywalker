@@ -8,6 +8,7 @@ import SwiftUI
 import SwiftData
 import AVFoundation
 import Speech
+import UniformTypeIdentifiers
 
 // MARK: - Upgrade-path limits
 
@@ -42,6 +43,8 @@ struct VoiceLibraryView: View {
     @StateObject private var player = AudioPlayer()
     @State private var playingID: UUID?
     @State private var showingRecorder = false
+    @State private var showingImporter = false   // 從「檔案」匯入手機內音檔當鈴聲
+    @State private var importError: String?       // 匯入失敗（DRM / 格式不支援）→ alert
     @State private var selectedClip: VoiceClip?
     @State private var deleteTarget: VoiceClip?
     @State private var showDeleteConfirm = false
@@ -85,6 +88,10 @@ struct VoiceLibraryView: View {
 
                     addButton
                         .padding(.horizontal, 24)
+                        .padding(.bottom, 10)
+
+                    importButton
+                        .padding(.horizontal, 24)
                         .padding(.bottom, 32)
                 }
             }
@@ -108,6 +115,19 @@ struct VoiceLibraryView: View {
             VoiceClipRecorderSheet { clip in
                 modelContext.insert(clip)
             }
+        }
+        // 從「檔案」App / iCloud Drive 匯入音檔（mp3/wav/m4a…）。DRM 保護的歌匯不進來 → 友善錯誤。
+        .fileImporter(
+            isPresented: $showingImporter,
+            allowedContentTypes: [.audio, .mp3, .wav, .aiff, .mpeg4Audio],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
+        }
+        .alert("匯入失敗", isPresented: importErrorBinding) {
+            Button("好", role: .cancel) { importError = nil }
+        } message: {
+            Text(importError ?? "")
         }
         .sheet(item: $selectedClip) { clip in
             VoiceClipDetailSheet(clip: clip) {
@@ -193,6 +213,59 @@ struct VoiceLibraryView: View {
             )
         }
         .disabled(!canAddMore)
+    }
+
+    /// Secondary entry: import an audio file from Files instead of recording. Same clip-count pool.
+    private var importButton: some View {
+        Button {
+            showingImporter = true
+        } label: {
+            Label {
+                Text("匯入音檔")
+            } icon: {
+                Image(systemName: canAddMore ? "square.and.arrow.down" : "lock.circle.fill")
+            }
+            .font(SunnyFonts.title(16))
+            .foregroundStyle(canAddMore ? SunnyColors.skyBlue : SunnyColors.sunnyGray)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .background(Color.white.opacity(0.85))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke((canAddMore ? SunnyColors.skyBlue : SunnyColors.sunnyGray).opacity(0.4), lineWidth: 1)
+            )
+        }
+        .disabled(!canAddMore)
+    }
+
+    private var importErrorBinding: Binding<Bool> {
+        Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            importError = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            Task {
+                do {
+                    let imported = try await AudioImporter.importAudioFile(
+                        from: url, maxSeconds: VoiceClipLimits.maxDurationSeconds
+                    )
+                    let clip = VoiceClip(
+                        name: imported.suggestedName,
+                        fileName: imported.base + ".m4a",
+                        duration: imported.duration
+                    )
+                    modelContext.insert(clip)
+                    try? modelContext.save()
+                } catch {
+                    importError = error.localizedDescription
+                }
+            }
+        }
     }
 
     // MARK: - Actions

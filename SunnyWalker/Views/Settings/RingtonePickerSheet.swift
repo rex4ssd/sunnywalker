@@ -10,6 +10,7 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+import UniformTypeIdentifiers
 
 // MARK: - Bundled sound descriptors
 
@@ -59,6 +60,8 @@ struct RingtonePickerSheet: View {
     @State private var renamingClip: VoiceClip?
     @State private var renameDraft = ""
     @State private var showingRecorder = false   // 自定鈴聲頁直接新增錄音（復用 VoiceClipRecorderSheet）
+    @State private var showingImporter = false    // 從「檔案」匯入手機內音檔（mp3/wav…）當鈴聲
+    @State private var importError: String?       // 匯入失敗（DRM / 格式不支援）→ alert
 
     var body: some View {
         NavigationStack {
@@ -101,6 +104,20 @@ struct RingtonePickerSheet: View {
             VoiceClipRecorderSheet { clip in
                 modelContext.insert(clip)
             }
+        }
+        // 從「檔案」App / iCloud Drive 匯入音檔（mp3/wav/m4a…）。受 DRM 保護的歌（Apple Music）
+        // 不會出現在這裡、也匯不進來——AudioImporter 會回友善錯誤。
+        .fileImporter(
+            isPresented: $showingImporter,
+            allowedContentTypes: [.audio, .mp3, .wav, .aiff, .mpeg4Audio],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result)
+        }
+        .alert("匯入失敗", isPresented: importErrorBinding) {
+            Button("好", role: .cancel) { importError = nil }
+        } message: {
+            Text(importError ?? "")
         }
         .alert("重新命名自錄鈴聲", isPresented: renameAlertBinding) {
             TextField("自錄鈴聲名稱", text: $renameDraft)
@@ -201,6 +218,57 @@ struct RingtonePickerSheet: View {
             .buttonStyle(.plain)
             .disabled(!canAddMoreClips)
             .listRowBackground(Color.white.opacity(0.75))
+
+            // 匯入手機內音檔（mp3/wav…）當鈴聲——與「新增錄音」同一上限池。
+            Button {
+                showingImporter = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: canAddMoreClips ? "square.and.arrow.down" : "lock.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(canAddMoreClips ? SunnyColors.skyBlue : SunnyColors.sunnyGray)
+                    Text("匯入音檔")
+                        .font(SunnyFonts.title(16))
+                        .foregroundStyle(canAddMoreClips ? SunnyColors.nightIndigo : SunnyColors.sunnyGray)
+                    Spacer()
+                }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!canAddMoreClips)
+            .listRowBackground(Color.white.opacity(0.75))
+        }
+    }
+
+    // MARK: - Import from Files
+
+    private var importErrorBinding: Binding<Bool> {
+        Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            importError = error.localizedDescription
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            Task {
+                do {
+                    let imported = try await AudioImporter.importAudioFile(
+                        from: url, maxSeconds: VoiceClipLimits.maxDurationSeconds
+                    )
+                    let clip = VoiceClip(
+                        name: imported.suggestedName,
+                        fileName: imported.base + ".m4a",
+                        duration: imported.duration
+                    )
+                    modelContext.insert(clip)
+                    try? modelContext.save()
+                } catch {
+                    importError = error.localizedDescription
+                }
+            }
         }
     }
 
