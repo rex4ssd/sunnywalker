@@ -115,28 +115,40 @@ final class FeatureLimitsTests: XCTestCase {
     }
 }
 
-/// Grandfathering: a clean install is NOT detected as existing; any legacy settings key flips it.
+/// Grandfathering: free-era originals (build < firstPaidBuild) get free lifetime Pro; paid-era
+/// originals do not. Driven by Apple's signed AppTransaction.originalAppVersion (account-bound).
 final class GrandfatherSignalTests: XCTestCase {
 
-    private func freshDefaults() -> UserDefaults {
-        let suite = "test.grandfather.\(UUID().uuidString)"
-        let d = UserDefaults(suiteName: suite)!
-        d.removePersistentDomain(forName: suite)
-        return d
-    }
-
-    func testCleanDefaultsHaveNoLegacySignal() {
-        let d = freshDefaults()
-        XCTAssertFalse(StoreService.hasLegacyInstallSignal(in: d))
-    }
-
-    func testAnyLegacyKeyTriggersSignal() {
-        for key in StoreService.legacyInstallKeys {
-            let d = freshDefaults()
-            d.set("x", forKey: key)
-            XCTAssertTrue(StoreService.hasLegacyInstallSignal(in: d),
-                          "legacy key \(key) should mark the install as existing")
+    func testFreeEraBuildsAreGrandfathered() {
+        // Free era = builds 1–10 (1.0–1.2). All must qualify.
+        for v in ["1", "4", "6", "9", "10"] {
+            XCTAssertTrue(StoreService.isGrandfatheredOriginalVersion(v),
+                          "original build \(v) (< \(StoreService.firstPaidBuild)) should be grandfathered")
         }
+    }
+
+    func testPaidEraBuildsAreNotGrandfathered() {
+        // build 11 = first paid build (1.3.20260614); 11 and up are new paying-era users.
+        for v in ["11", "12", "13", "20"] {
+            XCTAssertFalse(StoreService.isGrandfatheredOriginalVersion(v),
+                           "original build \(v) (>= \(StoreService.firstPaidBuild)) must NOT be grandfathered")
+        }
+    }
+
+    func testStoreKitTestingDottedVersionParsesLeadingInt() {
+        // StoreKit local-testing default originalApplicationVersion is "1.0" → parses to 1 → free era.
+        XCTAssertTrue(StoreService.isGrandfatheredOriginalVersion("1.0"))
+        XCTAssertEqual(StoreService.leadingInt("1.0"), 1)
+        XCTAssertEqual(StoreService.leadingInt("13"), 13)
+    }
+
+    func testUnparseableVersionFailsSafeToNoGrant() {
+        // Never give away Pro on a value we can't trust.
+        for v in ["", "abc", "v1"] {
+            XCTAssertFalse(StoreService.isGrandfatheredOriginalVersion(v),
+                           "unparseable original version \(v.debugDescription) must fail safe (no free grant)")
+        }
+        XCTAssertNil(StoreService.leadingInt("abc"))
     }
 }
 

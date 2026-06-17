@@ -106,7 +106,7 @@ Download SunnyWalker — goodbye morning battles, hello sunshine
 
 **zh-Hant**
 ```
-全新「溫和提醒模式」登場 ☀️
+全新「溫和提醒模式」登場
 
 ‧ 每顆鬧鐘都能選擇響鈴方式：
 　－ 系統鬧鐘：持續響直到關閉（預設）
@@ -116,12 +116,12 @@ Download SunnyWalker — goodbye morning battles, hello sunshine
 ‧ 錄音、命名、試聽整合在同一頁，並新增「重新錄音」
 ‧ 介面文字修正與多項穩定性改善
 
-謝謝你陪 SunnyWalker 一起長大 ☀️
+謝謝你陪 SunnyWalker 一起長大
 ```
 
 **en**
 ```
-Introducing Gentle Reminder mode ☀️
+Introducing Gentle Reminder mode
 
 • Choose how each alarm rings:
   – System Alarm: keeps ringing until stopped (default)
@@ -131,7 +131,7 @@ Introducing Gentle Reminder mode ☀️
 • Record, name, and preview your voice all on one page, plus a new "Record again" button
 • Interface polish and stability improvements
 
-Thanks for growing up with SunnyWalker ☀️
+Thanks for growing up with SunnyWalker
 ```
 
 ---

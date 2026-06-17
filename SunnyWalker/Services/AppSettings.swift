@@ -159,6 +159,11 @@ final class AppSettings: ObservableObject {
         parentalUnlockUntil = Date().addingTimeInterval(Double(parentalUnlockDurationMinutes * 60))
     }
 
+    /// End the temporary unlock immediately ("立即上鎖") — next Settings / New Alarm re-shows the gate.
+    func endParentalUnlockWindow() {
+        parentalUnlockUntil = nil
+    }
+
     func clearExpiredParentalUnlockIfNeeded(referenceDate: Date = .now) {
         if let unlockedUntil = parentalUnlockUntil, unlockedUntil <= referenceDate {
             parentalUnlockUntil = nil

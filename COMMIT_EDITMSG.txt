@@ -1,0 +1,24 @@
+Pro IAP: account-based grandfather, honest benefits, $1.99, auto parental unlock
+
+Grandfather (free-era installs → free lifetime Pro):
+- Switch detection from a local file/UserDefaults heuristic to Apple's signed
+  AppTransaction.originalAppVersion (account-bound: survives reinstall/new device;
+  offline after first fetch). Cutoff = original build < 11 (builds 1–10 = free era
+  1.0–1.2; build 11 = 1.3.20260614, first paid build). Fail-safe on unparseable;
+  freezes only on a definitive Apple answer so transient offline never denies a customer.
+- Remove the heuristic + its sync call in didFinishLaunching; resolve async in start().
+- DEBUG-only SW_FORCE_NEW_USER lever (declared disabled in project.yml/scheme) to test
+  the purchase UI despite StoreKit testing reporting originalAppVersion "1.0".
+
+Pro upsell sheet:
+- Drop the "per-alarm recording 180s→∞" benefit — it maps only to the orphaned
+  RecordingView (no entry point since build 10), so it advertised an unreachable feature.
+- Align benefit font to Settings rows (16pt) and reword ringtone-length copy for consistency.
+- Local StoreKit price → $1.99.
+
+Temporary unlock:
+- Passing the parental gate now auto-opens the unlock window (default 5 min) for both
+  Settings and New Alarm; add "立即上鎖" (lock now) + AppSettings.endParentalUnlockWindow().
+
+Tests updated to the new grandfather comparator; plan + helper scripts (run_tests.sh,
+reset_pro.sh) added.

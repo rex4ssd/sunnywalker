@@ -1,6 +1,7 @@
-# App Store Connect 內容 — 1.3.20260614 (build 11)：SunnyWalker Pro IAP
+# App Store Connect 內容 — SunnyWalker Pro IAP（原 1.3.20260614 build 11 → 實際隨 1.3.20260615 build 14 送審）
 
-> 配合 release：`release_note/apple_store.md` 的 1.3.20260614 段。
+> 🛑 **build 11 已放棄；IAP 最終隨 build 14（1.3.20260615）送審，定價改為 US$1.99 base（台灣約 NT$60）。** 下表 Price 已更新；其餘設定（Product ID、Family Sharing 等）不變。
+> 配合 release：`release_note/apple_store.md` 的 1.3.20260615 (build 14) 段。
 > App：SunnyWalker · Bundle `app.rexcode.sunnywalker` · ASC App ID `6775802674` · Team `NHY8MKW8NH`
 > 類別：Education（**Made for Kids**，6–8）· App Privacy：Data Not Collected · Privacy Policy：https://rexcode.app/sunny_walker/privacy/
 
@@ -13,7 +14,7 @@
 | Type | **Non-Consumable**（一次買斷、永久） |
 | Reference Name | `SunnyWalker Pro Lifetime`（後台用，不對外） |
 | Product ID | `app.rexcode.sunnywalker.pro.lifetime`（**須與程式 / `.storekit` 完全一致**） |
-| Price | **NT$50（Apple 價格點 ≈ US$1.49）** — ⚠️ 以本次為準（早期文件曾寫 NT$90/120） |
+| Price | **US$1.99（base 美國，Apple 標準價格點）** — 其餘 storefront 由 Apple 換算，台灣約 NT$60（舊規劃 NT$50／NT$90／NT$120 皆作廢） |
 | Family Sharing | **開啟**（程式 `familyShareable: true`） |
 | Cleared for Sale | 是 |
 

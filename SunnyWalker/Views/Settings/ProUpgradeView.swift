@@ -29,9 +29,6 @@ struct ProUpgradeView: View {
                                     text: L("pro_benefit_clip_len %lld %lld",
                                             Int(FeatureLimits.freeMaxVoiceClipSeconds),
                                             Int(FeatureLimits.proMaxVoiceClipSeconds)))
-                            benefit(icon: "mic.fill",
-                                    text: L("pro_benefit_recording %lld",
-                                            Int(FeatureLimits.freeMaxAlarmRecordingSeconds)))
                         }
                         .padding(20)
                     }
@@ -81,7 +78,7 @@ struct ProUpgradeView: View {
                 .foregroundStyle(SunnyColors.leafFresh)
                 .frame(width: 26)
             Text(verbatim: text)
-                .font(SunnyFonts.body())
+                .font(SunnyFonts.caption())   // match Settings list rows (16pt); body(22) looked oversized
                 .foregroundStyle(SunnyColors.nightIndigo)
             Spacer(minLength: 0)
         }

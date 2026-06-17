@@ -23,11 +23,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // ⚠️ MUST be the first thing we do. Decides ONCE — and freezes — whether this device already
-        // had SunnyWalker before the paid build, granting those users lifetime Pro for free. It reads
-        // pre-existing on-device state (SwiftData store, Recordings folder, settings keys); running it
-        // before any other launch code keeps those signals from being polluted by first-launch writes.
-        StoreService.resolveGrandfatheredEntitlement()
+        // Grandfathering (free-era installs → lifetime Pro, free) is resolved asynchronously from
+        // Apple's signed AppTransaction inside StoreService.start() (called from SunnyWalkerApp's
+        // .task). It's account-bound, so it no longer depends on launch-ordering or on-device state —
+        // nothing to do here at didFinishLaunching.
 
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()

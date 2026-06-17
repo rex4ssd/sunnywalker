@@ -7,15 +7,30 @@
 // reads. Effective Pro is the OR of two independent sources:
 //   1. A verified, non-revoked StoreKit entitlement for `proProductID` (purchase / restore /
 //      Family Sharing / Ask-to-Buy approval), resolved by `refreshEntitlement()`.
-//   2. The sticky "proGrandfathered" flag — granted ONCE, free, to anyone who already had
-//      SunnyWalker installed before this (the first paid) build. See `resolveGrandfatheredEntitlement`.
+//   2. The sticky "proGrandfathered" flag — granted ONCE, free, to anyone whose Apple ID first
+//      downloaded SunnyWalker BEFORE the first paid build (build 11), determined from Apple's
+//      signed `AppTransaction.originalAppVersion`. See `resolveGrandfatherIfNeeded`.
 //
 // OR-ing the grandfather flag inside `refreshEntitlement()` is essential: a grandfathered user has
 // NO StoreKit transaction, so a naive entitlement refresh would set isProUnlocked = false and revoke
 // their free lifetime grant on the next launch. The OR keeps them Pro forever.
+//
+// Why AppTransaction (not a local file/UserDefaults heuristic): the grant must follow the *Apple ID*,
+// not the device container. originalAppVersion is account-bound and Apple-signed, so it survives
+// delete-&-reinstall and new devices — a returning pre-paid customer keeps their free Pro. A local
+// "did this container run before?" check would falsely DENY those customers on a clean reinstall.
 
 import Foundation
 import StoreKit
+
+/// DEBUG-only logger for the Pro / entitlement flow. `@autoclosure` + `#if DEBUG` means the message
+/// string isn't even constructed in Release, so these traces add zero cost to the shipped app.
+@inline(__always)
+private func proLog(_ message: @autoclosure () -> String) {
+    #if DEBUG
+    print(message())
+    #endif
+}
 
 @MainActor
 final class StoreService: ObservableObject {
@@ -31,10 +46,16 @@ final class StoreService: ObservableObject {
     // MARK: UserDefaults keys
     /// Effective Pro flag read by `FeatureLimits.isPro`. Written ONLY here.
     nonisolated static let proUnlockedKey   = "isProUnlocked"
-    /// Sticky: this device owned SunnyWalker before the paid build → lifetime Pro, free. Never cleared.
+    /// Sticky: this Apple ID owned SunnyWalker before the paid build → lifetime Pro, free. Never cleared.
     nonisolated static let grandfatheredKey = "proGrandfathered"
-    /// One-shot gate so the existing-install heuristic is evaluated exactly once (first paid-build launch).
+    /// One-shot gate: frozen ONLY once Apple gives a definitive AppTransaction answer (so a transient
+    /// offline failure never permanently denies a genuine pre-paid customer — it just retries).
     nonisolated static let resolvedKey      = "proEntitlementResolved"
+
+    /// First build (CFBundleVersion) that shipped the paid Pro IAP. Anyone whose Apple ID first
+    /// downloaded SunnyWalker at a build BELOW this was a free-era user → lifetime Pro, free.
+    /// History (project.yml): builds 1–10 = free era (1.0–1.2); build 11 (1.3.20260614) = first paid build.
+    nonisolated static let firstPaidBuild = 11
 
     enum PurchaseState: Equatable {
         case idle
@@ -68,8 +89,11 @@ final class StoreService: ObservableObject {
             updatesListener = listenForTransactions()
         }
         Task {
+            proLog("🔑[Pro] StoreService.start() → resolve grandfather → refresh entitlement → load product")
+            await resolveGrandfatherIfNeeded()   // sets the sticky flag before we compute effective Pro
             await refreshEntitlement()
             await loadProduct()
+            proLog("🔑[Pro] start() done — isPro=\(isPro) product=\(product?.displayPrice ?? "nil")")
         }
     }
 
@@ -143,6 +167,7 @@ final class StoreService: ObservableObject {
             }
         }
         let grandfathered = UserDefaults.standard.bool(forKey: Self.grandfatheredKey)
+        proLog("🔑[Pro] refreshEntitlement: storeEntitled=\(storeEntitled) grandfathered=\(grandfathered) → isPro=\(storeEntitled || grandfathered)")
         setProUnlocked(storeEntitled || grandfathered)
     }
 
@@ -164,64 +189,91 @@ final class StoreService: ObservableObject {
         }
     }
 
-    // MARK: - Grandfathering (existing installs upgrade to lifetime Pro, free)
+    // MARK: - Grandfathering (free-era installs upgrade to lifetime Pro, free)
 
-    /// Evaluate the existing-install heuristic EXACTLY ONCE, then freeze the result.
-    /// Call as the first thing in `AppDelegate.didFinishLaunching`, before any first-launch writes
-    /// (settings defaults, SwiftData container) could pollute the signals.
-    ///
-    /// `nonisolated` + UserDefaults/FileManager only → safe to call directly on the launch thread.
-    nonisolated static func resolveGrandfatheredEntitlement() {
+    /// Resolve the one-time grandfather grant from Apple's signed `AppTransaction`. Account-bound, so
+    /// it survives delete-&-reinstall / new device, and reads the on-device receipt (works offline
+    /// once provisioned). Sets the sticky `grandfatheredKey` exactly once; the result is frozen
+    /// (`resolvedKey`) ONLY on a definitive Apple answer, so a transient offline failure just retries
+    /// next launch instead of permanently denying a genuine pre-paid customer.
+    func resolveGrandfatherIfNeeded() async {
         let d = UserDefaults.standard
-        guard !d.bool(forKey: resolvedKey) else { return }   // already decided on a prior launch
-        d.set(true, forKey: resolvedKey)
+        proLog("🔑[Pro] resolveGrandfather START — grandfathered=\(d.bool(forKey: Self.grandfatheredKey)) resolved=\(d.bool(forKey: Self.resolvedKey)) isProUnlocked=\(d.bool(forKey: Self.proUnlockedKey)) firstPaidBuild=\(Self.firstPaidBuild)")
 
-        if isExistingInstallFromPreviousVersion() {
-            d.set(true, forKey: grandfatheredKey)
-            d.set(true, forKey: proUnlockedKey)   // grant synchronously → no window where caps re-lock
-            print("🎁 Grandfather: pre-paid install detected → lifetime SunnyWalker Pro granted, free")
-        } else {
-            print("🆕 Grandfather: clean first install → standard free tier (Pro available to purchase)")
+        #if DEBUG
+        // Test lever (DEBUG only, never ships): scheme env var SW_FORCE_NEW_USER=1 forces the paid-era
+        // (purchase) state even though StoreKit testing reports originalAppVersion "1.0".
+        let forced = ProcessInfo.processInfo.environment["SW_FORCE_NEW_USER"]
+        proLog("🔑[Pro] DEBUG SW_FORCE_NEW_USER=\(forced ?? "<unset>") SW_FAKE_ORIGINAL_BUILD=\(ProcessInfo.processInfo.environment["SW_FAKE_ORIGINAL_BUILD"] ?? "<unset>")")
+        if forced == "1" {
+            d.set(false, forKey: Self.grandfatheredKey)
+            // Do NOT freeze resolvedKey — flipping the env var back off must re-resolve cleanly.
+            proLog("🧪[Pro] SW_FORCE_NEW_USER=1 → NOT grandfathered (testing purchase UI)")
+            return
         }
-    }
+        #endif
 
-    /// Settings keys a previous version persisted through normal use. Their presence on the FIRST
-    /// paid-build launch means the app ran before. (A clean install's UserDefaults has none of these:
-    /// `AppSettings`/`LocalizationManager` only WRITE them via `didSet`, which doesn't fire during
-    /// `init`, so merely launching fresh leaves them unset.)
-    nonisolated static let legacyInstallKeys = [
-        "use24HourClock", "recordingGapSeconds", "alarmRingDurationMinutes",
-        "mascotTheme", "parentalUnlockDurationMinutes", "parentalUnlockUntil",
-        "backgroundListeningEnabled", "appLanguageCode",
-    ]
+        if d.bool(forKey: Self.grandfatheredKey) {
+            proLog("🎁[Pro] already granted (sticky) → Pro.")
+            return   // sticky, never re-check
+        }
+        #if !DEBUG
+        // Release freezes once Apple answers; DEBUG re-resolves every launch so toggling the env var /
+        // StoreKit config takes effect without reinstalling.
+        if d.bool(forKey: Self.resolvedKey) {
+            proLog("🆕[Pro] already resolved as paid-era user (no free grant)")
+            return
+        }
+        #endif
 
-    /// True if this device already ran a pre-paid version of SunnyWalker. No prior build stored its
-    /// own version number, so existing ownership is inferred from persisted on-device state. Any ONE
-    /// signal is sufficient; a genuinely clean install has none of them at first-launch time.
-    nonisolated static func isExistingInstallFromPreviousVersion() -> Bool {
-        hasPreviousDataFiles() || hasLegacyInstallSignal(in: .standard)
-    }
-
-    /// File-system evidence of a prior run.
-    nonisolated static func hasPreviousDataFiles() -> Bool {
-        let fm = FileManager.default
-        // SwiftData store from a previous run (created lazily AFTER didFinishLaunching on a fresh
-        // install, so its presence at launch-decision time means the app has run before).
-        if let appSupport = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-            for name in ["default.store", "default.sqlite", "default.store-wal", "default.store-shm"] {
-                if fm.fileExists(atPath: appSupport.appendingPathComponent(name).path) { return true }
+        proLog("🔑[Pro] querying AppTransaction.shared …")
+        do {
+            let result = try await AppTransaction.shared
+            switch result {
+            case .unverified(let appTx, let err):
+                proLog("🛒[Pro] AppTransaction UNVERIFIED: originalAppVersion=\"\(appTx.originalAppVersion)\" err=\(err) — not freezing, will retry")
+                return
+            case .verified(let appTx):
+                var raw = appTx.originalAppVersion
+                #if DEBUG
+                // StoreKit LOCAL TESTING reports the CURRENT build as originalAppVersion (e.g. "13"),
+                // which can't represent an old install. To test the grandfather path on a dev build,
+                // set scheme env SW_FAKE_ORIGINAL_BUILD to any value < firstPaidBuild (e.g. "5").
+                // (Production uses the real AppTransaction value, so this never affects shipping.)
+                if let fake = ProcessInfo.processInfo.environment["SW_FAKE_ORIGINAL_BUILD"], !fake.isEmpty {
+                    proLog("🧪[Pro] SW_FAKE_ORIGINAL_BUILD=\(fake) overrides StoreKit-testing originalAppVersion=\"\(raw)\"")
+                    raw = fake
+                }
+                #endif
+                let parsed = Self.leadingInt(raw)
+                let grant = Self.isGrandfatheredOriginalVersion(raw)
+                proLog("🔑[Pro] AppTransaction VERIFIED: originalAppVersion=\"\(raw)\" parsedBuild=\(parsed.map(String.init) ?? "nil") cutoff=\(Self.firstPaidBuild) grandfather=\(grant)")
+                if grant {
+                    d.set(true, forKey: Self.grandfatheredKey)
+                    d.set(true, forKey: Self.proUnlockedKey)   // grant immediately; refreshEntitlement mirrors it
+                    proLog("🎁[Pro] GRANTED lifetime Pro (free, grandfathered)")
+                } else {
+                    proLog("🆕[Pro] paid-era user → free tier (Pro available to purchase)")
+                }
+                d.set(true, forKey: Self.resolvedKey)   // definitive answer → freeze (Release)
             }
+        } catch {
+            proLog("🛒[Pro] AppTransaction THREW: \(error) — will retry next launch")
         }
-        // Recordings folder (parent voice clips / custom ringtones live in Documents/Recordings).
-        if let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first {
-            if fm.fileExists(atPath: docs.appendingPathComponent("Recordings").path) { return true }
-        }
-        return false
     }
 
-    /// UserDefaults evidence of a prior run. Pure (defaults injected) so it is deterministically testable.
-    nonisolated static func hasLegacyInstallSignal(in defaults: UserDefaults) -> Bool {
-        for key in legacyInstallKeys where defaults.object(forKey: key) != nil { return true }
-        return false
+    /// Pure & testable. `AppTransaction.originalAppVersion` on iOS is the ORIGINAL `CFBundleVersion`
+    /// (build number) the Apple ID first downloaded — an integer string in production (e.g. "10").
+    /// Parse its leading integer and grandfather everything below the first paid build.
+    /// Unparseable → fail safe (NO free grant): never give away Pro on a value we can't trust.
+    nonisolated static func isGrandfatheredOriginalVersion(_ originalAppVersion: String) -> Bool {
+        guard let build = leadingInt(originalAppVersion) else { return false }
+        return build < firstPaidBuild
+    }
+
+    /// Leading run of digits as an Int (tolerates StoreKit-testing values like "1.0" → 1). nil if none.
+    nonisolated static func leadingInt(_ s: String) -> Int? {
+        let digits = s.prefix { $0.isNumber }
+        return digits.isEmpty ? nil : Int(digits)
     }
 }

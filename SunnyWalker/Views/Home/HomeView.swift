@@ -623,7 +623,13 @@ struct HomeView: View {
                 showingAddAlarm = true
             }
         }) {
-            ParentalGateView(onSuccess: { gateDidSucceed = true })
+            ParentalGateView(onSuccess: {
+                // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
+                // isn't re-challenged for every Settings / New Alarm within that window. They can end
+                // it early with "立即上鎖" in Settings.
+                settings.beginParentalUnlockWindow()
+                gateDidSucceed = true
+            })
         }
         .sheet(isPresented: $showingAddAlarm) {
             AlarmEditorView()
@@ -632,7 +638,11 @@ struct HomeView: View {
         .sheet(isPresented: $showingParentalForSettings, onDismiss: {
             if gateSettingsOK { gateSettingsOK = false; showingSettings = true }
         }) {
-            ParentalGateView(onSuccess: { gateSettingsOK = true })
+            ParentalGateView(onSuccess: {
+                // Same as the New Alarm gate: passing it starts the temporary-unlock window.
+                settings.beginParentalUnlockWindow()
+                gateSettingsOK = true
+            })
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
@@ -883,8 +893,16 @@ struct SettingsView: View {
                     }
 
                     if isTemporarilyUnlocked {
+                        // One row: "立即上鎖" (lock now, ends the window early) on the left, remaining
+                        // countdown on the right — saves the separate 目前狀態 line.
                         HStack {
-                            Label("temporary_unlock_remaining_label", systemImage: "checkmark.shield")
+                            Button(role: .destructive) {
+                                settings.endParentalUnlockWindow()
+                                unlockNow = Date()
+                            } label: {
+                                Label("temporary_unlock_lock_now", systemImage: "lock.fill")
+                            }
+                            .buttonStyle(.borderless)   // keep the tap target on the button, not the whole row
                             Spacer()
                             Text(remainingUnlockText)
                                 .foregroundStyle(SunnyColors.forestDeep)

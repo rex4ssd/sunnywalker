@@ -714,13 +714,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ringtone length: %1$lld s → %2$lld s"
+            "value" : "Ringtone length: %1$lld s on the free version, up to %2$lld s with Pro"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "單則鈴聲長度：%1$lld 秒 → %2$lld 秒"
+            "value" : "單則鈴聲長度：免費版 %1$lld 秒，Pro 最長 %2$lld 秒"
           }
         }
       }
@@ -1173,6 +1173,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "解鎖期間內，按設定與新增鬧鐘都不會跳出檢核視窗。"
+          }
+        }
+      }
+    },
+    "temporary_unlock_lock_now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lock now"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即上鎖"
           }
         }
       }

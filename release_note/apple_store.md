@@ -1,19 +1,19 @@
 # SunnyWalker — App Store Release Note
 
-## 1.3.20260615 (build 13) — 修內建鈴聲 + 從檔案匯入音檔當鈴聲（承接 Pro IAP）
+## 1.3.20260615 (build 14) — Pro 正式版：內建鈴聲修正 + 匯入音檔 + Pro 修正（$1.99／帳號制 grandfather／移除不可達 benefit）　✅ 已送審
 
-> 📦 **同一顯示版本 `1.3.20260615` 同日多次打包**：build 11(放棄)、build 12(已上傳，僅 bug fix)、
-> **本版 build 13** 在 build 12 之上再加「從檔案匯入音檔當鈴聲」新功能 → **以 build 13 送審**，
-> build 12 由 build 13 取代（同版本頁改掛 build 13 即可）。What's New 涵蓋 Pro + bug fix + 匯入功能。
+> 📦 **同一顯示版本 `1.3.20260615` 同日多次打包，最終以 build 14 送審**。歷程：build 11/12/13 皆已上傳佔用後作廢（11 放棄、12 為舊版 Pro $1.49 未送審、13 被佔用），**本版 build 14** 在其上加「從檔案匯入音檔當鈴聲」並修正多項 Pro 問題（見下「🔧 本版 Pro 調整」）。What's New 涵蓋 Pro + bug fix + 匯入功能。
 
 | 欄位 | 值 |
 |---|---|
 | 顯示版本 (Marketing Version) | **1.3.20260615**（沿用 1.3 Pro train，只換打包日期） |
-| Build (CFBundleVersion) | **13**（11、12 皆已上傳佔用 → 進 13） |
-| 送審日期 | 2026-06-15 |
-| 前次紀錄 | 1.3.20260615 (12) — 已上傳（bug fix）；1.3.20260614 (11) — 已上傳後放棄；1.2.20260613 (10) — 免費版 |
+| Build (CFBundleVersion) | **14**（11、12、13 皆已上傳佔用 → 進 14） |
+| 送審日期 | 2026-06-17 |
+| 前次紀錄 | 1.3.20260615 (11/12/13) — 已上傳後作廢；1.2.20260613 (10) — 免費版（已上架） |
 | Bundle ID | `app.rexcode.sunnywalker`　/　ASC App ID `6775802674`　/　Team `NHY8MKW8NH` |
-| 內含 | 承接 SunnyWalker Pro（NT$50 終身 IAP、家庭共享、grandfather 自動免費升級）＋下列修正與新功能 |
+| 內含 | 承接 SunnyWalker Pro（**US$1.99** 終身 IAP、家庭共享、grandfather 自動免費升級）＋下列修正與新功能。本版（14）另修正 build 12 的數項 Pro 問題，見下「🔧 本版 Pro 調整」 |
+| IAP / 價格 | `app.rexcode.sunnywalker.pro.lifetime`（Non-Consumable、Family Shareable）；**base = 美國 US$1.99**，其餘 storefront 由 Apple 換算（台灣約 NT$60）。`.storekit` displayPrice 1.99，實際以 ASC Price Schedule 為準 |
+| Pro 解除的上限（3 項，皆可達） | 鬧鐘 6→∞、自定鈴聲 5→∞、單則鈴聲 5s→30s（單一來源 `FeatureLimits`）。⚠️「家長錄音長度」那條已移除——見下 |
 
 ### 🐞 本版修正
 
@@ -26,6 +26,17 @@
   - 新增檔：`SunnyWalker/Services/AudioImporter.swift`。改動：`RingtonePickerSheet.swift`、`VoiceLibraryView.swift`（各加「匯入音檔」鈕 + 錯誤 alert）、`Localizable.xcstrings`（中英字串）。
   - ⚠️ **有新增檔** → Archive 前**務必** `xcodegen generate` 把 `AudioImporter.swift` 註冊進 pbxproj，否則不會編進 target。
 
+### 🔧 本版 Pro 調整（修正已上傳的 build 12）
+
+> build 12 已上傳但**尚未送審**；下列是 build 12 之後、隨 build 14 一起送的修正（2026-06-16）。
+
+- **Grandfather 改用 Apple 簽章的 `AppTransaction.originalAppVersion`**（取代原本的本地檔案／UserDefaults heuristic）。規則：該 Apple ID 首次下載的 build < **11**（免費期 1.0–1.2）→ 免費終身 Pro。綁 Apple ID、**跨刪除重裝／換機都在**、離線可用——舊 heuristic 會在重裝後把老用戶誤判成新人而收費，本版修掉。改動：`StoreService.swift`、`SunnyWalkerApp.swift`、`SunnyWalkerTests.swift`。
+- **移除「每鬧鐘錄音 180s→∞」這條 Pro benefit**：該上限只被沒有任何進入點的 orphaned `RecordingView` 使用，使用者到不了 → 形同廣告不可達功能（審核風險）。Pro 現在解除 **3 項可達上限**：鬧鐘 6→∞、自定鈴聲 5→∞、單則鈴聲 5s→30s。改動：`ProUpgradeView.swift`、`Localizable.xcstrings`。
+- **價格定為 US$1.99（base 美國）**，其餘由 Apple 換算（台灣約 NT$60）；`Configuration.storekit` displayPrice→1.99，實際以 ASC Price Schedule 為準。**畫面一律用 `product.displayPrice`，不寫死、不標 USD。**
+- **購買頁排版一致化**：benefit 字級對齊設定列（16pt）、單則鈴聲長度文案改成「免費版 5 秒，Pro 最長 30 秒」與其他列一致。
+- **家長暫時解鎖 UX**：通過家長驗證後自動開啟解鎖視窗（預設 5 分鐘），新增「立即上鎖」可提前結束。改動：`HomeView.swift`、`AppSettings.swift`、`Localizable.xcstrings`。⚠️ 合規留意：解鎖視窗內購買入口無需重過 gate（購買本身仍走 Apple 付款驗證）；若審核有疑可改成購買頁永遠獨立過 gate。
+- 測試：新增 `SW_FORCE_NEW_USER` DEBUG 環境變數（`project.yml`/scheme，**預設關閉**）以在 StoreKit 本機測試看到購買頁；本機重設用 `./reset_pro.sh`。
+
 ### App Store「版本說明 / What's New」
 
 #### 繁體中文（zh-Hant）
@@ -35,7 +46,7 @@ SunnyWalker Pro 來了，還能用你自己的音檔當鈴聲 ✨
 
 ‧ 新增：可以從「檔案」匯入手機裡的音檔（mp3／wav 等）當叫醒鈴聲
 ‧ 修正：在「溫和提醒」模式選用內建鈴聲時，現在會正確響起鈴聲（先前只會響一聲系統提示音）
-‧ SunnyWalker Pro：一次購買、永久解鎖——鬧鐘數量、自定鈴聲數量與長度、爸媽錄音長度全部無上限
+‧ SunnyWalker Pro：一次購買、永久解鎖——鬧鐘數量與自定鈴聲數量無上限，單則鈴聲最長拉到 30 秒
 ‧ 支援家庭共享，一人購買、全家共用；購買入口放在「設定」的家長驗證之後，孩子不會誤觸
 ‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro ☀️
 
@@ -49,32 +60,41 @@ Meet SunnyWalker Pro — and set your own audio as a ringtone ✨
 
 • New: import an audio file from Files (mp3, wav, and more) to use as a wake-up sound
 • Fixed: built-in ringtones now play correctly in Gentle Reminder mode (previously you'd only hear a single system alert tone)
-• SunnyWalker Pro: one-time purchase, unlocked forever — unlimited alarms, unlimited voice clips, longer clips, and longer parent recordings
+• SunnyWalker Pro: one-time purchase, unlocked forever — unlimited alarms, unlimited custom ringtones, and longer ringtones (up to 30s)
 • Family Sharing supported; the upgrade lives in Settings behind a parental gate so kids can't tap to buy
 • Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free ☀️
 
 The core wake-up features stay free forever. Fully offline, zero ads, no data collected.
 ```
 
+### 宣傳文字 / Promotional Text（≤170 字元，可隨時改不需重審）
+
+- 繁中（約 84 字）：`SunnyWalker Pro 來了！一次購買、永久解鎖無上限鬧鐘與鈴聲，還能匯入自己的音檔當叫醒聲。老用戶更新直接免費升 Pro ☀️ 完全離線、零廣告、不收集資料。`
+- EN（約 163 字）：`SunnyWalker Pro is here: unlock unlimited alarms & ringtones, and import your own audio as a wake-up sound. Already using SunnyWalker? Updating unlocks Pro free ☀️`
+
 ### 送審前最終確認（本次更新）
 
-- [ ] `project.yml`：MARKETING_VERSION `1.3.20260615`、CURRENT_PROJECT_VERSION `13` → **`xcodegen generate`**（套版號 **+ 註冊新檔 `AudioImporter.swift`**）
-- [ ] 真機驗收新功能：選鈴聲／錄音管理 → 匯入音檔 → 挑一首 mp3 → 出現在自訂鈴聲、可試聽、可設為鬧鈴；到 5 個上限時鈕變鎖頭；DRM 歌曲跳友善錯誤
-- [ ] 真機驗收 bug fix：溫和提醒模式 + 內建鈴聲 → 殺 App／關屏 → 應聽到內建鈴聲（非「咚」一聲）；切段堆疊正常；自錄聲不變
-- [ ] 真機驗收 IAP：設定 → 家長驗證後才看得到「SunnyWalker Pro」→ 購買 → 上限解除；Restore 可還原；grandfather 舊用戶自動免費
-- [ ] App Store Connect：`1.3.20260615` 版本頁改掛 **build 13**，貼上方 What's New
+- [ ] `project.yml`：MARKETING_VERSION `1.3.20260615`、CURRENT_PROJECT_VERSION `13` → **`xcodegen generate`**（套版號 + 註冊 `AudioImporter.swift` + scheme 的 `SW_FORCE_NEW_USER` 預設關閉）
+- [ ] App Store Connect → IAP `app.rexcode.sunnywalker.pro.lifetime` Price Schedule = **US$1.99（base 美國）**，檢視台灣等換算值；IAP 狀態到 **Ready to Submit**
+- [ ] 真機驗收新功能：選鈴聲／錄音管理 → 匯入音檔 → mp3 → 出現在自訂鈴聲、可試聽、可設鬧鈴；到 5 個上限鈕變鎖頭；DRM 歌曲跳友善錯誤
+- [ ] 真機驗收 bug fix：溫和提醒 + 內建鈴聲 → 殺 App／關屏 → 應聽到內建鈴聲（非「咚」一聲）；切段堆疊正常；自錄聲不變
+- [ ] 真機驗收 IAP：設定 → 家長驗證後才看得到「SunnyWalker Pro · $1.99」→ 購買 → **3 項上限**（鬧鐘∞／鈴聲∞／單則 30s）解除；Restore 可還原
+- [ ] 真機驗收 grandfather：裝過舊版（original build <11）的 Apple ID 更新 → 自動 Pro；**刪 app 重裝同帳號仍 Pro**；全新帳號 → 看到購買頁（本機測試可用 scheme env `SW_FORCE_NEW_USER=1`，截圖完關掉）
+- [ ] 確認購買頁 benefit 只剩 3 項（錄音那條已移除）；價格顯示 `product.displayPrice`、未寫死、未標 USD
+- [ ] App Store Connect：`1.3.20260615` 版本頁改掛 **build 14**（取代 build 11/12/13），貼上方 What's New；**IAP 勾選隨此版一起送審**（首個 IAP 必須隨 binary）
 - [ ] Age Rating（Made for Kids 6–8）、App Privacy（Data Not Collected）、Privacy Policy URL 沿用
-- [ ] Xcode Organizer → Distribute → Upload（build 13）→ Submit（首個 IAP 隨 binary 一併送審）
+- [ ] Review Notes：沿用既有「purchase 只在家長 gate 後、StoreKit 處理、無第三方 SDK／廣告／資料收集」說明（見 §4.6 / `appstoreconnect/App_Review.md`）
+- [ ] Xcode Organizer → Distribute → Upload（build 14）→ Submit（首個 IAP 隨 binary 一併送審）
 
 ---
 
-## 1.3.20260615 (build 12) — 修復內建鈴聲在溫和提醒模式不響（承接 Pro IAP）　⚠️ 已上傳，由 build 13 取代（加匯入音檔）
+## 1.3.20260615 (build 12) — 修復內建鈴聲在溫和提醒模式不響（承接 Pro IAP）　⚠️ 已上傳，由 build 14 取代（加匯入音檔）
 
-> 🐞 已上傳 ASC，但隨即由 **build 13**（再加「匯入音檔」功能）取代。內容＝SunnyWalker Pro + 內建鈴聲通知音修正。
+> 🐞 已上傳 ASC，但隨即由 **build 14**（再加「匯入音檔」功能）取代。內容＝SunnyWalker Pro + 內建鈴聲通知音修正。
 
 ---
 
-## 1.3.20260614 (build 11) — SunnyWalker Pro（NT$50 終身解鎖 IAP）　⚠️ 已上傳後放棄，由 1.3.20260615 (build 13) 取代
+## 1.3.20260614 (build 11) — SunnyWalker Pro（NT$50 終身解鎖 IAP）　⚠️ 已上傳後放棄，由 1.3.20260615 (build 14) 取代
 
 > 💰 **本次為「付費解鎖版」**：合併 `feature/pro-iap-lifetime` 的 StoreKit 2 一次性買斷
 > （non-consumable，家庭共享）。免費版叫醒功能不變；Pro 解除四個上限。
@@ -88,7 +108,7 @@ The core wake-up features stay free forever. Fully offline, zero ads, no data co
 | 前次紀錄 | 1.2.20260613 (10) — 免費版（切段 30s + 錄音管理） |
 | Bundle ID | `app.rexcode.sunnywalker`　/　ASC App ID `6775802674`　/　Team `NHY8MKW8NH` |
 | IAP Product ID | `app.rexcode.sunnywalker.pro.lifetime`（Non-Consumable，Family Shareable） |
-| 價格 | **NT$50（≈ US$1.49）一次買斷** — `.storekit` displayPrice 1.49；實際價格在 ASC 設定，⚠️ 早期規劃文件曾寫 NT$90/120，**以本次 NT$50 為準，送審前自行確認** |
+| 價格 | （build 11 當時規劃 **NT$50 ≈ US$1.49**）⚠️ **已作廢——最終定價改為 US$1.99（base 美國，台灣約 NT$60），以 build 14 為準，見上方 1.3.20260615 (build 14) 段** |
 | Pro 解除的上限 | 鬧鐘 6→∞、自定鈴聲 5→∞、單段鈴聲 5s→30s、家長錄音 3 分鐘→∞（單一來源 `FeatureLimits`） |
 | 購買入口 | 設定 → 家長驗證（ParentalGateView）後 → 「SunnyWalker Pro」→ ProUpgradeView（含 Restore） |
 
