@@ -1,5 +1,12 @@
 # 03_todo_fectures，完成後加 `done-YYYYMMDD_HHMM` 搬到 ## complete, fetures。
 
+
+#  to do task,  add voice, time settin by line msg
+-大人透過line或區網更新daily jobs,每晚訂時提醒小孩去做 
+主畫面上方出現氣球或太陽，表示有todo，點開用語音問job1、2是否完成(或用ui 讓kid點)都完成，氣球會消失，會有每周完成事頁紀錄和評平
+
+#
+
 ## 聲音時光機, 時空膠囊語音 (Voice Time Capsule)
 為了讓這個功能更穩定且具有吸引力，建議採取以下實作策略：
 
@@ -14,7 +21,6 @@
 - 成長聲音自動剪輯 → Pro 加值好題材，純 on-device 可行
 
 
-# add voice, time settin by line msg
 
 # 小孩錄音功能
 技術架構與隱私策略 (CloudKit 是首選)
