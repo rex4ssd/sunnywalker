@@ -7,7 +7,7 @@ project:
   name: SunnyWalker
   description: |
     A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI,
-    Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
+    hand-painted watercolor aesthetic. 100% offline, no ads, no tracking.
 
 # Path to the implementation spec, relative to repo root.
 spec_path: docs/swift_native_spec.md

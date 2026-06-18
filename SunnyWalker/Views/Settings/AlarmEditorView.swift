@@ -598,7 +598,7 @@ private struct WeekdayChip: View {
                         .fill(isSelected ? selectedFill : SunnyColors.sunnyGray.opacity(0.12))
                 )
         }
-        .ghibliButtonStyle()
+        .sunnyButtonStyle()
     }
 }
 

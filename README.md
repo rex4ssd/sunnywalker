@@ -1,6 +1,6 @@
 # SunnyWalker
 
-A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI, Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
+A voice-interactive alarm clock for 7-year-olds. iOS 17+, Swift + SwiftUI, hand-painted watercolor aesthetic. 100% offline, no ads, no tracking.
 
 The repo also contains **`claude_loop`** — a reusable 4-agent ring framework that builds the app one day at a time. The framework is the meta-project; SunnyWalker is the first app it builds. See `orchestrator/REUSE.md` to drop it into a new project.
 

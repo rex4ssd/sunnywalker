@@ -26,7 +26,7 @@ struct SunnyButton: View {
                         .shadow(color: color.opacity(0.4), radius: 8, y: 4)
                 )
         }
-        .ghibliButtonStyle()
+        .sunnyButtonStyle()
     }
 }
 

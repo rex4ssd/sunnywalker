@@ -31,7 +31,7 @@ struct ButtonPressStyle: ButtonStyle {
 }
 
 extension View {
-    func ghibliButtonStyle() -> some View {
+    func sunnyButtonStyle() -> some View {
         buttonStyle(ButtonPressStyle())
     }
 }

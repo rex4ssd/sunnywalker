@@ -1,7 +1,7 @@
 # SunnyWalker — Main Entry
 
 _A voice-interactive alarm clock for 7-year-olds. iOS 26+, Swift + SwiftUI,
-Studio-Ghibli watercolor aesthetic. 100% offline, no ads, no tracking.
+hand-painted watercolor aesthetic. 100% offline, no ads, no tracking.
 _
 
 Last updated: **2026-06-01T13:15:00+08:00**

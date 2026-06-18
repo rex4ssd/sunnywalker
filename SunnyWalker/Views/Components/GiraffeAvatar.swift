@@ -14,7 +14,7 @@ struct GiraffeAvatar: View {
     @State private var isBlinking = false
     private let blinkTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
 
-    // Palette — warm, soft, Ghibli-friendly
+    // Palette — warm, soft, hand-painted watercolor
     private let bodyColor = Color(red: 0.97, green: 0.81, blue: 0.40)   // golden coat
     private let bodyShade = Color(red: 0.93, green: 0.74, blue: 0.30)   // legs / neck shade
     private let bodyHi     = Color(red: 0.99, green: 0.90, blue: 0.62)  // belly highlight
