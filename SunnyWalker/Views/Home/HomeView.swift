@@ -34,6 +34,10 @@ struct HomeView: View {
     // Notification-driven / long-press alarm ring
     @State private var firingAlarm: Alarm?
 
+    // Multi-person alarm groups: which group page the home list is currently showing.
+    // 0 = group A. Clamped whenever the parent lowers the group count / disables grouping.
+    @State private var homeGroupSelection = 0
+
     // Day 19: bed-side mode
     @StateObject private var bedSide = BedSideManager.shared
 
@@ -48,6 +52,11 @@ struct HomeView: View {
     @State private var showingParentalForSettings = false
     @State private var gateSettingsOK = false
     @State private var showingSettings = false
+
+    // Group on/off (home banner) — also gated behind the parental gate
+    @State private var showingParentalForGroup = false
+    @State private var groupGateOK = false
+    @State private var pendingGroupToggle: Int? = nil
 
     // Drives only the time-of-day scene (background gradient + clock color), which can
     // only change on an hour boundary — a 60s cadence is plenty. The per-second clock
@@ -84,12 +93,13 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
-                                MascotView(tappable: true, scene: scene)
+                                MascotView(tappable: true, scene: scene,
+                                           themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
-                            AlarmListView(alarms: alarms)
+                            alarmColumn()
                                 .frame(maxWidth: .infinity)
                         }
                     } else {
@@ -99,11 +109,12 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
-                                MascotView(tappable: true, scene: scene)
+                                MascotView(tappable: true, scene: scene,
+                                           themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
-                            AlarmListView(alarms: alarms)
+                            alarmColumn()
                                 .frame(maxWidth: .infinity)
                         }
                     }
@@ -112,24 +123,16 @@ struct HomeView: View {
                 // iPhone: ONE continuous scroll, like the built-in Clock app. Clock + mascot are the
                 // first scrolling rows above the alarm cards, so the whole page reads as a single long
                 // strip you can drag up/down freely (no pinned header, no separate panel, no scrollbar).
-                AlarmListView(
-                    alarms: alarms,
-                    header: AnyView(
-                        VStack(spacing: 0) {
-                            ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
-                                .padding(.top, 56)
-                                .padding(.bottom, 12)
-                            MascotView(tappable: true, scene: scene)
-                                .padding(.bottom, 8)
-                        }
-                        // List row 預設靠左對齊 → 撐滿寬度才會水平置中（時鐘 / 日期 / 小動物）。
-                        .frame(maxWidth: .infinity)
-                    )
-                )
+                // When grouping is on, this becomes a horizontal pager (one page per group).
+                iphoneAlarmList()
             }
             addButton
         }
         .ignoresSafeArea(edges: .top)
+        // Keep the visible group page valid when the parent lowers the count or disables grouping.
+        .onChange(of: settings.effectiveGroupCount) { _, n in
+            if homeGroupSelection >= n { homeGroupSelection = max(0, n - 1) }
+        }
         .onAppear {
             checkPendingAlarm()
         }
@@ -147,7 +150,9 @@ struct HomeView: View {
                 // ★ 2026-06-12：通知模式的鬧鐘在【前景啟動】時可靠地（補）排一次 .timeSensitive 通知。
                 //   背景轉場故意不排（remove-readd 會被 force-quit 中斷 → 通知遺失，就是「提醒模式
                 //   什麼都沒發生」的根因）。前景 add() 一定跑得完，所以放這裡補；repeats:true 會自己持續存在。
-                for alarm in alarms where alarm.isEnabled && alarm.effectiveBackgroundMode == .notification {
+                for alarm in alarms where alarm.isEnabled
+                    && alarm.effectiveBackgroundMode == .notification
+                    && AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) {
                     try? await AlarmScheduler.shared.schedule(alarm: alarm)
                 }
             } else {
@@ -347,7 +352,7 @@ struct HomeView: View {
     private func presentRing(_ alarm: Alarm) {
         bedSide.disable()   // restore brightness if 床邊模式 dimmed the screen
         let sheetWasOpen = showingSettings || showingAddAlarm
-            || showingParentalGate || showingParentalForSettings
+            || showingParentalGate || showingParentalForSettings || showingParentalForGroup
         guard sheetWasOpen else {
             firingAlarm = alarm
             return
@@ -357,6 +362,7 @@ struct HomeView: View {
         showingAddAlarm = false
         showingParentalGate = false
         showingParentalForSettings = false
+        showingParentalForGroup = false
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(0.35))   // let the sheet finish dismissing
             firingAlarm = alarm
@@ -391,7 +397,8 @@ struct HomeView: View {
             let alarmSummary = alarms.filter(\.isEnabled).map { "\($0.id.uuidString.prefix(8)) \($0.hour):\(String(format: "%02d", $0.minute))" }.joined(separator: ", ")
             print("🏠 checkForegroundAlarm: now=\(h):\(String(format: "%02d", m)) wd=\(wd) enabledAlarms=[\(alarmSummary)]")
         }
-        for a in alarms where a.isEnabled && a.hour == h && a.minute == m {
+        for a in alarms where a.isEnabled && a.hour == h && a.minute == m
+            && AppSettings.groupAllowsFiring(a.effectiveGroupIndex) {
             // 通知模式：響鈴交給 .timeSensitive 通知本身（前景由 willPresent 出 banner+sound 並自動停），
             // 不在前景另外彈 in-app AlarmRingView，避免「通知音 + 鈴聲」雙重音效。點通知才開喚醒畫面。
             if a.effectiveBackgroundMode == .notification { continue }
@@ -516,13 +523,16 @@ struct HomeView: View {
     /// Push the current alarm list to the background-listening manager and start/stop it to match
     /// the setting. Called whenever alarms change or the toggle flips. (Experimental, off by default.)
     private func syncBackgroundListening() {
-        let snaps = alarms.map {
-            AlarmSnapshot(
-                id: $0.id, hour: $0.hour, minute: $0.minute, weekdays: $0.weekdays,
-                isEnabled: $0.isEnabled, recordingName: $0.recordingName, soundFileName: $0.soundFileName,
-                requireAppToStop: $0.effectiveRequireAppToStop
-            )
-        }
+        // 多人鬧鐘群組閘：被關掉 / 隱藏的群組不納入背景聆聽（keep-alive 麥克風 fallback）。
+        let snaps = alarms
+            .filter { AppSettings.groupAllowsFiring($0.effectiveGroupIndex) }
+            .map {
+                AlarmSnapshot(
+                    id: $0.id, hour: $0.hour, minute: $0.minute, weekdays: $0.weekdays,
+                    isEnabled: $0.isEnabled, recordingName: $0.recordingName, soundFileName: $0.soundFileName,
+                    requireAppToStop: $0.effectiveRequireAppToStop
+                )
+            }
         BackgroundListeningManager.shared.updateAlarms(snaps)
         // The keep-alive mic is ONLY a fallback for when AlarmKit is unauthorized. When AlarmKit
         // owns the alarms (normal state), never run it — the mic must open only during an actual
@@ -531,6 +541,95 @@ struct HomeView: View {
             if firingAlarm == nil { BackgroundListeningManager.shared.start() }
         } else {
             BackgroundListeningManager.shared.stop()
+        }
+    }
+
+    // MARK: - Grouped alarm list (multi-person alarms)
+
+    /// iPhone clock + mascot header. When `group` is non-nil a group-name banner is appended so the
+    /// current group (e.g. 哥哥) is labelled at the top of each horizontally-swiped page.
+    private func iphoneHeader(group: Int?, showBanner: Bool) -> AnyView {
+        AnyView(
+            VStack(spacing: 0) {
+                ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
+                    .padding(.top, 56)
+                    .padding(.bottom, 12)
+                MascotView(tappable: true, scene: scene,
+                           themeOverride: group.map { settings.groupMascot($0) })
+                    .padding(.bottom, 8)
+                if showBanner, let g = group {
+                    GroupBanner(
+                        name: settings.groupDisplayName(g),
+                        index: g,
+                        total: settings.effectiveGroupCount,
+                        active: settings.isGroupActive(g),
+                        onTap: { requestToggleGroup(g) }
+                    )
+                    .padding(.bottom, 10)
+                }
+            }
+            // List row 預設靠左對齊 → 撐滿寬度才會水平置中（時鐘 / 日期 / 小動物 / 群組橫幅）。
+            .frame(maxWidth: .infinity)
+        )
+    }
+
+    /// iPhone alarm list. Single continuous scroll when grouping is off; a horizontal page-per-group
+    /// pager (整頁橫向分頁) when the parent has enabled groups with 2+ groups.
+    @ViewBuilder
+    private func iphoneAlarmList() -> some View {
+        if settings.groupEnabled && settings.effectiveGroupCount > 1 {
+            TabView(selection: $homeGroupSelection) {
+                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { g in
+                    AlarmListView(
+                        alarms: alarms.filter { $0.effectiveGroupIndex == g },
+                        header: iphoneHeader(group: g, showBanner: true),
+                        dimmed: !settings.isGroupActive(g)
+                    )
+                    .tag(g)
+                }
+            }
+            // We draw our own banner + dots, so suppress the system page dots (they would sit under
+            // the floating FAB row at the bottom).
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        } else {
+            // Grouping off → only group A shows (B–E stay assigned but hidden until re-enabled).
+            // Enabled-but-single-group still shows group A's mascot, just without the swipe banner.
+            AlarmListView(
+                alarms: alarms.filter { $0.effectiveGroupIndex == 0 },
+                header: iphoneHeader(group: settings.groupEnabled ? 0 : nil, showBanner: false)
+            )
+        }
+    }
+
+    /// iPad alarm-list column (clock/mascot live in a separate column). Same grouping behaviour:
+    /// a horizontal pager with a group banner on top when grouping is enabled.
+    @ViewBuilder
+    private func alarmColumn() -> some View {
+        if settings.groupEnabled && settings.effectiveGroupCount > 1 {
+            TabView(selection: $homeGroupSelection) {
+                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { g in
+                    AlarmListView(
+                        alarms: alarms.filter { $0.effectiveGroupIndex == g },
+                        header: AnyView(
+                            GroupBanner(
+                                name: settings.groupDisplayName(g),
+                                index: g,
+                                total: settings.effectiveGroupCount,
+                                active: settings.isGroupActive(g),
+                                onTap: { requestToggleGroup(g) }
+                            )
+                            .padding(.top, 24)
+                            .padding(.bottom, 6)
+                            .frame(maxWidth: .infinity)
+                        ),
+                        dimmed: !settings.isGroupActive(g)
+                    )
+                    .tag(g)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        } else {
+            AlarmListView(alarms: alarms.filter { $0.effectiveGroupIndex == 0 })
         }
     }
 
@@ -647,6 +746,19 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView()
         }
+        // Group on/off parental gate → toggle the pending group on success.
+        .sheet(isPresented: $showingParentalForGroup, onDismiss: {
+            if groupGateOK {
+                groupGateOK = false
+                if let g = pendingGroupToggle { toggleGroup(g) }
+            }
+            pendingGroupToggle = nil
+        }) {
+            ParentalGateView(onSuccess: {
+                settings.beginParentalUnlockWindow()
+                groupGateOK = true
+            })
+        }
         // Alarm cap reached → tell the parent to delete one first.
         .alert("鬧鐘數量已達上限", isPresented: $showingMaxAlarmsAlert) {
             Button("好", role: .cancel) { }
@@ -687,6 +799,29 @@ struct HomeView: View {
             showingParentalForSettings = true
         }
     }
+
+    /// 點首頁群組橫幅 → 切換該組開關。先檢查家長權限：已解鎖直接切，否則先過家長閘。
+    private func requestToggleGroup(_ g: Int) {
+        settings.clearExpiredParentalUnlockIfNeeded()
+        if settings.isParentalGateUnlocked() {
+            toggleGroup(g)
+        } else {
+            pendingGroupToggle = g
+            showingParentalForGroup = true
+        }
+    }
+
+    /// 真正切換第 g 組的開關：只翻轉群組旗標（不動每顆鬧鐘的 isEnabled，保留個別開關狀態），
+    /// 再對該組鬧鐘重排一次 UN/通知。實際「響不響」交給 AppSettings.groupAllowsFiring 這道群組閘——
+    /// off → schedule()/syncAlarm() 會清掉排程；on → 依各鬧鐘自己的 isEnabled 重新排。
+    /// AlarmKit 則由前景/背景生命週期（enterBackground/ForegroundAlarmMode）依 model + 群組閘重排。
+    private func toggleGroup(_ g: Int) {
+        settings.setGroupActive(g, !settings.isGroupActive(g))
+        let affected = alarms.filter { $0.effectiveGroupIndex == g }
+        Task {
+            for a in affected { try? await AlarmScheduler.shared.syncWithModel(alarm: a) }
+        }
+    }
 }
 
 
@@ -721,6 +856,85 @@ private struct FabHint: ViewModifier {
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.35).onEnded { _ in reveal(id) }
             )
+    }
+}
+
+// MARK: - GroupBanner (multi-person alarm — current group label + swipe hint)
+
+/// Shows the current group's name (e.g. 哥哥) as a soft, hand-drawn label with left/right swipe
+/// chevrons and a row of page dots. Styled to melt into the watercolor sky (frosted cream capsule,
+/// thin jade outline) rather than sit on top of it as a heavy block. Name is verbatim (may be a
+/// custom name the parent typed).
+private struct GroupBanner: View {
+    let name: String
+    let index: Int
+    let total: Int
+    /// 群組開關狀態：true＝開（綠、彩色），false＝關（灰、休眠樣式）。
+    var active: Bool = true
+    /// 點名稱膠囊 → 切換這個群組的開關（呼叫端會先過家長驗證）。nil＝不可點（例如沒有開關需求時）。
+    var onTap: (() -> Void)? = nil
+
+    private var capsuleFill: Color {
+        active ? SunnyColors.cloudWhite.opacity(0.78) : SunnyColors.sunnyGray.opacity(0.2)
+    }
+
+    var body: some View {
+        // 單行：左箭頭 · 名稱膠囊（可點＝開關）· 右箭頭 · 頁點。
+        HStack(spacing: 10) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(SunnyColors.forestDeep.opacity(index > 0 ? 0.45 : 0.1))
+
+            Button {
+                onTap?()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: active ? "person.crop.circle.fill" : "powersleep")
+                        .font(.system(size: 14))
+                        .foregroundStyle(active ? SunnyColors.leafFresh : SunnyColors.sunnyGray)
+                    Text(verbatim: name)
+                        .font(SunnyFonts.caption(15))
+                        .foregroundStyle(active ? SunnyColors.forestDeep : SunnyColors.sunnyGray)
+                        .lineLimit(1)
+                    if !active {
+                        Text("group_off_badge")
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(Capsule(style: .continuous).fill(capsuleFill))
+                .overlay(
+                    Capsule(style: .continuous)
+                        .strokeBorder((active ? SunnyColors.leafFresh : SunnyColors.sunnyGray).opacity(0.4),
+                                      lineWidth: 1.5)
+                )
+                .shadow(color: SunnyColors.forestDeep.opacity(active ? 0.1 : 0), radius: 4, y: 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(onTap == nil)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(SunnyColors.forestDeep.opacity(index < total - 1 ? 0.45 : 0.1))
+
+            HStack(spacing: 5) {
+                ForEach(Array(0..<total), id: \.self) { d in
+                    Circle()
+                        .fill(d == index ? SunnyColors.leafFresh : SunnyColors.forestDeep.opacity(0.18))
+                        .frame(width: d == index ? 7 : 6, height: d == index ? 7 : 6)
+                        .animation(.easeInOut(duration: 0.2), value: index)
+                }
+            }
+            .padding(.leading, 2)
+        }
+        .animation(.easeInOut(duration: 0.2), value: active)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: name))
+        .accessibilityValue(Text(active ? "group_on_badge" : "group_off_badge"))
+        .accessibilityHint(Text("group_toggle_hint"))
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -782,6 +996,7 @@ struct SettingsView: View {
     @State private var showingHistory   = false
     @State private var showingIO        = false
     @State private var showingPro       = false
+    @State private var showingFlowerEditor = false
     @State private var unlockNow = Date()
     private let unlockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -869,6 +1084,107 @@ struct SettingsView: View {
                             .foregroundStyle(SunnyColors.wheatGold)
                     }
                     .pickerStyle(.navigationLink)
+
+                    // 自訂向日葵：選一張照片當花心（全 app 共用）。可在這裡或群組吉祥物選擇器選「向日葵」。
+                    Button { showingFlowerEditor = true } label: {
+                        HStack {
+                            Label("flower_settings_row", systemImage: "camera.macro")
+                                .foregroundStyle(SunnyColors.lanternOrange)
+                            Spacer()
+                            if let img = settings.flowerImage {
+                                Image(uiImage: img)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 28, height: 28)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().strokeBorder(SunnyColors.wheatGold, lineWidth: 1.5))
+                            }
+                            NavigationChevron()
+                        }
+                    }
+                }
+
+                // 多人鬧鐘分組 — 啟用後首頁的鬧鐘清單可左右滑動切換不同群組（如哥哥、妹妹）。
+                Section(
+                    header: Text("group_section"),
+                    footer: Text(settings.groupEnabled
+                                 ? LocalizedStringKey("group_rename_footer")
+                                 : LocalizedStringKey("group_section_footer"))
+                ) {
+                    Toggle(isOn: $settings.groupEnabled) {
+                        Label("group_enable_label", systemImage: "person.2.fill")
+                            .foregroundStyle(SunnyColors.forestDeep)
+                    }
+                    .tint(SunnyColors.leafFresh)
+
+                    if settings.groupEnabled {
+                        // 群組數量（1…5）
+                        HStack {
+                            Label("group_count_label", systemImage: "number.circle.fill")
+                                .foregroundStyle(SunnyColors.skyBlue)
+                            Spacer()
+                            Text("\(settings.groupCount)")
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                                .monospacedDigit()
+                            Stepper("", value: $settings.groupCount, in: 1...AppSettings.maxGroups)
+                                .labelsHidden()
+                        }
+
+                        // 每組一列：字母徽章 + 命名欄（空白＝沿用「群組 A / Group A」）+ 右側可橫向捲動的
+                        // 吉祥物選擇器。用 Array 包 range 避免動態 range 的 ForEach 警告（groupCount 會變）。
+                        ForEach(Array(0..<settings.groupCount), id: \.self) { i in
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(SunnyColors.leafFresh.opacity(0.16))
+                                        .frame(width: 30, height: 30)
+                                    Text(verbatim: String(Character(UnicodeScalar(UInt8(65 + i)))))
+                                        .font(SunnyFonts.caption(15))
+                                        .foregroundStyle(SunnyColors.forestDeep)
+                                }
+
+                                TextField(
+                                    "",
+                                    text: settings.groupNameBinding(i),
+                                    prompt: Text(verbatim: settings.groupDisplayName(i))
+                                )
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(SunnyColors.nightIndigo)
+                                .tint(SunnyColors.leafFresh)
+                                .submitLabel(.done)
+                                .frame(maxWidth: 96)
+
+                                Divider().frame(height: 26)
+
+                                // 吉祥物選擇器（橫向捲動）。選 flower 但還沒設照片時，下面的「向日葵花心照片」可設定。
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(MascotTheme.allCases) { theme in
+                                            Button {
+                                                settings.setGroupMascot(i, theme)
+                                            } label: {
+                                                MascotThumb(theme: theme, size: 30)
+                                                    .padding(5)
+                                                    .background(
+                                                        Circle().fill(settings.groupMascot(i) == theme
+                                                                      ? SunnyColors.leafFresh.opacity(0.22)
+                                                                      : Color.clear)
+                                                    )
+                                                    .overlay(
+                                                        Circle().strokeBorder(settings.groupMascot(i) == theme
+                                                                              ? SunnyColors.leafFresh
+                                                                              : Color.clear, lineWidth: 2)
+                                                    )
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                    .padding(.trailing, 4)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Section(
@@ -989,6 +1305,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
         .sheet(isPresented: $showingPro)       { ProUpgradeView() }
+        .sheet(isPresented: $showingFlowerEditor) { FlowerCenterEditorView() }
     }
 
     private var isTemporarilyUnlocked: Bool {

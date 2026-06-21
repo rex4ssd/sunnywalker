@@ -14,6 +14,12 @@ final class AlarmScheduler {
 
     // Schedule one notification request per active weekday so repeats honour the weekdays array.
     func schedule(alarm: Alarm) async throws {
+        // 多人鬧鐘群組閘：群組被關閉 / 超出目前群組數 → 不排，並清掉既有 pending（等家長把群組開回再響）。
+        guard AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) else {
+            cancel(alarm.id)
+            print("🔔 AlarmScheduler.schedule: \(alarm.id.uuidString.prefix(8)) group inactive/hidden — cancelled, not scheduling")
+            return
+        }
         let center = UNUserNotificationCenter.current()
 
         print("🔔 AlarmScheduler.schedule: alarm=\(alarm.id.uuidString.prefix(8)) \(alarm.hour):\(String(format: "%02d", alarm.minute)) weekdays=\(alarm.weekdays) sound=\(alarm.soundFileName) AlarmKitAuthorized=\(AlarmKitService.shared.isAuthorized)")

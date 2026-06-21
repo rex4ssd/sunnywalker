@@ -236,7 +236,7 @@ final class AlarmKitService {
         // If syncAlarm throws (entitlement revoked, API error, etc.) the UNNotification
         // stays active as a fallback — prevents an alarm from silently disappearing.
         var successIDs: [UUID] = []
-        for alarm in alarms where alarm.isEnabled {
+        for alarm in alarms where alarm.isEnabled && AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) {
             do {
                 try await syncAlarm(alarm)
                 // 只有「AlarmKit 模式」的鬧鐘才需要清掉殘留 UNNotification（避免雙重響）。
@@ -251,8 +251,10 @@ final class AlarmKitService {
         for id in successIDs {
             AlarmScheduler.shared.cancel(id)
         }
-        // Disabled alarms should not fire via either path.
-        for alarm in alarms where !alarm.isEnabled {
+        // Disabled alarms — or alarms whose group is off/hidden — should not fire via either path.
+        // (AlarmKit disarm is handled by the foreground cancel-all + background arm-only-enabled cycle;
+        // here we just make sure no UNNotification fallback lingers for them.)
+        for alarm in alarms where !alarm.isEnabled || !AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) {
             AlarmScheduler.shared.cancel(alarm.id)
         }
         print("AlarmKitService: bulk sync complete — \(successIDs.count)/\(alarms.filter(\.isEnabled).count) synced to AlarmKit")
@@ -267,7 +269,8 @@ final class AlarmKitService {
     /// - If weekdays is non-empty: schedules a weekly recurring alarm.
     /// - If weekdays is empty: schedules a one-shot alarm at the next occurrence of the alarm's time.
     func syncAlarm(_ alarm: Alarm) async throws {
-        guard alarm.isEnabled else {
+        // 鬧鐘本身關閉，或其群組被首頁關掉 / 超出群組數 → 從 AlarmKit 移除，不排程。
+        guard alarm.isEnabled, AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) else {
             try removeAlarm(alarm)
             return
         }

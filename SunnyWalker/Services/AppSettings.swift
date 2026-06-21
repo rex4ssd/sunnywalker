@@ -2,6 +2,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit   // UIImage — 自訂向日葵花心照片的儲存/載入
 
 // MARK: - Feature limits (free vs Pro)
 
@@ -51,6 +52,8 @@ enum MascotTheme: String, CaseIterable, Identifiable {
     case giraffe  = "giraffe"
     case bunny    = "bunny"
     case bear     = "bear"
+    /// 自訂向日葵：花心放使用者的一張照片（全 app 共用，由 FlowerCenterEditorView 設定）。
+    case flower   = "flower"
 
     var id: String { rawValue }
 
@@ -61,6 +64,7 @@ enum MascotTheme: String, CaseIterable, Identifiable {
         case .giraffe: return "長頸鹿"
         case .bunny:   return "小兔子"
         case .bear:    return "小熊"
+        case .flower:  return "向日葵（自訂照片）"
         }
     }
 
@@ -71,6 +75,7 @@ enum MascotTheme: String, CaseIterable, Identifiable {
         case .giraffe: return "pawprint.fill"
         case .bunny:   return "hare.fill"
         case .bear:    return "teddybear.fill"
+        case .flower:  return "camera.macro"
         }
     }
 }
@@ -98,6 +103,27 @@ final class AppSettings: ObservableObject {
         let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
         self.mascotTheme = MascotTheme(rawValue: raw) ?? .sunny
         self.parentalUnlockDurationMinutes = UserDefaults.standard.object(forKey: "parentalUnlockDurationMinutes") as? Int ?? 5
+        // 多人鬧鐘分組設定
+        self.groupEnabled = UserDefaults.standard.object(forKey: "groupEnabled") as? Bool ?? false
+        let storedCount = UserDefaults.standard.object(forKey: "groupCount") as? Int ?? 1
+        self.groupCount = min(max(storedCount, 1), AppSettings.maxGroups)
+        let storedNames = UserDefaults.standard.stringArray(forKey: "groupNames") ?? []
+        // 永遠補齊到 maxGroups 長度，空字串＝沿用在地化預設名（群組 A / Group A）。
+        self.groupNames = (0..<AppSettings.maxGroups).map { i in
+            i < storedNames.count ? storedNames[i] : ""
+        }
+        // 每組吉祥物（MascotTheme rawValue，空字串＝沿用全域 mascotTheme）。
+        let storedMascots = UserDefaults.standard.stringArray(forKey: "groupMascots") ?? []
+        self.groupMascots = (0..<AppSettings.maxGroups).map { i in
+            i < storedMascots.count ? storedMascots[i] : ""
+        }
+        // 每組的開關狀態（首頁點群組橫幅切換；off＝該組鬧鐘暫停響＋清單變灰）。預設全部 on。
+        let storedActive = (UserDefaults.standard.array(forKey: "groupActiveStates") as? [Bool]) ?? []
+        self.groupActiveStates = (0..<AppSettings.maxGroups).map { i in
+            i < storedActive.count ? storedActive[i] : true
+        }
+        // 自訂向日葵花心照片：開機載入一次到記憶體，避免 mascot 24fps 重繪時反覆讀檔。
+        self.flowerImage = AppSettings.loadFlowerImageFromDisk()
         let unlockedUntil = UserDefaults.standard.double(forKey: "parentalUnlockUntil")
         if unlockedUntil > Date().timeIntervalSince1970 {
             self.parentalUnlockUntil = Date(timeIntervalSince1970: unlockedUntil)
@@ -146,6 +172,157 @@ final class AppSettings: ObservableObject {
 
     @Published var parentalUnlockDurationMinutes: Int {
         didSet { UserDefaults.standard.set(parentalUnlockDurationMinutes, forKey: "parentalUnlockDurationMinutes") }
+    }
+
+    // MARK: - 多人鬧鐘分組（Groups）
+
+    /// 群組數量上限。群組索引 0…maxGroups-1 對應 A…E。
+    static let maxGroups = 5
+
+    /// 是否啟用多人鬧鐘分組。關閉時整個 app 只當作單一群組 A（首頁不分頁、新增鬧鐘不顯示群組選擇）。
+    /// 關閉並不會清掉鬧鐘原本的 groupIndex——只是暫時隱藏 B–E 的鬧鐘，重新啟用即恢復。
+    @Published var groupEnabled: Bool {
+        didSet { UserDefaults.standard.set(groupEnabled, forKey: "groupEnabled") }
+    }
+
+    /// 啟用後可用的群組數（1…maxGroups）。didSet 會 clamp，避免外部寫入越界值。
+    @Published var groupCount: Int {
+        didSet {
+            let clamped = min(max(groupCount, 1), Self.maxGroups)
+            if clamped != groupCount { groupCount = clamped; return }   // 二次寫入帶回合法值後即返回
+            UserDefaults.standard.set(groupCount, forKey: "groupCount")
+        }
+    }
+
+    /// 每個群組的自訂名稱（長度固定 maxGroups）。空字串＝沿用在地化預設名（群組 A / Group A）。
+    /// 顯示請用 `groupDisplayName(_:)`，不要直接讀這個陣列。
+    @Published var groupNames: [String] {
+        didSet { UserDefaults.standard.set(groupNames, forKey: "groupNames") }
+    }
+
+    /// 每個群組的吉祥物（MascotTheme rawValue，長度固定 maxGroups）。空字串＝沿用全域 mascotTheme。
+    /// 讀取請用 `groupMascot(_:)`，設定請用 `setGroupMascot(_:_:)`。
+    @Published var groupMascots: [String] {
+        didSet { UserDefaults.standard.set(groupMascots, forKey: "groupMascots") }
+    }
+
+    /// 第 index 組要顯示的吉祥物：該組未指定（空字串/越界）→ 回全域 mascotTheme。
+    func groupMascot(_ index: Int) -> MascotTheme {
+        guard index >= 0, index < groupMascots.count,
+              !groupMascots[index].isEmpty,
+              let theme = MascotTheme(rawValue: groupMascots[index]) else {
+            return mascotTheme
+        }
+        return theme
+    }
+
+    /// 設定第 index 組的吉祥物（補齊陣列長度後寫入）。
+    func setGroupMascot(_ index: Int, _ theme: MascotTheme) {
+        guard index >= 0, index < Self.maxGroups else { return }
+        var arr = groupMascots
+        while arr.count < Self.maxGroups { arr.append("") }
+        arr[index] = theme.rawValue
+        groupMascots = arr
+    }
+
+    /// 每組的開關狀態（首頁群組橫幅的 on/off）。off＝該組鬧鐘暫停（HomeView 會把成員 isEnabled 連動關掉）
+    /// ＋首頁清單變灰。這跟設定頁「調整群組數量」是兩回事——這裡只是暫時開關，不會刪掉群組或鬧鐘。
+    @Published var groupActiveStates: [Bool] {
+        didSet { UserDefaults.standard.set(groupActiveStates, forKey: "groupActiveStates") }
+    }
+
+    /// 第 index 組是否開啟（越界視為開啟，維持既有行為）。
+    func isGroupActive(_ index: Int) -> Bool {
+        guard index >= 0, index < groupActiveStates.count else { return true }
+        return groupActiveStates[index]
+    }
+
+    /// 設定第 index 組的開關（補齊陣列長度後寫入）。
+    func setGroupActive(_ index: Int, _ active: Bool) {
+        guard index >= 0, index < Self.maxGroups else { return }
+        var arr = groupActiveStates
+        while arr.count < Self.maxGroups { arr.append(true) }
+        arr[index] = active
+        groupActiveStates = arr
+    }
+
+    /// 響鈴閘（firing gate）：某顆鬧鐘的「群組」是否允許它響。規則：
+    ///   1. 沒啟用分組 → 一律允許（維持單一群組的舊行為）。
+    ///   2. 群組索引超出目前 groupCount（被「縮小數量」隱藏）→ 不響。
+    ///   3. 該組被首頁橫幅關掉（groupActiveStates[idx] == false）→ 不響。
+    /// **nonisolated + 直接讀 UserDefaults**，讓 AlarmScheduler / AlarmKitService（可能不在 main actor）
+    /// 也能在排程決策時呼叫。注意這是「群組層」的閘，鬧鐘本身的 `isEnabled` 仍要另外判斷。
+    nonisolated static func groupAllowsFiring(_ groupIndex: Int) -> Bool {
+        let d = UserDefaults.standard
+        let enabled = d.object(forKey: "groupEnabled") as? Bool ?? false
+        guard enabled else { return true }
+        let count = min(max(d.object(forKey: "groupCount") as? Int ?? 1, 1), maxGroups)
+        let idx = min(max(groupIndex, 0), maxGroups - 1)
+        guard idx < count else { return false }
+        let active = (d.array(forKey: "groupActiveStates") as? [Bool]) ?? []
+        return idx < active.count ? active[idx] : true
+    }
+
+    /// 目前實際生效的群組數：未啟用分組時固定為 1（只有群組 A）。
+    var effectiveGroupCount: Int { groupEnabled ? min(max(groupCount, 1), Self.maxGroups) : 1 }
+
+    /// 群組顯示名稱：使用者改過名 → 用自訂名；否則回在地化預設「群組 A」/「Group A」。
+    func groupDisplayName(_ index: Int) -> String {
+        guard index >= 0, index < Self.maxGroups else { return "" }
+        let custom = (index < groupNames.count ? groupNames[index] : "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !custom.isEmpty { return custom }
+        let letter = String(Character(UnicodeScalar(UInt8(65 + index))))   // A, B, C, D, E
+        return L("group_default_prefix") + " " + letter         // 群組 A / Group A
+    }
+
+    /// 綁定到第 index 個群組名稱輸入框（給 SettingsView 的 TextField 用）。
+    func groupNameBinding(_ index: Int) -> Binding<String> {
+        Binding(
+            get: { index < self.groupNames.count ? self.groupNames[index] : "" },
+            set: { newValue in
+                guard index >= 0, index < Self.maxGroups else { return }
+                var names = self.groupNames
+                while names.count < Self.maxGroups { names.append("") }
+                names[index] = newValue
+                self.groupNames = names
+            }
+        )
+    }
+
+    // MARK: - 自訂向日葵花心照片（全 app 共用一張）
+
+    /// 已裁切好的花心照片（已是正方形，SunflowerAvatar 會再 clip 成圓）。開機載入一次後常駐記憶體，
+    /// 寫入時同步更新，避免吉祥物 24fps 重繪時反覆讀檔。
+    @Published private(set) var flowerImage: UIImage?
+
+    var hasFlowerImage: Bool { flowerImage != nil }
+
+    /// 花心照片在 Documents 的固定位置（全 app 一張，覆寫即可）。
+    static var flowerImageURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("mascot_flower_center.jpg")
+    }
+
+    static func loadFlowerImageFromDisk() -> UIImage? {
+        let url = flowerImageURL
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// 存下使用者裁切好的花心照片（已套用拖曳/縮放的正方形圖），同步更新記憶體中的 flowerImage。
+    func saveFlowerImage(_ image: UIImage) {
+        if let data = image.jpegData(compressionQuality: 0.9) {
+            try? data.write(to: Self.flowerImageURL, options: .atomic)
+        }
+        flowerImage = image
+    }
+
+    /// 移除自訂花心照片（SunflowerAvatar 會回到預設的種子花心）。
+    func clearFlowerImage() {
+        try? FileManager.default.removeItem(at: Self.flowerImageURL)
+        flowerImage = nil
     }
 
     @Published private(set) var parentalUnlockUntil: Date? {

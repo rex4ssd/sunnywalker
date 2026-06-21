@@ -30,6 +30,8 @@ struct AlarmEditorView: View {
     @State private var useNotificationMode = false
     /// 切段：溫和提醒模式下，是否把語音堆成 ~30s（gentle-repeat burst）。預設 off，只響一次。
     @State private var segmentedBurst = false
+    /// 多人鬧鐘群組索引（0 = 群組 A，預設）。只有在 settings.groupEnabled 時才顯示選擇器、存回鬧鐘。
+    @State private var selectedGroupIndex = 0
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
     // Label tap/long-press
@@ -58,6 +60,7 @@ struct AlarmEditorView: View {
             _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
             _useNotificationMode = State(initialValue: a.effectiveBackgroundMode == .notification)
             _segmentedBurst = State(initialValue: a.effectiveSegmentedBurst)
+            _selectedGroupIndex = State(initialValue: a.effectiveGroupIndex)
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
@@ -77,6 +80,9 @@ struct AlarmEditorView: View {
                         timePicker
                         labelField
                         weekdayPicker
+                        if settings.groupEnabled {
+                            groupCard
+                        }
                         ringtoneCard
                         dismissMethodCard
                         backgroundModeCard
@@ -183,6 +189,36 @@ struct AlarmEditorView: View {
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
+        }
+    }
+
+    /// 多人鬧鐘：選這個鬧鐘屬於哪一個群組（哥哥 / 妹妹…）。只有家長在設定頁開啟分組時才出現。
+    /// 群組名稱由設定頁集中管理，這裡只負責「選哪一組」（水平捲動的膠囊按鈕）。
+    private var groupCard: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("group_select_label", systemImage: "person.2.fill")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.sunnyGray)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
+                            GroupChip(
+                                letter: String(Character(UnicodeScalar(UInt8(65 + i)))),
+                                title: settings.groupDisplayName(i),
+                                isSelected: selectedGroupIndex == i
+                            ) {
+                                selectedGroupIndex = i
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
         }
     }
 
@@ -551,6 +587,10 @@ struct AlarmEditorView: View {
         tempAlarm.backgroundRingMode = useNotificationMode ? .notification : .alarmKit
         // 切段只在溫和提醒模式下有意義；非通知模式一律存 false。
         tempAlarm.segmentedBurst = useNotificationMode ? segmentedBurst : false
+        // 群組：只有啟用分組時才寫回（未啟用時保留鬧鐘原本的 groupIndex，不強制歸 0）。
+        if settings.groupEnabled {
+            tempAlarm.groupIndex = selectedGroupIndex
+        }
 
         if !isEditing {
             modelContext.insert(tempAlarm)
@@ -597,6 +637,43 @@ private struct WeekdayChip: View {
                     Circle()
                         .fill(isSelected ? selectedFill : SunnyColors.sunnyGray.opacity(0.12))
                 )
+        }
+        .sunnyButtonStyle()
+    }
+}
+
+// MARK: - GroupChip (multi-person alarm group selector)
+
+private struct GroupChip: View {
+    let letter: String
+    let title: String
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 7) {
+                Text(verbatim: letter)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isSelected ? .white : SunnyColors.forestDeep)
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isSelected
+                                      ? Color.white.opacity(0.28)
+                                      : SunnyColors.leafFresh.opacity(0.18))
+                    )
+                Text(verbatim: title)
+                    .font(SunnyFonts.caption(15))
+                    .foregroundStyle(isSelected ? .white : SunnyColors.nightIndigo)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Capsule().fill(isSelected
+                               ? SunnyColors.leafFresh
+                               : SunnyColors.sunnyGray.opacity(0.12))
+            )
         }
         .sunnyButtonStyle()
     }

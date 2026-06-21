@@ -28,6 +28,8 @@ struct AlarmListView: View {
     /// ONE continuous strip (like the built-in Clock app) instead of clock/mascot being pinned and
     /// only the list scrolling. nil on iPad's side-by-side layout (clock/mascot live in their own column).
     var header: AnyView? = nil
+    /// 多人鬧鐘：該群組被首頁橫幅關閉時為 true → 把鬧鐘卡片變灰、不可點（header 不受影響，仍可點橫幅開回）。
+    var dimmed: Bool = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -37,6 +39,8 @@ struct AlarmListView: View {
                 VStack(spacing: 0) {
                     if let header { header }
                     emptyStateContent
+                        .grayscale(dimmed ? 1 : 0)
+                        .opacity(dimmed ? 0.5 : 1)
                 }
             }
         } else {
@@ -51,6 +55,10 @@ struct AlarmListView: View {
                 }
                 ForEach(alarms) { alarm in
                     AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) })
+                        .grayscale(dimmed ? 1 : 0)
+                        .opacity(dimmed ? 0.5 : 1)
+                        .allowsHitTesting(!dimmed)   // 關閉的群組：卡片不可點/不可滑（要先點橫幅開回）
+                        .animation(.easeInOut(duration: 0.2), value: dimmed)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))

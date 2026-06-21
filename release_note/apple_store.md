@@ -1,5 +1,67 @@
 # SunnyWalker — App Store Release Note
 
+## 1.4.20260622 (build 15) — 多人鬧鐘（分組）+ 每組吉祥物 + 自訂向日葵花心照片　🚧 待送審
+
+> 📦 在已上架的 1.3 Pro train（build 14）之上，新增「多人鬧鐘」整套：一台手機分多位小朋友（哥哥／妹妹…）各自的鬧鐘清單、各自的吉祥物，並可在首頁直接把某位小朋友的鬧鐘整組暫停。另加一個可放自己照片的「向日葵」自訂吉祥物。**全部離線、零廣告、不收集資料**的定位不變。
+
+| 欄位 | 值 |
+|---|---|
+| 顯示版本 (Marketing Version) | **1.4.20260622**（新 minor＝多人鬧鐘功能） |
+| Build (CFBundleVersion) | **15**（14 已送審 → 進 15） |
+| 前次紀錄 | 1.3.20260615 (build 14) — Pro + 匯入音檔（已送審） |
+| Bundle ID | `app.rexcode.sunnywalker`　/　ASC App ID `6775802674`　/　Team `NHY8MKW8NH` |
+| 資料相容 | `Alarm.groupIndex` 為 optional（SwiftData 輕量遷移安全）；舊鬧鐘 nil → 群組 A，**升級後行為完全不變** |
+| 權限 | 自訂花心用 `PhotosPicker`（out-of-process）→ **不需** `NSPhotoLibraryUsageDescription`、不會跳相簿權限 |
+
+### ✨ 本版新功能
+
+- **多人鬧鐘（分組）。** 家長設定頁新增「群組」：開啟分組、選數量（1～5 組）、各組命名（預設「群組 A／B…」，可改成哥哥、妹妹）。新增鬧鐘時可選這顆屬於哪一組。首頁鬧鐘清單變成可左右滑動的分頁，每頁一組，頁首有群組名橫幅＋頁點；未啟用分組則維持原本單一清單，行為不變。
+  - 改動：`Models/Alarm.swift`（+`groupIndex`/`effectiveGroupIndex`）、`Services/AppSettings.swift`（群組設定）、`Views/Settings/AlarmEditorView.swift`（群組選擇器）、`Views/Home/HomeView.swift`（分頁＋橫幅＋設定區）。
+- **每組各自的吉祥物。** 設定頁每組命名欄右邊有一排可橫向捲動的吉祥物選擇器；首頁左右滑切換群組時，吉祥物會跟著換成那組選的。某組沒選 → 沿用全域「主題」吉祥物。
+  - 改動：`Views/Components/MascotView.swift`（`themeOverride` 參數 + `MascotThumb`）、`AppSettings.swift`（`groupMascots`）、`HomeView.swift`。
+- **自訂「向日葵」吉祥物（放自己的照片）。** 新增向日葵吉祥物，花心可放一張使用者照片：用 `PhotosPicker` 選圖，再以**拖曳＋雙指縮放**把最適合的部分放進圓形花心，所見即所得存檔（`ImageRenderer`），全 app 共用一張。沒設照片時花心是預設種子圖案。
+  - 新增檔：`Views/Settings/FlowerCenterEditorView.swift`；改動：`MascotView.swift`（`SunflowerAvatar`）、`AppSettings.swift`（`MascotTheme.flower` + flowerImage 存取）。
+- **首頁群組橫幅 = 該組開關（on/off）。** 點群組膠囊可把該組鬧鐘整組開／關——**進去前先過家長驗證**（已在解鎖視窗內則直接切）。關閉時該組清單變灰、不可點，且該組鬧鐘**暫停響鈴**；這跟設定頁「調整群組數量」不同，只是暫停、**不刪除**任何鬧鐘或設定，重新開啟即恢復。
+  - 改動：`HomeView.swift`（橫幅可點＋家長閘＋`toggleGroup`）、`AppSettings.swift`（`groupActiveStates`）、`AlarmListView.swift`（`dimmed` 變灰）。
+
+### 🔧 工程重點（響鈴正確性）
+
+- **「群組關閉就不會響」走的是一道集中的響鈴閘 `AppSettings.groupAllowsFiring(_:)`（nonisolated，直接讀 UserDefaults），不是去連動每顆鬧鐘的 `isEnabled`。** 規則：未啟用分組→全允許；群組被關／超出目前群組數→不響。閘設在所有實際排程決策點：`AlarmScheduler.schedule`、`AlarmKitService.syncAllEnabled`/`syncAlarm`、`HomeView.checkForegroundAlarm`、通知模式前景補排、背景聆聽 snapshot。
+- **好處：不會動到既有 AlarmKit 核心邏輯、也保留每顆鬧鐘自己的開關狀態**（重新開啟群組時，原本個別關掉的鬧鐘仍維持關，不會被一起打開）。同時順手修掉「縮小群組數量後，被隱藏的群組鬧鐘仍會響」的潛在問題。
+- ⚠️ **有新增檔（`FlowerCenterEditorView.swift`）** → Archive 前**務必** `xcodegen generate` 把它註冊進 pbxproj，否則不會編進 target。
+
+### App Store「版本說明 / What's New」
+
+#### 繁體中文（zh-Hant）
+
+```
+一台手機，全家小朋友各自的鬧鐘 ☀️
+
+‧ 新增「多人鬧鐘」：可分成哥哥、妹妹…各自的鬧鐘清單，首頁左右滑就能切換
+‧ 每位小朋友可以有自己的吉祥物，滑到他的清單就會出現
+‧ 新的「向日葵」吉祥物：把你喜歡的照片放進花心（可拖曳、縮放對位）
+‧ 首頁點一下群組名稱，就能把某位小朋友的鬧鐘整組暫停（需家長驗證）；暫停只是先關起來，不會刪除
+‧ 介面小調整：群組名稱橫幅更貼合水彩風格、更省空間
+
+基本叫醒功能永遠免費。完全離線、零廣告、不收集任何資料。
+```
+
+#### English (en)
+
+```
+One phone, a separate set of alarms for each child ☀️
+
+‧ New "Groups": split alarms per child (e.g. Brother, Sister) — swipe left/right on the home screen to switch
+‧ Each child can have their own mascot, shown when you swipe to their list
+‧ New "Sunflower" mascot: drop your own photo into the flower's center (drag & pinch to fit)
+‧ Tap a group's name on the home screen to pause that child's whole set of alarms (parent check required) — pausing just turns them off, nothing is deleted
+‧ Small polish: the group-name banner now fits the watercolor look and takes less space
+
+Core wake-up features are always free. Fully offline, no ads, no data collection.
+```
+
+---
+
 ## 1.3.20260615 (build 14) — Pro 正式版：內建鈴聲修正 + 匯入音檔 + Pro 修正（$1.99／帳號制 grandfather／移除不可達 benefit）　✅ 已送審
 
 > 📦 **同一顯示版本 `1.3.20260615` 同日多次打包，最終以 build 14 送審**。歷程：build 11/12/13 皆已上傳佔用後作廢（11 放棄、12 為舊版 Pro $1.49 未送審、13 被佔用），**本版 build 14** 在其上加「從檔案匯入音檔當鈴聲」並修正多項 Pro 問題（見下「🔧 本版 Pro 調整」）。What's New 涵蓋 Pro + bug fix + 匯入功能。

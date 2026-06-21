@@ -12,8 +12,8 @@ settings:
     # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
-    MARKETING_VERSION: "1.3.20260615"   # 1.3 = SunnyWalker Pro（NT$50 終身 IAP）。同日多次打包：build 11(放棄)/12(已上傳)→ 本版 13 加「匯入音檔當鈴聲」
-    CURRENT_PROJECT_VERSION: 14   # bump on every upload (App Store rejects duplicate build numbers). 11、12、13 皆已上傳佔用 → 本次 14
+    MARKETING_VERSION: "1.4.20260622"   # 1.4 = 多人鬧鐘（分組）+ 每組吉祥物 + 自訂向日葵花心照片。1.3 train（build 14）已送審
+    CURRENT_PROJECT_VERSION: 15   # bump on every upload (App Store rejects duplicate build numbers). 14 已送審 → 本次 15
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 

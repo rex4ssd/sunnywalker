@@ -60,6 +60,7 @@
 		D7435DD04281BC3455C7EA04 /* DaytimeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9494AECBCB0F791E7F24F12 /* DaytimeScene.swift */; };
 		DCD09C4C3618823D88663E91 /* mascot_greet_07.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 6A42B2A278FAC5F1A781F640 /* mascot_greet_07.aiff */; };
 		DD467670A8B05840FBB95018 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402591D9D880D83E7903B948 /* AudioRecorder.swift */; };
+		DF7B9FDA595A709D5B596EFE /* FlowerCenterEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */; };
 		E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */; };
 		E359AB840D940CEA85C8305C /* timeout_sad.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2C81D51ADB7CD8DC5347513F /* timeout_sad.wav */; };
 		E409258EA2C6052DDE696951 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB6388EF249B7365D9B3B48 /* HomeView.swift */; };
@@ -92,6 +93,7 @@
 		152B960BF89216BE38D306F6 /* GiraffeAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiraffeAvatar.swift; sourceTree = "<group>"; };
 		17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowerCenterEditorView.swift; sourceTree = "<group>"; };
 		24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLibraryView.swift; sourceTree = "<group>"; };
 		24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperTexture.swift; sourceTree = "<group>"; };
 		26E49492007B21D867DE139A /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 			children = (
 				5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */,
 				26E49492007B21D867DE139A /* AlarmIOView.swift */,
+				1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */,
 				3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */,
 				A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */,
 				892C0B175BB78C133BDF4A9A /* RecordingView.swift */,
@@ -465,6 +468,7 @@
 				F3417E034F113A67319AC0D7 /* CloudBackground.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
 				D7435DD04281BC3455C7EA04 /* DaytimeScene.swift in Sources */,
+				DF7B9FDA595A709D5B596EFE /* FlowerCenterEditorView.swift in Sources */,
 				499BA1FC564089EFF62D8A6A /* GiraffeAvatar.swift in Sources */,
 				E409258EA2C6052DDE696951 /* HomeView.swift in Sources */,
 				F5649E1A09CA9E061FA1E461 /* Localization.swift in Sources */,
@@ -564,7 +568,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -579,7 +583,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.20260615;
+				MARKETING_VERSION = 1.4.20260622;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -660,7 +664,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NHY8MKW8NH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -681,7 +685,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.20260615;
+				MARKETING_VERSION = 1.4.20260622;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

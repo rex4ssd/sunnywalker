@@ -69,6 +69,12 @@ final class Alarm {
     /// Optional + default nil 配合 SwiftData lightweight migration。讀取請用 `effectiveSegmentedBurst`。
     var segmentedBurst: Bool? = nil
 
+    /// 多人鬧鐘的群組索引（0 = 群組 A／預設、1 = B … 4 = E）。
+    /// 群組功能由家長在設定頁開關（AppSettings.groupEnabled / groupCount / groupNames）；
+    /// 未啟用時所有鬧鐘都視為群組 A。Optional + default nil 配合 SwiftData lightweight migration
+    /// （舊資料 nil → 群組 A，行為完全不變）。讀取請一律用 `effectiveGroupIndex`。
+    var groupIndex: Int? = nil
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -93,6 +99,12 @@ final class Alarm {
 
     /// 溫和提醒「切段響滿 30s」是否開啟。nil（舊資料 / 未設）→ false（只響一次、不堆疊通知）。
     var effectiveSegmentedBurst: Bool { segmentedBurst ?? false }
+
+    /// 群組索引——nil（舊資料 / 未設定）→ 0（群組 A）。請一律用這個讀取，並 clamp 到 0...4。
+    var effectiveGroupIndex: Int {
+        let raw = groupIndex ?? 0
+        return min(max(raw, 0), 4)
+    }
 
     /// 「貪睡模式 / strict mode」已於 2026-06-10 移除：它原本承諾「一定要開 App 才能關」，但
     /// AlarmKit 系統鬧鐘的實體鍵(音量/側鍵)由 iOS 直接 map 成「停止」，第三方攔不到，承諾無法兌現；

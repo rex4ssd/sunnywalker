@@ -9,10 +9,15 @@ struct MascotView: View {
     /// the mascot on the recording screens never steals the audio session (they use .playAndRecord).
     var tappable: Bool = false
     var scene: DaytimeScene? = nil
+    /// 多人鬧鐘：覆寫要顯示的吉祥物（首頁每個群組各自的吉祥物）。nil → 用全域 settings.mascotTheme。
+    var themeOverride: MascotTheme? = nil
 
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bounce = false
+
+    /// 實際顯示的吉祥物：優先用 themeOverride（群組指定），否則全域設定。
+    private var effectiveTheme: MascotTheme { themeOverride ?? settings.mascotTheme }
 
     var body: some View {
         if tappable {
@@ -68,12 +73,13 @@ struct MascotView: View {
 
     @ViewBuilder
     private func avatar(forceBlink: Bool) -> some View {
-        switch settings.mascotTheme {
+        switch effectiveTheme {
         case .sunnyAlarm: SunnyAlarmAvatar(forceBlink: forceBlink)
         case .sunny:   SunnyAvatar(forceBlink: forceBlink)
         case .giraffe: GiraffeAvatar(forceBlink: forceBlink)
         case .bunny:   BunnyAvatar(forceBlink: forceBlink)
         case .bear:    BearAvatar(forceBlink: forceBlink)
+        case .flower:  SunflowerAvatar(forceBlink: forceBlink)
         }
     }
 
@@ -119,6 +125,107 @@ final class MascotVoice {
         if clips.count > 1 && idx == lastIndex { idx = (idx + 1) % clips.count }
         lastIndex = idx
         player.play(url: clips[idx], loop: false)
+    }
+}
+
+// MARK: - SunflowerAvatar (custom mascot: a sunflower whose centre is the user's photo)
+
+/// 自訂向日葵吉祥物：金色花瓣環 + 花心放使用者裁切好的照片（全 app 共用一張，存在
+/// AppSettings.flowerImage）。沒有照片時用預設種子花心。沒有眼睛，breath/夜間效果由 MascotView 套用。
+private struct SunflowerAvatar: View {
+    var forceBlink = false   // 介面相容用：向日葵沒有眼睛，這個參數不使用
+    @ObservedObject private var settings = AppSettings.shared
+
+    private let petalGold = SunnyColors.wheatGold
+    private let petalDeep = SunnyColors.lanternOrange
+    private let seed = Color(red: 0.45, green: 0.30, blue: 0.16)
+
+    var body: some View {
+        ZStack {
+            petals
+            centerDisc
+        }
+        .frame(width: 132, height: 150)
+        .accessibilityLabel(Text("向日葵"))
+    }
+
+    private var petals: some View {
+        ZStack {
+            ForEach(0..<16, id: \.self) { i in
+                Ellipse()
+                    .fill(LinearGradient(colors: [petalGold, petalDeep],
+                                         startPoint: .top, endPoint: .bottom))
+                    .frame(width: 22, height: 46)
+                    .offset(y: -42)
+                    .rotationEffect(.degrees(Double(i) / 16 * 360))
+            }
+        }
+    }
+
+    private var centerDisc: some View {
+        ZStack {
+            Circle().fill(seed.opacity(0.92)).frame(width: 86, height: 86)
+            Group {
+                if let img = settings.flowerImage {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    seedPattern
+                }
+            }
+            .frame(width: 76, height: 76)
+            .clipShape(Circle())
+            Circle()
+                .stroke(Color.white.opacity(0.85), lineWidth: 3)
+                .frame(width: 79, height: 79)
+        }
+    }
+
+    // 預設花心：同心圓點點，像真的向日葵種子。
+    private var seedPattern: some View {
+        ZStack {
+            Circle().fill(seed)
+            ForEach(0..<3, id: \.self) { ring in
+                let count = 8 + ring * 5
+                ForEach(Array(0..<count), id: \.self) { i in
+                    Circle()
+                        .fill(Color.black.opacity(0.22))
+                        .frame(width: 4, height: 4)
+                        .offset(y: -CGFloat(9 + ring * 11))
+                        .rotationEffect(.degrees(Double(i) / Double(count) * 360))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - MascotThumb (compact mascot cell for pickers)
+
+/// 小尺寸吉祥物縮圖，給設定頁的吉祥物選擇器用。內建吉祥物用 SF 圖示；向日葵若已設定照片則顯示
+/// 圓形照片縮圖，否則顯示花朵圖示。
+struct MascotThumb: View {
+    let theme: MascotTheme
+    var size: CGFloat = 34
+
+    @ObservedObject private var settings = AppSettings.shared
+
+    var body: some View {
+        ZStack {
+            if theme == .flower, let img = settings.flowerImage {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipShape(Circle())
+            } else {
+                Image(systemName: theme.icon)
+                    .font(.system(size: size * 0.52))
+                    .foregroundStyle(SunnyColors.forestDeep)
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel(Text(LocalizedStringKey(theme.displayName)))
     }
 }
 
