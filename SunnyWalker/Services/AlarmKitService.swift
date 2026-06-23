@@ -284,8 +284,8 @@ final class AlarmKitService {
         //   改排 .timeSensitive UNNotification（響一次自動停）。移除任何既有 AlarmKit 條目 + 解除
         //   auto-stop keep-alive（這顆鬧鐘不需要背景保活）。UNNotification 由 AlarmScheduler 排。
         if alarm.effectiveBackgroundMode == .notification {
-            try? manager.stop(id: alarm.id)      // 若上一版是 AlarmKit 模式且正在響 → 先靜音
-            try? manager.cancel(id: alarm.id)     // 從系統排程移除，否則會跟通知雙重響
+            // 若上一版是 AlarmKit 模式且正在響 → 先靜音 + 從系統排程移除（否則會跟通知雙重響）。
+            bestEffortStopCancel(alarm.id, context: "syncAlarm→notification")
             AlarmAutoStopService.shared.disarm(alarmID: alarm.id)
             // ⚠️ 2026-06-12 根因修正：這裡【故意不】呼叫 AlarmScheduler.schedule()。
             //   syncAlarm 是在「進背景」時跑的，schedule() 會先 removePending 再 async add()；
@@ -340,8 +340,7 @@ final class AlarmKitService {
         if stateBeforeSync != "not-found" {
             print("AlarmKitService.syncAlarm: \(alarm.id.uuidString.prefix(8)) state=\(stateBeforeSync) — stop()+cancel() before reschedule")
         }
-        try? manager.stop(id: alarm.id)
-        try? manager.cancel(id: alarm.id)
+        bestEffortStopCancel(alarm.id, context: "syncAlarm→reschedule")
 
         // Scheduling with the same id upserts (replaces) any existing AlarmKit entry.
         // On Simulator: omit sound — .named() crashes Simulator ToneLibrary.
@@ -391,10 +390,25 @@ final class AlarmKitService {
         }
     }
 
+    /// best-effort「先停再取消」：失敗不中斷後續流程，但**一定 log**——AlarmKit `stop` 失敗代表系統
+    /// 鬧鐘可能卡住一直響（兒童鬧鐘是真實事故），不能像 `try?` 那樣靜默吞掉，至少留下可診斷軌跡。
+    /// 即使 `stop` 丟錯，`cancel` 仍會嘗試（兩段獨立 do/catch），維持原本「先靜音再移除」的語意。
+    private func bestEffortStopCancel(_ id: UUID, context: String) {
+        let short = id.uuidString.prefix(8)
+        // 本來就不在 AlarmKit（沒排過 / 已停 / 已被系統清掉）→ 沒東西要停，也不該當失敗洗 log。
+        // removeAlarm 常在「從沒排程的鬧鐘」上被呼叫，這個 early-return 讓 ⚠️ 只留給「該停卻停不掉」
+        // 的真實事故（兒童鬧鐘卡住一直響），而不是正常的 not-found。
+        let state = alarmState(id: id)
+        guard state != "not-found" else { return }
+        do { try manager.stop(id: id) }
+        catch { print("⚠️ AlarmKitService.\(context): manager.stop(\(short)) FAILED state=\(state) — \(error)") }
+        do { try manager.cancel(id: id) }
+        catch { print("⚠️ AlarmKitService.\(context): manager.cancel(\(short)) FAILED — \(error)") }
+    }
+
     /// Remove an alarm from AlarmKit. Safe to call if the alarm was never scheduled.
     func removeAlarm(_ alarm: Alarm) throws {
-        try? manager.stop(id: alarm.id)    // silence if currently ringing
-        try? manager.cancel(id: alarm.id)
+        bestEffortStopCancel(alarm.id, context: "removeAlarm")   // silence if currently ringing + remove
         AlarmAutoStopService.shared.disarm(alarmID: alarm.id)   // cancel BGTask / DispatchTimer
         print("AlarmKitService: removed \(alarm.id)")
     }

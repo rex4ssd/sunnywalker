@@ -778,7 +778,9 @@ struct HomeView: View {
         .alert("鬧鐘數量已達上限", isPresented: $showingMaxAlarmsAlert) {
             Button("好", role: .cancel) { }
         } message: {
-            Text("最多只能設定 \(maxAlarms) 個鬧鐘，請先刪除一個再新增。")
+            // 插值用 String(...) → 產生 "%@ 個鬧鐘" 這個 catalog 已翻譯的 key；用 Int 會變 "%lld …"
+            // 動態 key、catalog 沒有 → 英文模式整句 fallback 露中文。
+            Text("最多只能設定 \(String(maxAlarms)) 個鬧鐘，請先刪除一個再新增。")
         }
     }
 
@@ -1060,7 +1062,8 @@ struct SettingsView: View {
                         HStack {
                             Label("recording_gap_label", systemImage: "waveform")
                             Spacer()
-                            Text("\(settings.recordingGapSeconds) 秒")
+                            // String(...) → "%@ 秒"（catalog 已有 en）；Int 插值會變沒翻譯的 "%lld 秒"。
+                            Text("\(String(settings.recordingGapSeconds)) 秒")
                                 .foregroundStyle(SunnyColors.sunnyGray)
                                 .monospacedDigit()
                         }

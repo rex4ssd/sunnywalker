@@ -81,6 +81,42 @@
         }
       }
     },
+    "全部清除" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear all" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "全部清除" } }
+      }
+    },
+    "鬧鐘數量已達上限" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm limit reached" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "鬧鐘數量已達上限" } }
+      }
+    },
+    "匯出紀錄" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Export log" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯出紀錄" } }
+      }
+    },
+    "確定清除全部起床紀錄？" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear all wake records?" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "確定清除全部起床紀錄？" } }
+      }
+    },
+    "刪除這筆紀錄" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete this record" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "刪除這筆紀錄" } }
+      }
+    },
+    "錄音最長 %lld 分鐘，超過會自動停止" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recordings are capped at %lld min; recording stops automatically after that." } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "錄音最長 %lld 分鐘，超過會自動停止" } }
+      }
+    },
     "%lld 分" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2883,7 +2919,10 @@
       }
     },
     "向日葵" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sunflower" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "向日葵" } }
+      }
     },
     "向日葵（自訂照片）" : {
       "extractionState" : "stale",
@@ -3201,7 +3240,10 @@
       }
     },
     "已選取" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Selected" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "已選取" } }
+      }
     },
     "已選自錄鈴聲，可以開啟口令關閉。" : {
       "extractionState" : "stale",
@@ -4727,7 +4769,10 @@
       }
     },
     "選取" : {
-
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "選取" } }
+      }
     },
     "選擇鈴聲 🎵" : {
       "extractionState" : "stale",

@@ -32,6 +32,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import signal
 import subprocess
 import threading
 import sys
@@ -85,6 +86,21 @@ def _last_agent_text(log_file: Path) -> str:
         except Exception:
             continue
     return ""
+
+
+def _kill_tree(proc: subprocess.Popen) -> None:
+    """SIGKILL the whole process group (claude + its node/MCP/xcodebuild descendants).
+
+    Launched with ``start_new_session=True`` so the child is its own session/group leader
+    (pgid == pid). ``proc.kill()`` alone would only kill ``claude`` itself and leave the
+    grandchildren running → residual node/MCP/xcodebuild eats RAM/CPU across runs. We do NOT
+    ``wait()`` here — the reader thread owns ``proc.wait()``; killing closes stdout, which lets
+    that loop end and reap the process exactly once.
+    """
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError):
+        pass
 
 
 def _live_status(log_file: Path, agent: str, day: int,
@@ -188,14 +204,35 @@ class Agent:
                     cmd, cwd=paths.ROOT,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     text=True, bufsize=1,
+                    start_new_session=True,   # 自成 process group → 逾時可整棵 kill（含 node/MCP/xcodebuild）
                 )
-                for line in proc.stdout:
-                    logf.write(line)
-                    logf.flush()
-                    if time.time() - t0 > self.timeout_s:
-                        proc.kill()
-                        raise TimeoutError(f"exceeded {self.timeout_s}s")
-                rc = proc.wait()
+                # ⚠️ 逾時要靠 watchdog timer，不能只在 `for line in proc.stdout` 迴圈裡判斷：
+                #   agent 靜默掛住（不再吐 stdout）時，for-loop 會永久阻塞在等下一行，迴圈內的
+                #   時間檢查永遠跑不到 → timeout 永不觸發、整條 pipeline 卡死。watchdog 到期直接
+                #   kill 整個 process group，stdout 收到 EOF → 迴圈自然結束。
+                timed_out = threading.Event()
+
+                def _on_timeout(p: subprocess.Popen = proc) -> None:
+                    if p.poll() is not None:
+                        return   # 已經正常結束（剛好卡在 cancel 之前）→ 別誤殺/誤標 timeout
+                    timed_out.set()
+                    _kill_tree(p)
+
+                watchdog = threading.Timer(self.timeout_s, _on_timeout)
+                watchdog.daemon = True
+                watchdog.start()
+                try:
+                    for line in proc.stdout:
+                        logf.write(line)
+                        logf.flush()
+                        if timed_out.is_set():
+                            break
+                    rc = proc.wait()   # reap（被 kill 時回負的 signal 值）
+                finally:
+                    watchdog.cancel()
+
+                if timed_out.is_set():
+                    raise TimeoutError(f"exceeded {self.timeout_s}s")
             except TimeoutError as e:
                 stop_event.set(); status_thread.join(timeout=3)
                 elapsed_s = int(time.time() - t0)
