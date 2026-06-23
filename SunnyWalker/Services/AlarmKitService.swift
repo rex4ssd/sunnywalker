@@ -269,6 +269,11 @@ final class AlarmKitService {
     /// - If weekdays is non-empty: schedules a weekly recurring alarm.
     /// - If weekdays is empty: schedules a one-shot alarm at the next occurrence of the alarm's time.
     func syncAlarm(_ alarm: Alarm) async throws {
+        // 待辦語音提醒不會響：從 AlarmKit 移除、不排程。只在主頁冒圖示。
+        guard !alarm.isTodo else {
+            try removeAlarm(alarm)
+            return
+        }
         // 鬧鐘本身關閉，或其群組被首頁關掉 / 超出群組數 → 從 AlarmKit 移除，不排程。
         guard alarm.isEnabled, AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) else {
             try removeAlarm(alarm)

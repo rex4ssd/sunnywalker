@@ -25,7 +25,9 @@ enum FeatureLimits {
 
     // Free-tier baselines + the one finite Pro value. Named so the caps below AND the Pro upsell
     // copy (ProUpgradeView) read the same numbers — no literal cap is hardcoded in any view.
-    static let freeMaxAlarms = 6
+    // 免費版「全部設定」總量上限＝10：鬧鐘與待辦是同一種 Alarm 物件，所以這個數字同時涵蓋
+    // 「鬧鐘 + 待辦」的總和（不分群組、不分類別）。Pro 版無上限。2026-06-22 從 6 提升到 10（促銷）。
+    static let freeMaxAlarms = 10
     static let freeMaxVoiceClips = 5
     static let freeMaxVoiceClipSeconds: Double = 5
     static let proMaxVoiceClipSeconds: Double = 30
@@ -121,6 +123,18 @@ final class AppSettings: ObservableObject {
         let storedActive = (UserDefaults.standard.array(forKey: "groupActiveStates") as? [Bool]) ?? []
         self.groupActiveStates = (0..<AppSettings.maxGroups).map { i in
             i < storedActive.count ? storedActive[i] : true
+        }
+        // 每組的「報時」開關（設定頁群組列最右側的鈴鐺切換）。on＝這組的鬧鐘改成報時鬧鐘
+        // （新增鬧鐘時鈴聲欄會換成「報時次數」）。預設全部 off。
+        let storedChime = (UserDefaults.standard.array(forKey: "groupChimeStates") as? [Bool]) ?? []
+        self.groupChimeStates = (0..<AppSettings.maxGroups).map { i in
+            i < storedChime.count ? storedChime[i] : false
+        }
+        // 每組的「待辦(todo)」開關（群組列上鈴鐺旁的圖示切換）。on＝這組的鬧鐘變成待辦語音提醒。
+        // 與報時互斥（同一組不能同時報時又待辦）。預設全部 off。
+        let storedTodo = (UserDefaults.standard.array(forKey: "groupTodoStates") as? [Bool]) ?? []
+        self.groupTodoStates = (0..<AppSettings.maxGroups).map { i in
+            i < storedTodo.count ? storedTodo[i] : false
         }
         // 自訂向日葵花心照片：開機載入一次到記憶體，避免 mascot 24fps 重繪時反覆讀檔。
         self.flowerImage = AppSettings.loadFlowerImageFromDisk()
@@ -244,6 +258,62 @@ final class AppSettings: ObservableObject {
         while arr.count < Self.maxGroups { arr.append(true) }
         arr[index] = active
         groupActiveStates = arr
+    }
+
+    /// 每組的「報時」開關（長度固定 maxGroups，預設全 false）。on＝這組的鬧鐘變成報時鬧鐘：
+    /// 新增/編輯鬧鐘時把「鈴聲」欄換成「報時次數」，時間到時用系統語音念出時刻 N 次。
+    /// 讀取請用 `isGroupChimeEnabled(_:)`，設定請用 `setGroupChimeEnabled(_:_:)`。
+    @Published var groupChimeStates: [Bool] {
+        didSet { UserDefaults.standard.set(groupChimeStates, forKey: "groupChimeStates") }
+    }
+
+    /// 第 index 組是否啟用報時（越界視為未啟用）。
+    func isGroupChimeEnabled(_ index: Int) -> Bool {
+        guard index >= 0, index < groupChimeStates.count else { return false }
+        return groupChimeStates[index]
+    }
+
+    /// 設定第 index 組的報時開關（補齊陣列長度後寫入）。開啟報時會自動關掉同組的待辦（兩者互斥）。
+    func setGroupChimeEnabled(_ index: Int, _ enabled: Bool) {
+        guard index >= 0, index < Self.maxGroups else { return }
+        var arr = groupChimeStates
+        while arr.count < Self.maxGroups { arr.append(false) }
+        arr[index] = enabled
+        groupChimeStates = arr
+        if enabled { setGroupTodoEnabledRaw(index, false) }   // 報時 / 待辦互斥
+    }
+
+    /// 每組的「待辦(todo)」開關（長度固定 maxGroups，預設全 false）。on＝這組的鬧鐘變成待辦語音提醒：
+    /// 新增/編輯時改成「錄一段提醒語音 + 選圖示 + 顯示時長」，時間到時在主頁吉祥物旁冒出小圖示，
+    /// 兒童長按播放。與報時互斥。讀取請用 `isGroupTodoEnabled(_:)`，設定請用 `setGroupTodoEnabled(_:_:)`。
+    @Published var groupTodoStates: [Bool] {
+        didSet { UserDefaults.standard.set(groupTodoStates, forKey: "groupTodoStates") }
+    }
+
+    /// 第 index 組是否啟用待辦（越界視為未啟用）。
+    func isGroupTodoEnabled(_ index: Int) -> Bool {
+        guard index >= 0, index < groupTodoStates.count else { return false }
+        return groupTodoStates[index]
+    }
+
+    /// 設定第 index 組的待辦開關。開啟待辦會自動關掉同組的報時（兩者互斥）。
+    func setGroupTodoEnabled(_ index: Int, _ enabled: Bool) {
+        setGroupTodoEnabledRaw(index, enabled)
+        if enabled, index >= 0, index < Self.maxGroups {
+            var arr = groupChimeStates
+            while arr.count < Self.maxGroups { arr.append(false) }
+            arr[index] = false
+            groupChimeStates = arr
+        }
+    }
+
+    /// 只寫待辦狀態、不連動報時（內部用，避免互斥連動互相遞迴）。
+    private func setGroupTodoEnabledRaw(_ index: Int, _ enabled: Bool) {
+        guard index >= 0, index < Self.maxGroups else { return }
+        var arr = groupTodoStates
+        while arr.count < Self.maxGroups { arr.append(false) }
+        arr[index] = enabled
+        groupTodoStates = arr
     }
 
     /// 響鈴閘（firing gate）：某顆鬧鐘的「群組」是否允許它響。規則：

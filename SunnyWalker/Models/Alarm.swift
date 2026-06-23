@@ -29,6 +29,39 @@ enum AlarmBackgroundMode: String, Codable {
     case notification
 }
 
+// MARK: - Todo icon
+
+/// 待辦提醒在主頁吉祥物旁顯示的小圖示。家長每則待辦自己挑一個。Stored as raw String（migration-safe）。
+enum TodoIcon: String, CaseIterable, Identifiable, Codable {
+    case balloon
+    case star
+    case heart
+    case gift
+    case sun
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .balloon: return "balloon.fill"
+        case .star:    return "star.fill"
+        case .heart:   return "heart.fill"
+        case .gift:    return "gift.fill"
+        case .sun:     return "sun.max.fill"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .balloon: return "🎈"
+        case .star:    return "⭐️"
+        case .heart:   return "❤️"
+        case .gift:    return "🎁"
+        case .sun:     return "🌞"
+        }
+    }
+}
+
 // MARK: - Alarm model
 
 @Model
@@ -75,6 +108,20 @@ final class Alarm {
     /// （舊資料 nil → 群組 A，行為完全不變）。讀取請一律用 `effectiveGroupIndex`。
     var groupIndex: Int? = nil
 
+    /// 報時次數：這顆鬧鐘屬於「報時群組」時，時間到要用系統語音念出時刻幾次（例：07:00、times=2 ＝
+    /// 早上七點報兩次）。nil（一般鬧鐘 / 舊資料）→ 走原本的鈴聲。Optional + default nil 配合
+    /// SwiftData lightweight migration。是否為報時鬧鐘請看 `isChimeAlarm`，次數請讀 `effectiveChimeCount`。
+    var chimeCount: Int? = nil
+
+    /// 待辦圖示（TodoIcon rawValue）。非 nil ⇒ 這顆是「待辦語音提醒」而不是會響的鬧鐘：時間到時在
+    /// 主頁吉祥物旁冒出此圖示，兒童長按播放 recordingName 的錄音。nil（一般鬧鐘 / 報時）→ 不是待辦。
+    /// Optional + default nil 配合 SwiftData lightweight migration。判斷請用 `isTodo`。
+    var todoIcon: String? = nil
+
+    /// 待辦圖示在主頁顯示的持續分鐘數。0 ＝ 直到兒童點開才消失；其餘正整數 ＝ N 分鐘後自動消失。
+    /// nil（舊資料）→ 預設 10 分鐘。讀取請用 `effectiveTodoDurationMinutes`。
+    var todoDurationMinutes: Int? = nil
+
     init(label: String, hour: Int, minute: Int, recordingName: String = "",
          taskType: AlarmTaskType = .voice) {
         self.id = UUID()
@@ -104,6 +151,37 @@ final class Alarm {
     var effectiveGroupIndex: Int {
         let raw = groupIndex ?? 0
         return min(max(raw, 0), 4)
+    }
+
+    /// 報時次數上限（報時鬧鐘最多連報幾次）。
+    static let maxChimeCount = 5
+
+    /// 報時次數——nil → 1，並 clamp 到 1...maxChimeCount。
+    var effectiveChimeCount: Int {
+        min(max(chimeCount ?? 1, 1), Self.maxChimeCount)
+    }
+
+    /// 這顆是不是報時鬧鐘：鈴聲檔名走報時合成檔（chime_ 前綴）即視為報時。
+    /// soundFileName 是單一事實來源——前景 AlarmRingView / 背景 AlarmKit 都靠它選音，
+    /// 所以「是否報時」也以它為準，不額外存旗標避免兩邊不同步。
+    var isChimeAlarm: Bool { soundFileName.hasPrefix(Self.chimeFilePrefix) }
+
+    /// 報時合成 CAF 的檔名前綴（與 ChimeSoundComposer 一致）。
+    static let chimeFilePrefix = "chime_"
+
+    /// 這顆是不是待辦語音提醒（有挑圖示即視為待辦）。待辦不會響（不進 AlarmKit / 通知），只在主頁冒圖示。
+    var isTodo: Bool { todoIcon != nil }
+
+    /// 待辦圖示（解析 rawValue，壞值/未設→氣球）。
+    var effectiveTodoIcon: TodoIcon {
+        guard let raw = todoIcon, let icon = TodoIcon(rawValue: raw) else { return .balloon }
+        return icon
+    }
+
+    /// 待辦圖示顯示時長（分鐘）。nil→10；0 ＝ 直到點開。
+    var effectiveTodoDurationMinutes: Int {
+        let v = todoDurationMinutes ?? 10
+        return max(0, v)
     }
 
     /// 「貪睡模式 / strict mode」已於 2026-06-10 移除：它原本承諾「一定要開 App 才能關」，但

@@ -95,6 +95,10 @@ struct HomeView: View {
                                     .padding(.bottom, 8)
                                 MascotView(tappable: true, scene: scene,
                                            themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
+                                    .overlay(alignment: .topTrailing) {
+                                        TodoBadgesView(group: settings.groupEnabled ? homeGroupSelection : nil)
+                                            .offset(x: 14, y: 6)
+                                    }
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
@@ -111,6 +115,10 @@ struct HomeView: View {
                                     .padding(.bottom, 16)
                                 MascotView(tappable: true, scene: scene,
                                            themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
+                                    .overlay(alignment: .topTrailing) {
+                                        TodoBadgesView(group: settings.groupEnabled ? homeGroupSelection : nil)
+                                            .offset(x: 14, y: 6)
+                                    }
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
@@ -151,6 +159,7 @@ struct HomeView: View {
                 //   背景轉場故意不排（remove-readd 會被 force-quit 中斷 → 通知遺失，就是「提醒模式
                 //   什麼都沒發生」的根因）。前景 add() 一定跑得完，所以放這裡補；repeats:true 會自己持續存在。
                 for alarm in alarms where alarm.isEnabled
+                    && !alarm.isTodo
                     && alarm.effectiveBackgroundMode == .notification
                     && AppSettings.groupAllowsFiring(alarm.effectiveGroupIndex) {
                     try? await AlarmScheduler.shared.schedule(alarm: alarm)
@@ -399,6 +408,8 @@ struct HomeView: View {
         }
         for a in alarms where a.isEnabled && a.hour == h && a.minute == m
             && AppSettings.groupAllowsFiring(a.effectiveGroupIndex) {
+            // 待辦語音提醒不會響：跳過（它只在主頁吉祥物旁冒圖示，由 TodoBadgesView 處理）。
+            if a.isTodo { continue }
             // 通知模式：響鈴交給 .timeSensitive 通知本身（前景由 willPresent 出 banner+sound 並自動停），
             // 不在前景另外彈 in-app AlarmRingView，避免「通知音 + 鈴聲」雙重音效。點通知才開喚醒畫面。
             if a.effectiveBackgroundMode == .notification { continue }
@@ -556,6 +567,10 @@ struct HomeView: View {
                     .padding(.bottom, 12)
                 MascotView(tappable: true, scene: scene,
                            themeOverride: group.map { settings.groupMascot($0) })
+                    .overlay(alignment: .topTrailing) {
+                        TodoBadgesView(group: group)
+                            .offset(x: 14, y: 6)
+                    }
                     .padding(.bottom, 8)
                 if showBanner, let g = group {
                     GroupBanner(
@@ -997,7 +1012,12 @@ struct SettingsView: View {
     @State private var showingIO        = false
     @State private var showingPro       = false
     @State private var showingFlowerEditor = false
+    @State private var showingTodoHistory = false
     @State private var unlockNow = Date()
+    /// 長按某組的「報時」鈴鐺時，在那一列下方顯示使用提示（再長按別組會切換、放開不自動收）。
+    @State private var chimeHintGroup: Int? = nil
+    /// 長按某組的「待辦」圖示時，在那一列下方顯示使用提示。
+    @State private var todoHintGroup: Int? = nil
     private let unlockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -1130,57 +1150,117 @@ struct SettingsView: View {
                                 .labelsHidden()
                         }
 
-                        // 每組一列：字母徽章 + 命名欄（空白＝沿用「群組 A / Group A」）+ 右側可橫向捲動的
-                        // 吉祥物選擇器。用 Array 包 range 避免動態 range 的 ForEach 警告（groupCount 會變）。
+                        // 每組一列：字母徽章 + 命名欄（空白＝沿用「群組 A / Group A」）+ 吉祥物下拉選單
+                        // ＋最右側「報時」鈴鐺開關（長按顯示提示）。用 Array 包 range 避免動態 range 的
+                        // ForEach 警告（groupCount 會變）。
                         ForEach(Array(0..<settings.groupCount), id: \.self) { i in
-                            HStack(spacing: 10) {
-                                ZStack {
-                                    Circle()
-                                        .fill(SunnyColors.leafFresh.opacity(0.16))
-                                        .frame(width: 30, height: 30)
-                                    Text(verbatim: String(Character(UnicodeScalar(UInt8(65 + i)))))
-                                        .font(SunnyFonts.caption(15))
-                                        .foregroundStyle(SunnyColors.forestDeep)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 10) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(SunnyColors.leafFresh.opacity(0.16))
+                                            .frame(width: 30, height: 30)
+                                        Text(verbatim: String(Character(UnicodeScalar(UInt8(65 + i)))))
+                                            .font(SunnyFonts.caption(15))
+                                            .foregroundStyle(SunnyColors.forestDeep)
+                                    }
+
+                                    TextField(
+                                        "",
+                                        text: settings.groupNameBinding(i),
+                                        prompt: Text(verbatim: settings.groupDisplayName(i))
+                                    )
+                                    .font(SunnyFonts.caption())
+                                    .foregroundStyle(SunnyColors.nightIndigo)
+                                    .tint(SunnyColors.leafFresh)
+                                    .submitLabel(.done)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                    // 吉祥物下拉選單：點開選一隻；按鈕顯示目前選的吉祥物 + 上下箭頭。
+                                    Menu {
+                                        Picker("group_mascot_label", selection: Binding(
+                                            get: { settings.groupMascot(i) },
+                                            set: { settings.setGroupMascot(i, $0) }
+                                        )) {
+                                            ForEach(MascotTheme.allCases) { theme in
+                                                Label {
+                                                    Text(LocalizedStringKey(theme.displayName))
+                                                } icon: {
+                                                    Image(systemName: theme.icon)
+                                                }
+                                                .tag(theme)
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: 5) {
+                                            MascotThumb(theme: settings.groupMascot(i), size: 26)
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(SunnyColors.sunnyGray)
+                                        }
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 5)
+                                        .background(
+                                            Capsule().fill(SunnyColors.sunnyGray.opacity(0.12))
+                                        )
+                                    }
+
+                                    // 報時開關（鈴鐺）。on＝這組變成報時鬧鐘；長按顯示使用提示。報時 / 待辦互斥。
+                                    Button {
+                                        settings.setGroupChimeEnabled(i, !settings.isGroupChimeEnabled(i))
+                                    } label: {
+                                        Image(systemName: settings.isGroupChimeEnabled(i)
+                                              ? "bell.badge.fill" : "bell.slash")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(settings.isGroupChimeEnabled(i)
+                                                             ? SunnyColors.lanternOrange
+                                                             : SunnyColors.sunnyGray.opacity(0.6))
+                                            .frame(width: 32, height: 32)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .simultaneousGesture(
+                                        LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                                            withAnimation(.spring(duration: 0.2)) {
+                                                chimeHintGroup = (chimeHintGroup == i) ? nil : i
+                                                todoHintGroup = nil
+                                            }
+                                        }
+                                    )
+
+                                    // 待辦開關（氣球）。on＝這組變成待辦語音提醒；長按顯示使用提示。
+                                    Button {
+                                        settings.setGroupTodoEnabled(i, !settings.isGroupTodoEnabled(i))
+                                    } label: {
+                                        Image(systemName: settings.isGroupTodoEnabled(i)
+                                              ? "balloon.fill" : "balloon")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(settings.isGroupTodoEnabled(i)
+                                                             ? SunnyColors.leafFresh
+                                                             : SunnyColors.sunnyGray.opacity(0.6))
+                                            .frame(width: 32, height: 32)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .simultaneousGesture(
+                                        LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                                            withAnimation(.spring(duration: 0.2)) {
+                                                todoHintGroup = (todoHintGroup == i) ? nil : i
+                                                chimeHintGroup = nil
+                                            }
+                                        }
+                                    )
                                 }
 
-                                TextField(
-                                    "",
-                                    text: settings.groupNameBinding(i),
-                                    prompt: Text(verbatim: settings.groupDisplayName(i))
-                                )
-                                .font(SunnyFonts.caption())
-                                .foregroundStyle(SunnyColors.nightIndigo)
-                                .tint(SunnyColors.leafFresh)
-                                .submitLabel(.done)
-                                .frame(maxWidth: 96)
-
-                                Divider().frame(height: 26)
-
-                                // 吉祥物選擇器（橫向捲動）。選 flower 但還沒設照片時，下面的「向日葵花心照片」可設定。
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(MascotTheme.allCases) { theme in
-                                            Button {
-                                                settings.setGroupMascot(i, theme)
-                                            } label: {
-                                                MascotThumb(theme: theme, size: 30)
-                                                    .padding(5)
-                                                    .background(
-                                                        Circle().fill(settings.groupMascot(i) == theme
-                                                                      ? SunnyColors.leafFresh.opacity(0.22)
-                                                                      : Color.clear)
-                                                    )
-                                                    .overlay(
-                                                        Circle().strokeBorder(settings.groupMascot(i) == theme
-                                                                              ? SunnyColors.leafFresh
-                                                                              : Color.clear, lineWidth: 2)
-                                                    )
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                    .padding(.vertical, 2)
-                                    .padding(.trailing, 4)
+                                if chimeHintGroup == i {
+                                    Text("chime_toggle_hint")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.9))
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+                                if todoHintGroup == i {
+                                    Text("todo_toggle_hint")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(SunnyColors.leafFresh.opacity(0.95))
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
                             }
                         }
@@ -1254,6 +1334,10 @@ struct SettingsView: View {
                         Label("起床紀錄", systemImage: "chart.bar.fill")
                             .foregroundStyle(SunnyColors.forestDeep)
                     }
+                    Button { showingTodoHistory = true } label: {
+                        Label("todo_history_title", systemImage: "balloon.2.fill")
+                            .foregroundStyle(SunnyColors.leafFresh)
+                    }
                     Button { showingIO = true } label: {
                         Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
                             .foregroundStyle(SunnyColors.leafFresh)
@@ -1306,6 +1390,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
         .sheet(isPresented: $showingPro)       { ProUpgradeView() }
         .sheet(isPresented: $showingFlowerEditor) { FlowerCenterEditorView() }
+        .sheet(isPresented: $showingTodoHistory) { TodoHistoryView() }
     }
 
     private var isTemporarilyUnlocked: Bool {

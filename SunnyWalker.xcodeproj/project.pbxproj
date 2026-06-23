@@ -12,8 +12,10 @@
 		00F40DEC550A65F5744B1465 /* success_cheer.wav in Resources */ = {isa = PBXBuildFile; fileRef = 04CFE05C97D05DBDEFEACB3C /* success_cheer.wav */; };
 		019276FB701C56D377901176 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */; };
 		0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD068A8949D465654B55698 /* AlarmAutoStopService.swift */; };
+		0E06CC87F2E8356A5C190B46 /* TodoHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */; };
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
 		1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */; };
+		1871D0205CB66D4D6DA89165 /* TodoBadgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B9F0F0DC245E5787F1E6B5 /* TodoBadgesView.swift */; };
 		1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05356F2D5C177271D275559D /* BedSideManager.swift */; };
 		2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */; };
 		29BD4F65DED2C01951CEDFF1 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */; };
@@ -45,6 +47,7 @@
 		8048B0AF117F5962D38548BA /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */; };
 		830FD8EDE129F8AC869B0664 /* mascot_greet_02.aiff in Resources */ = {isa = PBXBuildFile; fileRef = AC5327BB0CA5B082F8AB8670 /* mascot_greet_02.aiff */; };
 		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
+		8E14817276527AB6F341E185 /* TodoPlayRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8115D639C5C1CDC1E1B91038 /* TodoPlayRecord.swift */; };
 		938216E6565ABD29589DE1B7 /* mascot_greet_04.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 427040A89B54DA26678D1F99 /* mascot_greet_04.aiff */; };
 		9755A93FDAED01AD518AA530 /* mascot_greet_08.aiff in Resources */ = {isa = PBXBuildFile; fileRef = A78A4E3EF2804681F00AFC87 /* mascot_greet_08.aiff */; };
 		9963F75094590316808918F3 /* WakeHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E8F50B718D9D7CBCD731146 /* WakeHistoryView.swift */; };
@@ -58,6 +61,7 @@
 		D203CF6EA08D9B05D6F4E1D1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 2BD64995B72CADA3B22DB510 /* Localizable.xcstrings */; };
 		D718AFB8A73894D4BF7F4B11 /* WatercolorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE7FA83B8576CE1FFA1F10E /* WatercolorCard.swift */; };
 		D7435DD04281BC3455C7EA04 /* DaytimeScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9494AECBCB0F791E7F24F12 /* DaytimeScene.swift */; };
+		D9A5FB7840358B54CFF8C772 /* ChimeSoundComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5D08D9775AC2929E331087 /* ChimeSoundComposer.swift */; };
 		DCD09C4C3618823D88663E91 /* mascot_greet_07.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 6A42B2A278FAC5F1A781F640 /* mascot_greet_07.aiff */; };
 		DD467670A8B05840FBB95018 /* AudioRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402591D9D880D83E7903B948 /* AudioRecorder.swift */; };
 		DF7B9FDA595A709D5B596EFE /* FlowerCenterEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */; };
@@ -107,6 +111,7 @@
 		3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
 		402591D9D880D83E7903B948 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		427040A89B54DA26678D1F99 /* mascot_greet_04.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_04.aiff; sourceTree = "<group>"; };
+		44B9F0F0DC245E5787F1E6B5 /* TodoBadgesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoBadgesView.swift; sourceTree = "<group>"; };
 		46A29B4B7C206E35F4EB5B97 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
 		46A37A57C8FCFE4F4D092654 /* AlarmRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmRingView.swift; sourceTree = "<group>"; };
 		46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyButton.swift; sourceTree = "<group>"; };
@@ -121,6 +126,7 @@
 		6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakePhrase.swift; sourceTree = "<group>"; };
 		7BD2360682B2434A47F2021F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7D68BD8FA689AB6E344E0DFA /* SunnyFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyFonts.swift; sourceTree = "<group>"; };
+		8115D639C5C1CDC1E1B91038 /* TodoPlayRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoPlayRecord.swift; sourceTree = "<group>"; };
 		888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmScheduler.swift; sourceTree = "<group>"; };
 		892C0B175BB78C133BDF4A9A /* RecordingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingView.swift; sourceTree = "<group>"; };
 		8A39961C2B11BD747210DF5F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -140,6 +146,7 @@
 		A9494AECBCB0F791E7F24F12 /* DaytimeScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaytimeScene.swift; sourceTree = "<group>"; };
 		A9980AB76E88D93B5F47148F /* MarkdownAlarmIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIO.swift; sourceTree = "<group>"; };
 		AC5327BB0CA5B082F8AB8670 /* mascot_greet_02.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_02.aiff; sourceTree = "<group>"; };
+		AC5D08D9775AC2929E331087 /* ChimeSoundComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimeSoundComposer.swift; sourceTree = "<group>"; };
 		B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyAvatar.swift; sourceTree = "<group>"; };
 		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
@@ -147,6 +154,7 @@
 		D43882E1C62C0E0AF8608822 /* SunnyColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyColors.swift; sourceTree = "<group>"; };
 		E082FE6D44313D96DE49E326 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
 		E0D014C1458197C25E160373 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoHistoryView.swift; sourceTree = "<group>"; };
 		F8B2F46A3941FEE3E76A4346 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -193,6 +201,7 @@
 				A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */,
 				892C0B175BB78C133BDF4A9A /* RecordingView.swift */,
 				3A9A3B1D0C7F32B69EB73774 /* RingtonePickerSheet.swift */,
+				EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */,
 				24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */,
 				8E8F50B718D9D7CBCD731146 /* WakeHistoryView.swift */,
 			);
@@ -253,6 +262,7 @@
 			isa = PBXGroup;
 			children = (
 				60114EB5C3B3CEE759BABCDF /* Alarm.swift */,
+				8115D639C5C1CDC1E1B91038 /* TodoPlayRecord.swift */,
 				8A8E8B44056E1DBE4A0429A7 /* VoiceClip.swift */,
 				6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */,
 				5F6D67B3B5D9C27FB3D0E4A5 /* WakeRecord.swift */,
@@ -266,6 +276,7 @@
 				E082FE6D44313D96DE49E326 /* CloudBackground.swift */,
 				A9494AECBCB0F791E7F24F12 /* DaytimeScene.swift */,
 				1EB6388EF249B7365D9B3B48 /* HomeView.swift */,
+				44B9F0F0DC245E5787F1E6B5 /* TodoBadgesView.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -321,6 +332,7 @@
 				C6A487603264A6DA88C647F8 /* AudioPlayer.swift */,
 				402591D9D880D83E7903B948 /* AudioRecorder.swift */,
 				05356F2D5C177271D275559D /* BedSideManager.swift */,
+				AC5D08D9775AC2929E331087 /* ChimeSoundComposer.swift */,
 				17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */,
 				A9980AB76E88D93B5F47148F /* MarkdownAlarmIO.swift */,
 				8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */,
@@ -465,6 +477,7 @@
 				3BC8F8E87CABFEF31FB088DA /* AudioPlayer.swift in Sources */,
 				DD467670A8B05840FBB95018 /* AudioRecorder.swift in Sources */,
 				1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */,
+				D9A5FB7840358B54CFF8C772 /* ChimeSoundComposer.swift in Sources */,
 				F3417E034F113A67319AC0D7 /* CloudBackground.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,
 				D7435DD04281BC3455C7EA04 /* DaytimeScene.swift in Sources */,
@@ -489,6 +502,9 @@
 				C714C087A1B5D9F0B11DECAB /* SunnyColors.swift in Sources */,
 				2FA716C98FC48F6B082F492E /* SunnyFonts.swift in Sources */,
 				E08BE7AC23F36A479736F09D /* SunnyWalkerApp.swift in Sources */,
+				1871D0205CB66D4D6DA89165 /* TodoBadgesView.swift in Sources */,
+				0E06CC87F2E8356A5C190B46 /* TodoHistoryView.swift in Sources */,
+				8E14817276527AB6F341E185 /* TodoPlayRecord.swift in Sources */,
 				AE34FEC3FB8419495514DA29 /* VoiceClip.swift in Sources */,
 				3AFF1E5DCB46051419AE5A95 /* VoiceLibraryView.swift in Sources */,
 				9963F75094590316808918F3 /* WakeHistoryView.swift in Sources */,

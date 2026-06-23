@@ -32,6 +32,16 @@ struct AlarmEditorView: View {
     @State private var segmentedBurst = false
     /// 多人鬧鐘群組索引（0 = 群組 A，預設）。只有在 settings.groupEnabled 時才顯示選擇器、存回鬧鐘。
     @State private var selectedGroupIndex = 0
+    /// 報時次數（報時鬧鐘專用）：時間到要連報幾次。
+    @State private var chimeCount = 1
+    /// 待辦提醒：主頁顯示的圖示、顯示時長（分鐘，0＝直到點開）。
+    @State private var todoIcon: TodoIcon = .balloon
+    @State private var todoDuration = 10
+    @State private var showingTodoRecorder = false
+    @State private var showingTodoPicker = false
+    @State private var showingTodoNeedsRecording = false
+    /// 待辦顯示時長可選項（分鐘）。0 = 直到兒童點開才消失。
+    private let todoDurationOptions = [10, 30, 60, 0]
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
     // Label tap/long-press
@@ -61,6 +71,9 @@ struct AlarmEditorView: View {
             _useNotificationMode = State(initialValue: a.effectiveBackgroundMode == .notification)
             _segmentedBurst = State(initialValue: a.effectiveSegmentedBurst)
             _selectedGroupIndex = State(initialValue: a.effectiveGroupIndex)
+            _chimeCount = State(initialValue: a.effectiveChimeCount)
+            _todoIcon = State(initialValue: a.effectiveTodoIcon)
+            _todoDuration = State(initialValue: a.effectiveTodoDurationMinutes)
         } else {
             // Create mode
             _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
@@ -83,9 +96,18 @@ struct AlarmEditorView: View {
                         if settings.groupEnabled {
                             groupCard
                         }
-                        ringtoneCard
-                        dismissMethodCard
-                        backgroundModeCard
+                        // 報時群組：鈴聲欄換成「報時次數」（通知模式、響一次自動停）。
+                        // 待辦群組：鈴聲欄換成「待辦語音 + 圖示 + 顯示時長」（不會響，只在主頁冒圖示）。
+                        // 一般群組維持原本的鈴聲與背景模式選擇。
+                        if chimeActive {
+                            chimeCard
+                        } else if todoActive {
+                            todoCard
+                        } else {
+                            ringtoneCard
+                            dismissMethodCard
+                            backgroundModeCard
+                        }
                     }
                     .padding(24)
                 }
@@ -97,6 +119,11 @@ struct AlarmEditorView: View {
             }
             .onReceive(previewPlayer.$isPlaying) { playing in
                 if !playing { previewingRow = nil }
+            }
+            .alert("todo_needs_recording_title", isPresented: $showingTodoNeedsRecording) {
+                Button("好", role: .cancel) {}
+            } message: {
+                Text("todo_needs_recording_msg")
             }
             .onDisappear { previewPlayer.stop() }
             .navigationTitle(isEditing ? "編輯鬧鐘" : "新增鬧鐘")
@@ -219,6 +246,215 @@ struct AlarmEditorView: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+        }
+    }
+
+    /// 這顆鬧鐘是否屬於「報時群組」（要啟用分組 + 該組開了報時）。決定顯示「鈴聲」還是「報時次數」。
+    private var chimeActive: Bool {
+        settings.groupEnabled && settings.isGroupChimeEnabled(selectedGroupIndex)
+    }
+
+    /// 報時卡：取代鈴聲卡。家長設定時間到要連報幾次；可試聽。實際語音在儲存時用系統語音合成
+    /// （語言跟著 App 語言設定，只分中／英），背景與前景都放同一份報時音。
+    private var chimeCard: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(SunnyColors.lanternOrange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("chime_card_title")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        Text("chime_card_subtitle")
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                    }
+                    Spacer()
+                    // 試聽：合成目前時間 + 次數的報時音並播放。合成需約 1 秒，期間圖示先進入播放態。
+                    Button {
+                        previewChime()
+                    } label: {
+                        Image(systemName: previewingRow == "chime" ? "stop.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 30))
+                            .foregroundStyle(previewingRow == "chime" ? SunnyColors.lanternOrange : SunnyColors.skyBlue)
+                            .symbolEffect(.pulse, isActive: previewingRow == "chime")
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Divider()
+
+                HStack {
+                    Label("chime_count_label", systemImage: "repeat")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                    Spacer()
+                    Text(L("chime_times_value %lld", chimeCount))
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.lanternOrange)
+                        .monospacedDigit()
+                    Stepper("", value: $chimeCount, in: 1...Alarm.maxChimeCount)
+                        .labelsHidden()
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+    }
+
+    /// 這顆是否屬於「待辦群組」（啟用分組 + 該組開了待辦）。決定顯示「鈴聲」還是「待辦語音」卡。
+    private var todoActive: Bool {
+        settings.groupEnabled && settings.isGroupTodoEnabled(selectedGroupIndex)
+    }
+
+    private var todoRecordingSubtitle: Text {
+        guard !tempAlarm.recordingName.isEmpty else { return Text(LocalizedStringKey("尚未錄音")) }
+        return Text("🎤 \(tempAlarm.effectiveRecordingDisplayName)")
+    }
+
+    /// 顯示時長文字：0 → 直到點開；其餘 → N 分鐘。
+    private func todoDurationText(_ minutes: Int) -> String {
+        minutes == 0 ? L("todo_duration_until_tapped") : L("todo_duration_minutes %lld", minutes)
+    }
+
+    /// 待辦卡：取代鈴聲卡。家長錄/選一段提醒語音、挑主頁圖示、設顯示時長。待辦不會響，
+    /// 時間到時在主頁吉祥物旁冒出圖示，兒童長按播放。
+    private var todoCard: some View {
+        WatercolorCard {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 10) {
+                    Text(todoIcon.emoji).font(.system(size: 24))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("todo_card_title")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        Text("todo_card_subtitle")
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+                    }
+                    Spacer()
+                }
+
+                Divider()
+
+                // 提醒語音：試聽 + 名稱
+                HStack(spacing: 14) {
+                    Button { togglePreview("custom") } label: {
+                        Image(systemName: previewingRow == "custom" ? "stop.circle.fill" : "play.circle.fill")
+                            .font(.system(size: 26))
+                            .foregroundStyle(previewingRow == "custom"
+                                             ? SunnyColors.lanternOrange
+                                             : (tempAlarm.recordingName.isEmpty
+                                                ? SunnyColors.sunnyGray.opacity(0.4)
+                                                : SunnyColors.leafFresh))
+                            .symbolEffect(.pulse, isActive: previewingRow == "custom")
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(tempAlarm.recordingName.isEmpty)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("todo_voice_label")
+                            .font(SunnyFonts.caption())
+                            .foregroundStyle(SunnyColors.nightIndigo)
+                        todoRecordingSubtitle
+                            .font(SunnyFonts.caption(14))
+                            .foregroundStyle(tempAlarm.recordingName.isEmpty
+                                             ? SunnyColors.sunnyGray : SunnyColors.lanternOrange)
+                    }
+                    Spacer()
+                }
+
+                HStack(spacing: 10) {
+                    Button { showingTodoRecorder = true } label: {
+                        Label("todo_record", systemImage: "mic.fill")
+                            .font(SunnyFonts.caption(14))
+                            .foregroundStyle(SunnyColors.leafFresh)
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
+                    Button { showingTodoPicker = true } label: {
+                        Label("todo_pick", systemImage: "square.and.arrow.down")
+                            .font(SunnyFonts.caption(14))
+                            .foregroundStyle(SunnyColors.skyBlue)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Divider()
+
+                // 主頁圖示挑選
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("todo_icon_label")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                    HStack(spacing: 10) {
+                        ForEach(TodoIcon.allCases) { icon in
+                            Button { todoIcon = icon } label: {
+                                Text(icon.emoji)
+                                    .font(.system(size: 22))
+                                    .frame(width: 42, height: 42)
+                                    .background(
+                                        Circle().fill(todoIcon == icon
+                                                      ? SunnyColors.lanternOrange.opacity(0.18)
+                                                      : SunnyColors.sunnyGray.opacity(0.1))
+                                    )
+                                    .overlay(
+                                        Circle().strokeBorder(todoIcon == icon
+                                                              ? SunnyColors.lanternOrange
+                                                              : Color.clear, lineWidth: 2)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                Divider()
+
+                // 顯示時長
+                HStack {
+                    Label("todo_duration_label", systemImage: "timer")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                    Spacer()
+                    Menu {
+                        Picker("todo_duration_label", selection: $todoDuration) {
+                            ForEach(todoDurationOptions, id: \.self) { opt in
+                                Text(verbatim: todoDurationText(opt)).tag(opt)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(verbatim: todoDurationText(todoDuration))
+                                .foregroundStyle(SunnyColors.lanternOrange)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                        }
+                        .font(SunnyFonts.caption())
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+        }
+        .sheet(isPresented: $showingTodoRecorder) {
+            // 完整對齊「錄音管理」的錄音體驗（倒數秒環 + 辨識錄音內容自動命名）：直接重用
+            // VoiceClipRecorderSheet，錄好的 clip 收進音檔庫，並設成這則待辦的提醒語音。
+            VoiceClipRecorderSheet { clip in
+                modelContext.insert(clip)
+                let base = String(clip.fileName.dropLast(4))   // 去掉 ".m4a"
+                tempAlarm.recordingName = base
+                tempAlarm.recordingDisplayName = clip.name
+            }
+        }
+        .sheet(isPresented: $showingTodoPicker) {
+            VoiceLibraryView(currentFileName: tempAlarm.soundFileName) { _, chosenRecording in
+                tempAlarm.recordingName = chosenRecording?.baseName ?? ""
+                tempAlarm.recordingDisplayName = chosenRecording?.displayName
+            }
         }
     }
 
@@ -423,6 +659,40 @@ struct AlarmEditorView: View {
 
     // MARK: - Preview
 
+    /// 試聽報時：用目前選的時間 + 次數合成報時音（背景執行緒）後播放一次。
+    /// ⚠️ 用 previewingRow=="chime" 當狀態（不要另立會被 onReceive 歸零的旗標）：previewPlayer.stop()
+    ///    會同步觸發 $isPlaying→false 的 onReceive 把 previewingRow 清掉，所以要在 stop() 之後才設
+    ///    previewingRow，合成期間 isPlaying 不變動、previewingRow 維持 "chime"，播完才被 onReceive 清掉。
+    private func previewChime() {
+        if previewingRow == "chime" {
+            previewPlayer.stop()
+            previewingRow = nil
+            return
+        }
+        previewPlayer.stop()
+        previewingRow = "chime"
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
+        let h = comps.hour ?? 7
+        let m = comps.minute ?? 0
+        let loc = SunnyLocalization.locale
+        Task {
+            let caf = await Task.detached(priority: .userInitiated) {
+                ChimeSoundComposer.compose(hour: h, minute: m, locale: loc)
+            }.value
+            await MainActor.run {
+                guard previewingRow == "chime", let caf else {
+                    if previewingRow == "chime" { previewingRow = nil }
+                    return
+                }
+                let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("Sounds", isDirectory: true)
+                    .appendingPathComponent(caf)
+                guard FileManager.default.fileExists(atPath: url.path) else { previewingRow = nil; return }
+                previewPlayer.play(url: url, loop: false)
+            }
+        }
+    }
+
     private func togglePreview(_ row: String) {
         if previewingRow == row {
             previewPlayer.stop()
@@ -571,6 +841,15 @@ struct AlarmEditorView: View {
     // MARK: - Save logic
 
     private func saveAlarm() {
+        // 待辦：存檔前先驗證必須有錄音。數量不在這裡擋——免費版總量(鬧鐘+待辦合計)由首頁「＋」鈕
+        // 統一以 alarms.count < FeatureLimits.maxAlarms 把關（待辦本身就是 Alarm，已計入總數）。
+        if todoActive {
+            guard !tempAlarm.recordingName.isEmpty else {
+                showingTodoNeedsRecording = true
+                return
+            }
+        }
+
         isSaving = true
         let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
         let trimmed = label.trimmingCharacters(in: .whitespaces)
@@ -592,12 +871,67 @@ struct AlarmEditorView: View {
             tempAlarm.groupIndex = selectedGroupIndex
         }
 
+        // 三種模式：報時 / 待辦 / 一般。報時的實際語音檔在下面的 Task 裡（背景執行緒）合成。
+        let chimeOn = chimeActive
+        let todoOn = todoActive
+        let previousSound = tempAlarm.soundFileName
+        // 統一先把「另外兩種模式」的殘留欄位清掉，避免切換模式後留下舊狀態。
+        func clearChimeSoundIfNeeded() {
+            if previousSound.hasPrefix(Alarm.chimeFilePrefix) {
+                tempAlarm.soundFileName = "sunny_wake.caf"
+                ChimeSoundComposer.removeChimeFile(named: previousSound)
+            }
+        }
+        if chimeOn {
+            tempAlarm.chimeCount = chimeCount
+            tempAlarm.todoIcon = nil
+            tempAlarm.todoDurationMinutes = nil
+            tempAlarm.recordingName = ""          // 報時沒有錄音；清掉才不會誤判成口令關閉
+            tempAlarm.recordingDisplayName = nil
+            tempAlarm.taskType = .button          // 報時用按鈕關（沒有錄音可做口令辨識）
+            // 報時一律走「通知模式」：響一次（把報時音檔放完）就自動停。若走 AlarmKit 會無限 loop
+            // → 報完還一直響（使用者回報「響不停」）。單通知＝報時次數已合成在音檔裡，放完即止。
+            tempAlarm.backgroundRingMode = .notification
+            tempAlarm.segmentedBurst = false
+        } else if todoOn {
+            // 待辦：不會響（schedule/syncAlarm 會因 isTodo 跳過）。只存圖示 + 顯示時長 + 錄音。
+            tempAlarm.todoIcon = todoIcon.rawValue
+            tempAlarm.todoDurationMinutes = todoDuration
+            tempAlarm.chimeCount = nil
+            tempAlarm.taskType = .button
+            clearChimeSoundIfNeeded()
+        } else {
+            tempAlarm.chimeCount = nil
+            tempAlarm.todoIcon = nil
+            tempAlarm.todoDurationMinutes = nil
+            clearChimeSoundIfNeeded()
+        }
+
         if !isEditing {
             modelContext.insert(tempAlarm)
         }
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
 
+        let chimeHour = tempAlarm.hour
+        let chimeMinute = tempAlarm.minute
+        let chimeLocale = SunnyLocalization.locale
         Task {
+            // 報時：先在背景合成「一句」語音 CAF（保持短、通知音不被截）。連報次數由 AlarmScheduler
+            // 排多顆秒級錯開的通知達成，所以這裡不把 N 次塞進同一個檔。
+            if chimeOn {
+                let caf = await Task.detached(priority: .userInitiated) {
+                    ChimeSoundComposer.compose(hour: chimeHour, minute: chimeMinute, locale: chimeLocale)
+                }.value
+                await MainActor.run {
+                    if let caf {
+                        tempAlarm.soundFileName = caf
+                        if previousSound.hasPrefix(Alarm.chimeFilePrefix), previousSound != caf {
+                            ChimeSoundComposer.removeChimeFile(named: previousSound)
+                        }
+                    }
+                    // 合成失敗（極少數）→ 保留原 soundFileName，鬧鐘仍會用既有鈴聲響，不會無聲。
+                }
+            }
             // UNNotification fallback (no-op while AlarmKit is authorized — it stands down).
             try? await AlarmScheduler.shared.schedule(alarm: tempAlarm)
             // AlarmKit is NOT armed here: it's managed by HomeView's foreground/background switch,

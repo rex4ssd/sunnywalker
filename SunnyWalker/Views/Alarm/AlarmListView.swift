@@ -61,7 +61,7 @@ struct AlarmListView: View {
                         .animation(.easeInOut(duration: 0.2), value: dimmed)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
                 }
             }
             .listStyle(.plain)
@@ -133,9 +133,9 @@ private struct AlarmCard: View {
                 } label: {
                     HStack(spacing: 12) {
                         DaytimeAlarmIcon(scene: DaytimeScene.current(hour: alarm.hour))
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(alarm.formattedTime(use24h: settings.use24HourClock))
-                                .font(SunnyFonts.clock(40))
+                                .font(SunnyFonts.clock(30))
                                 .foregroundStyle(
                                     alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
                                 )
@@ -157,7 +157,7 @@ private struct AlarmCard: View {
                     }
                     .padding(.leading, 14)
                     .padding(.trailing, 12)
-                    .padding(.vertical, 18)
+                    .padding(.vertical, 10)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -169,7 +169,7 @@ private struct AlarmCard: View {
                     .labelsHidden()
                     .accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")
                     .padding(.trailing, 20)
-                    .padding(.vertical, 18)
+                    .padding(.vertical, 10)
             }
         }
         .opacity(alarm.isEnabled ? 1.0 : 0.6)
@@ -226,7 +226,7 @@ private struct DaytimeAlarmIcon: View {
         ZStack {
             Circle()
                 .fill(iconColor.opacity(0.14))
-                .frame(width: 46, height: 46)
+                .frame(width: 40, height: 40)
 
             switch scene {
             case .dawn, .morning:
@@ -243,7 +243,7 @@ private struct DaytimeAlarmIcon: View {
                     .foregroundStyle(SunnyColors.nightIndigo, SunnyColors.starGold)
             }
         }
-        .font(.system(size: 22, weight: .medium))
+        .font(.system(size: 19, weight: .medium))
         .accessibilityHidden(true)
     }
 
@@ -260,9 +260,9 @@ private struct SampleAlarmCard: View {
     var body: some View {
         WatercolorCard {
             HStack(alignment: .center, spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(data.timeString)
-                        .font(SunnyFonts.clock(40))
+                        .font(SunnyFonts.clock(30))
                         .foregroundStyle(SunnyColors.nightIndigo)
                     Text(LocalizedStringKey(data.label))
                         .font(SunnyFonts.caption())
@@ -275,7 +275,7 @@ private struct SampleAlarmCard: View {
                     .disabled(true)
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 18)
+            .padding(.vertical, 10)
         }
     }
 }

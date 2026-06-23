@@ -216,6 +216,6 @@ struct SunnyWalkerApp: App {
                     _ = await AlarmKitService.shared.requestAuthorization()
                 }
         }
-        .modelContainer(for: [Alarm.self, WakeRecord.self, VoiceClip.self])
+        .modelContainer(for: [Alarm.self, WakeRecord.self, VoiceClip.self, TodoPlayRecord.self])
     }
 }
