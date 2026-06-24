@@ -891,10 +891,6 @@ private struct GroupBanner: View {
     /// 點名稱膠囊 → 切換這個群組的開關（呼叫端會先過家長驗證）。nil＝不可點（例如沒有開關需求時）。
     var onTap: (() -> Void)? = nil
 
-    private var capsuleFill: Color {
-        active ? SunnyColors.cloudWhite.opacity(0.78) : SunnyColors.sunnyGray.opacity(0.2)
-    }
-
     var body: some View {
         // 單行：左箭頭 · 名稱膠囊（可點＝開關）· 右箭頭 · 頁點。
         HStack(spacing: 10) {
@@ -921,13 +917,9 @@ private struct GroupBanner: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 7)
-                .background(Capsule(style: .continuous).fill(capsuleFill))
-                .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder((active ? SunnyColors.leafFresh : SunnyColors.sunnyGray).opacity(0.4),
-                                      lineWidth: 1.5)
-                )
-                .shadow(color: SunnyColors.forestDeep.opacity(active ? 0.1 : 0), radius: 4, y: 1)
+                // 外框 / 底色 / 陰影移除（會破壞水彩主題）——只留文字＋圖示。padding 區仍可點：
+                // 沒有 fill 時要用 contentShape 把整顆膠囊範圍補回可點區。
+                .contentShape(Capsule(style: .continuous))
             }
             .buttonStyle(.plain)
             .disabled(onTap == nil)
