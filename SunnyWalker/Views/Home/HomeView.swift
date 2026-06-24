@@ -1370,6 +1370,17 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                // 開源授權 — fulfils the MIT notice obligation for bundled
+                // third-party code (ConfettiSwiftUI). Static info screen, no gate.
+                Section {
+                    NavigationLink {
+                        AcknowledgementsView()
+                    } label: {
+                        Label("third_party_licenses_row", systemImage: "doc.text.fill")
+                            .foregroundStyle(SunnyColors.skyBlue)
+                    }
+                }
             }
             .navigationTitle(Text("settings_label"))
             .navigationBarTitleDisplayMode(.inline)

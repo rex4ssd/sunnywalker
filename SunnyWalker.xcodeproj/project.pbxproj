@@ -39,6 +39,7 @@
 		5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */; };
 		6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */; };
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
+		6D475AD077361995E172BA9D /* AcknowledgementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EAAC2635158C5EDC87A347 /* AcknowledgementsView.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
@@ -103,6 +104,7 @@
 		26E49492007B21D867DE139A /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
 		2BD64995B72CADA3B22DB510 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		2C81D51ADB7CD8DC5347513F /* timeout_sad.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = timeout_sad.wav; sourceTree = "<group>"; };
+		30EAAC2635158C5EDC87A347 /* AcknowledgementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AcknowledgementsView.swift; sourceTree = "<group>"; };
 		3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitService.swift; sourceTree = "<group>"; };
 		3A9A3B1D0C7F32B69EB73774 /* RingtonePickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingtonePickerSheet.swift; sourceTree = "<group>"; };
 		3B95C4905637E5F644D212ED /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
@@ -194,6 +196,7 @@
 		5121DFB6639E40E382A52354 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				30EAAC2635158C5EDC87A347 /* AcknowledgementsView.swift */,
 				5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */,
 				26E49492007B21D867DE139A /* AlarmIOView.swift */,
 				1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */,
@@ -463,6 +466,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6D475AD077361995E172BA9D /* AcknowledgementsView.swift in Sources */,
 				A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */,
 				0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */,
 				505C59164E21638ED2A87584 /* AlarmEditorView.swift in Sources */,

@@ -81,42 +81,6 @@
         }
       }
     },
-    "全部清除" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear all" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "全部清除" } }
-      }
-    },
-    "鬧鐘數量已達上限" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Alarm limit reached" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "鬧鐘數量已達上限" } }
-      }
-    },
-    "匯出紀錄" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Export log" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯出紀錄" } }
-      }
-    },
-    "確定清除全部起床紀錄？" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear all wake records?" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "確定清除全部起床紀錄？" } }
-      }
-    },
-    "刪除這筆紀錄" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete this record" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "刪除這筆紀錄" } }
-      }
-    },
-    "錄音最長 %lld 分鐘，超過會自動停止" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recordings are capped at %lld min; recording stops automatically after that." } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "錄音最長 %lld 分鐘，超過會自動停止" } }
-      }
-    },
     "%lld 分" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1698,6 +1662,55 @@
         }
       }
     },
+    "third_party_ack_footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This app includes open-source components. Their copyright and license notices are reproduced below."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本 app 使用下列開源元件，依授權要求保留其著作權與授權聲明。"
+          }
+        }
+      }
+    },
+    "third_party_licenses_row" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open-Source Licenses"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開源授權"
+          }
+        }
+      }
+    },
+    "third_party_licenses_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open-Source Licenses"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開源授權"
+          }
+        }
+      }
+    },
     "time_format_section" : {
       "localizations" : {
         "en" : {
@@ -2532,6 +2545,23 @@
         }
       }
     },
+    "全部清除" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部清除"
+          }
+        }
+      }
+    },
     "六" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2688,6 +2718,23 @@
         }
       }
     },
+    "刪除這筆紀錄" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this record"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除這筆紀錄"
+          }
+        }
+      }
+    },
     "刪除鬧鐘" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2834,6 +2881,23 @@
         }
       }
     },
+    "匯出紀錄" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export log"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出紀錄"
+          }
+        }
+      }
+    },
     "午睡起床" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2920,8 +2984,18 @@
     },
     "向日葵" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sunflower" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "向日葵" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunflower"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向日葵"
+          }
+        }
       }
     },
     "向日葵（自訂照片）" : {
@@ -3241,8 +3315,18 @@
     },
     "已選取" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Selected" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "已選取" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取"
+          }
+        }
       }
     },
     "已選自錄鈴聲，可以開啟口令關閉。" : {
@@ -3964,6 +4048,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "用通知響一次（≤30 秒）就自動停，不會一直響到沒電。可突破專注模式，但破不了實體靜音，較不會吵醒熟睡的孩子。"
+          }
+        }
+      }
+    },
+    "確定清除全部起床紀錄？" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all wake records?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定清除全部起床紀錄？"
           }
         }
       }
@@ -4770,8 +4871,18 @@
     },
     "選取" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "選取" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取"
+          }
+        }
       }
     },
     "選擇鈴聲 🎵" : {
@@ -5051,6 +5162,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "錄音中（實驗）"
+          }
+        }
+      }
+    },
+    "錄音最長 %lld 分鐘，超過會自動停止" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordings are capped at %lld min; recording stops automatically after that."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錄音最長 %lld 分鐘，超過會自動停止"
           }
         }
       }
@@ -5443,6 +5571,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "鬧鐘名稱"
+          }
+        }
+      }
+    },
+    "鬧鐘數量已達上限" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarm limit reached"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鬧鐘數量已達上限"
           }
         }
       }
