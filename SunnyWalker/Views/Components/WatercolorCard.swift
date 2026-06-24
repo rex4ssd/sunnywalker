@@ -42,7 +42,7 @@ struct WatercolorCard<Content: View>: View {
 struct NavigationChevron: View {
     var body: some View {
         Image(systemName: "chevron.right")
-            .font(.system(size: 16, weight: .bold))
+            .font(.callout.weight(.bold))
             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.55))
             .frame(width: 36, height: 36)
             .background(

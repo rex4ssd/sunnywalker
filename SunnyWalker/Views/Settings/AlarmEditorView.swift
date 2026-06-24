@@ -209,7 +209,7 @@ struct AlarmEditorView: View {
 
                 if showLabelHint {
                     Text(LocalizedStringKey("alarm_label_hint"))
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(SunnyColors.leafFresh.opacity(0.85))
                         .padding(.horizontal, 20)
                         .padding(.bottom, 10)
@@ -261,7 +261,7 @@ struct AlarmEditorView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 10) {
                     Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 24))
+                        .font(.title2)
                         .foregroundStyle(SunnyColors.lanternOrange)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("chime_card_title")
@@ -277,7 +277,7 @@ struct AlarmEditorView: View {
                         previewChime()
                     } label: {
                         Image(systemName: previewingRow == "chime" ? "stop.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 30))
+                            .font(.title)
                             .foregroundStyle(previewingRow == "chime" ? SunnyColors.lanternOrange : SunnyColors.skyBlue)
                             .symbolEffect(.pulse, isActive: previewingRow == "chime")
                     }
@@ -325,7 +325,7 @@ struct AlarmEditorView: View {
         WatercolorCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 10) {
-                    Text(todoIcon.emoji).font(.system(size: 24))
+                    Text(todoIcon.emoji).font(.title2)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("todo_card_title")
                             .font(SunnyFonts.caption())
@@ -343,7 +343,7 @@ struct AlarmEditorView: View {
                 HStack(spacing: 14) {
                     Button { togglePreview("custom") } label: {
                         Image(systemName: previewingRow == "custom" ? "stop.circle.fill" : "play.circle.fill")
-                            .font(.system(size: 26))
+                            .font(.title)
                             .foregroundStyle(previewingRow == "custom"
                                              ? SunnyColors.lanternOrange
                                              : (tempAlarm.recordingName.isEmpty
@@ -393,7 +393,7 @@ struct AlarmEditorView: View {
                         ForEach(TodoIcon.allCases) { icon in
                             Button { todoIcon = icon } label: {
                                 Text(icon.emoji)
-                                    .font(.system(size: 22))
+                                    .font(.title2)
                                     .frame(width: 42, height: 42)
                                     .background(
                                         Circle().fill(todoIcon == icon
@@ -430,7 +430,7 @@ struct AlarmEditorView: View {
                             Text(verbatim: todoDurationText(todoDuration))
                                 .foregroundStyle(SunnyColors.lanternOrange)
                             Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(SunnyColors.sunnyGray)
                         }
                         .font(SunnyFonts.caption())
@@ -505,7 +505,7 @@ struct AlarmEditorView: View {
 
                 if showDaysHint {
                     Text(LocalizedStringKey("alarm_days_hint"))
-                        .font(.system(size: 12))
+                        .font(.caption)
                         .foregroundStyle(SunnyColors.leafFresh.opacity(0.85))
                         .padding(.horizontal, 20)
                         .padding(.bottom, 10)
@@ -807,7 +807,7 @@ struct AlarmEditorView: View {
             // Left icon: tap to preview current sound
             Button(action: onIconTap) {
                 Image(systemName: isPreviewing ? "stop.circle.fill" : icon)
-                    .font(.system(size: 26))
+                    .font(.title)
                     .foregroundStyle(isPreviewing ? SunnyColors.lanternOrange : iconColor)
                     .symbolEffect(.pulse, isActive: isPreviewing)
                     .frame(width: 32, height: 32)
@@ -825,7 +825,7 @@ struct AlarmEditorView: View {
             Spacer()
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundStyle(SunnyColors.leafFresh)
             }
             // Right chevron: tap to navigate to picker
@@ -962,7 +962,7 @@ private struct WeekdayChip: View {
     var body: some View {
         Button(action: onTap) {
             Text(LocalizedStringKey(symbol))
-                .font(.system(size: 11, weight: .semibold))
+                .font(.caption2.weight(.semibold))
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? .white : SunnyColors.sunnyGray)
@@ -988,7 +988,7 @@ private struct GroupChip: View {
         Button(action: onTap) {
             HStack(spacing: 7) {
                 Text(verbatim: letter)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.caption.weight(.bold))
                     .foregroundStyle(isSelected ? .white : SunnyColors.forestDeep)
                     .frame(width: 22, height: 22)
                     .background(

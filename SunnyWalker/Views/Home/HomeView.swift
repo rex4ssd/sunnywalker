@@ -895,7 +895,7 @@ private struct GroupBanner: View {
         // 單行：左箭頭 · 名稱膠囊（可點＝開關）· 右箭頭 · 頁點。
         HStack(spacing: 10) {
             Image(systemName: "chevron.left")
-                .font(.system(size: 11, weight: .bold))
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(SunnyColors.forestDeep.opacity(index > 0 ? 0.45 : 0.1))
 
             Button {
@@ -903,7 +903,7 @@ private struct GroupBanner: View {
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: active ? "person.crop.circle.fill" : "powersleep")
-                        .font(.system(size: 14))
+                        .font(.subheadline)
                         .foregroundStyle(active ? SunnyColors.leafFresh : SunnyColors.sunnyGray)
                     Text(verbatim: name)
                         .font(SunnyFonts.caption(15))
@@ -925,7 +925,7 @@ private struct GroupBanner: View {
             .disabled(onTap == nil)
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
+                .font(.caption2.weight(.bold))
                 .foregroundStyle(SunnyColors.forestDeep.opacity(index < total - 1 ? 0.45 : 0.1))
 
             HStack(spacing: 5) {
@@ -1190,7 +1190,7 @@ struct SettingsView: View {
                                         HStack(spacing: 5) {
                                             MascotThumb(theme: settings.groupMascot(i), size: 26)
                                             Image(systemName: "chevron.up.chevron.down")
-                                                .font(.system(size: 11, weight: .semibold))
+                                                .font(.caption2.weight(.semibold))
                                                 .foregroundStyle(SunnyColors.sunnyGray)
                                         }
                                         .padding(.horizontal, 8)
@@ -1206,7 +1206,7 @@ struct SettingsView: View {
                                     } label: {
                                         Image(systemName: settings.isGroupChimeEnabled(i)
                                               ? "bell.badge.fill" : "bell.slash")
-                                            .font(.system(size: 20))
+                                            .font(.title3)
                                             .foregroundStyle(settings.isGroupChimeEnabled(i)
                                                              ? SunnyColors.lanternOrange
                                                              : SunnyColors.sunnyGray.opacity(0.6))
@@ -1228,7 +1228,7 @@ struct SettingsView: View {
                                     } label: {
                                         Image(systemName: settings.isGroupTodoEnabled(i)
                                               ? "balloon.fill" : "balloon")
-                                            .font(.system(size: 20))
+                                            .font(.title3)
                                             .foregroundStyle(settings.isGroupTodoEnabled(i)
                                                              ? SunnyColors.leafFresh
                                                              : SunnyColors.sunnyGray.opacity(0.6))
@@ -1247,13 +1247,13 @@ struct SettingsView: View {
 
                                 if chimeHintGroup == i {
                                     Text("chime_toggle_hint")
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                         .foregroundStyle(SunnyColors.lanternOrange.opacity(0.9))
                                         .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
                                 if todoHintGroup == i {
                                     Text("todo_toggle_hint")
-                                        .font(.system(size: 12))
+                                        .font(.caption)
                                         .foregroundStyle(SunnyColors.leafFresh.opacity(0.95))
                                         .transition(.opacity.combined(with: .move(edge: .top)))
                                 }

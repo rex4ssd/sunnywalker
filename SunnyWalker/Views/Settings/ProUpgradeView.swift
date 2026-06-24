@@ -74,7 +74,7 @@ struct ProUpgradeView: View {
     private func benefit(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(SunnyColors.leafFresh)
                 .frame(width: 26)
             Text(verbatim: text)

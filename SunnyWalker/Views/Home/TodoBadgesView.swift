@@ -140,7 +140,7 @@ private struct TodoBadge: View {
 
     var body: some View {
         Text(icon.emoji)
-            .font(.system(size: 30))
+            .font(.title)
             .scaleEffect(isPlaying ? 1.25 : 1.0)
             .offset(y: bob ? -4 : 0)
             .padding(8)
@@ -158,7 +158,7 @@ private struct TodoBadge: View {
             .overlay(alignment: .topTrailing) {
                 if canAcknowledge {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.callout)
                         .foregroundStyle(SunnyColors.leafFresh)
                         .background(Circle().fill(.white))
                         .offset(x: 4, y: -4)

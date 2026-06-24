@@ -56,7 +56,7 @@ struct TodoHistoryView: View {
     private func row(_ record: TodoPlayRecord) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 24))
+                .font(.title2)
                 .foregroundStyle(SunnyColors.leafFresh)
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: record.todoLabel.isEmpty ? L("待辦提醒") : record.todoLabel)

@@ -372,7 +372,7 @@ private struct VoiceClipRow: View {
                 HStack(spacing: 18) {
                     Button(action: onDelete) {
                         Image(systemName: "trash.circle")
-                            .font(.system(size: 26))
+                            .font(.title)
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
                     }
                     .buttonStyle(.plain)
@@ -380,7 +380,7 @@ private struct VoiceClipRow: View {
 
                     Button(action: onPickToUse) {
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 28))
+                            .font(.title)
                             .foregroundStyle(isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.4))
                     }
                     .buttonStyle(.plain)
@@ -391,7 +391,7 @@ private struct VoiceClipRow: View {
                 HStack(spacing: 22) {
                     Button(action: onSelect) {
                         Image(systemName: "square.and.pencil")
-                            .font(.system(size: 24))
+                            .font(.title2)
                             .foregroundStyle(SunnyColors.forestDeep.opacity(0.85))
                     }
                     .buttonStyle(.plain)
@@ -399,7 +399,7 @@ private struct VoiceClipRow: View {
 
                     Button(action: onDelete) {
                         Image(systemName: "trash.circle")
-                            .font(.system(size: 26))
+                            .font(.title)
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.85))
                     }
                     .buttonStyle(.plain)
@@ -586,7 +586,7 @@ struct VoiceClipRecorderSheet: View {
                     HStack(spacing: 6) {
                         ProgressView().scaleEffect(0.75)
                         Text("辨識中…")
-                            .font(.system(size: 12))
+                            .font(.caption)
                             .foregroundStyle(SunnyColors.sunnyGray)
                     }
                 } else {
@@ -599,7 +599,7 @@ struct VoiceClipRecorderSheet: View {
                         // "辨識錄音內容" / en "Name from voice" — both localized in the
                         // String Catalog so the English UI never shows Chinese (App Review).
                         Label("辨識錄音內容", systemImage: "sparkles")
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.footnote.weight(.medium))
                             .foregroundStyle(SunnyColors.leafFresh)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 7)

@@ -158,7 +158,7 @@ private struct WakeRecordCard: View {
                 VStack(spacing: 4) {
                     Button(action: onDelete) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 20))
+                            .font(.title3)
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.55))
                     }
                     .accessibilityLabel("刪除這筆紀錄")

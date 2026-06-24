@@ -49,10 +49,10 @@ struct HomeView: View {
             Text("🌈")
                 .font(.system(size: 56))
             Text("小小瀏覽器")
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .font(.system(.title, design: .rounded).weight(.heavy))
                 .foregroundColor(Color(hex: "#7C5E3C"))
             Text("點一個圖案開始學習吧！")
-                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .font(.system(.callout, design: .rounded).weight(.medium))
                 .foregroundColor(Color(hex: "#A78A5E"))
         }
     }
@@ -61,10 +61,10 @@ struct HomeView: View {
         VStack(spacing: 12) {
             Text("🐣").font(.system(size: 48))
             Text("還沒有設定任何網頁")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.system(.body, design: .rounded).weight(.bold))
                 .foregroundColor(Color(hex: "#7C5E3C"))
             Text("請家長在「檔案 app → 小小瀏覽器 → sites.json」中加入網址")
-                .font(.system(size: 14, design: .rounded))
+                .font(.system(.subheadline, design: .rounded))
                 .foregroundColor(Color(hex: "#A78A5E"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
@@ -84,7 +84,7 @@ struct SiteCard: View {
                 iconView
                     .frame(height: 64)
                 Text(site.name)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(.title3, design: .rounded).weight(.bold))
                     .foregroundColor(Color(hex: "#5A4427"))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -129,7 +129,7 @@ struct WebPage: View {
             Button(action: onClose) {
                 HStack(spacing: 6) {
                     Image(systemName: "house.fill")
-                    Text("回家").font(.system(size: 18, weight: .bold, design: .rounded))
+                    Text("回家").font(.system(.body, design: .rounded).weight(.bold))
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 12)

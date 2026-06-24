@@ -243,7 +243,7 @@ private struct DaytimeAlarmIcon: View {
                     .foregroundStyle(SunnyColors.nightIndigo, SunnyColors.starGold)
             }
         }
-        .font(.system(size: 19, weight: .medium))
+        .font(.title3.weight(.medium))
         .accessibilityHidden(true)
     }
 

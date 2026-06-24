@@ -199,7 +199,7 @@ struct RingtonePickerSheet: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: canAddMoreClips ? "mic.badge.plus" : "lock.fill")
-                        .font(.system(size: 22))
+                        .font(.title2)
                         .foregroundStyle(canAddMoreClips ? SunnyColors.lanternOrange : SunnyColors.sunnyGray)
                     if canAddMoreClips {
                         Text("新增錄音")
@@ -225,7 +225,7 @@ struct RingtonePickerSheet: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: canAddMoreClips ? "square.and.arrow.down" : "lock.fill")
-                        .font(.system(size: 22))
+                        .font(.title2)
                         .foregroundStyle(canAddMoreClips ? SunnyColors.skyBlue : SunnyColors.sunnyGray)
                     Text("匯入音檔")
                         .font(SunnyFonts.title(16))
@@ -369,7 +369,7 @@ private struct RingtoneBundledRow: View {
             // Preview toggle
             Button(action: onPreview) {
                 Image(systemName: isPreviewing ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 30))
+                    .font(.title)
                     .foregroundStyle(isPreviewing ? SunnyColors.lanternOrange : SunnyColors.skyBlue)
                     .symbolEffect(.pulse, isActive: isPreviewing)
             }
@@ -385,7 +385,7 @@ private struct RingtoneBundledRow: View {
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(SunnyColors.leafFresh)
-                    .font(.system(size: 22))
+                    .font(.title2)
             }
         }
         .padding(.vertical, 6)
@@ -408,7 +408,7 @@ private struct RingtoneClipRow: View {
         HStack(spacing: 14) {
             Button(action: onPreview) {
                 Image(systemName: isPreviewing ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 30))
+                    .font(.title)
                     .foregroundStyle(isPreviewing ? SunnyColors.lanternOrange : SunnyColors.leafFresh)
                     .symbolEffect(.pulse, isActive: isPreviewing)
             }
@@ -428,7 +428,7 @@ private struct RingtoneClipRow: View {
 
             Button(action: onRename) {
                 Image(systemName: "pencil.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.title)
                     .foregroundStyle(SunnyColors.skyBlue)
             }
             .buttonStyle(.plain)
@@ -436,7 +436,7 @@ private struct RingtoneClipRow: View {
             if isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(SunnyColors.leafFresh)
-                    .font(.system(size: 22))
+                    .font(.title2)
             }
         }
         .padding(.vertical, 6)
