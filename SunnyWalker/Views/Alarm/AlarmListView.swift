@@ -167,7 +167,11 @@ private struct AlarmCard: View {
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
                     .labelsHidden()
-                    .accessibilityLabel(Text(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘"))
+                    // 明確標 LocalizedStringKey：兩個字面值的三元運算可能被推成 Text(String)（verbatim、
+                    // 不在地化）——那會悄悄讓這條 VoiceOver 修正失效。寫死 LocalizedStringKey 保證在地化。
+                    .accessibilityLabel(Text(alarm.isEnabled
+                                             ? LocalizedStringKey("關閉鬧鐘")
+                                             : LocalizedStringKey("開啟鬧鐘")))
                     .padding(.trailing, 20)
                     .padding(.vertical, 10)
             }
