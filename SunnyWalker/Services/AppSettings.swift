@@ -381,12 +381,32 @@ final class AppSettings: ObservableObject {
         return UIImage(data: data)
     }
 
+    /// 花心照片儲存上限邊長（px）。花心在畫面上最大也才 ~132px，512 已綽綽有餘，存全解析度只是
+    /// 白佔磁碟 + 常駐記憶體（flowerImage 整個 app 生命週期持有）。
+    static let flowerImageMaxDimension: CGFloat = 512
+
     /// 存下使用者裁切好的花心照片（已套用拖曳/縮放的正方形圖），同步更新記憶體中的 flowerImage。
+    /// 存檔前先縮到 ≤512px：避免一張數 MB 的原圖既佔磁碟、又常駐記憶體（mascot 24fps 重繪會反覆取用）。
     func saveFlowerImage(_ image: UIImage) {
-        if let data = image.jpegData(compressionQuality: 0.9) {
+        let thumb = Self.downscaled(image, maxDimension: Self.flowerImageMaxDimension)
+        if let data = thumb.jpegData(compressionQuality: 0.9) {
             try? data.write(to: Self.flowerImageURL, options: .atomic)
         }
-        flowerImage = image
+        flowerImage = thumb
+    }
+
+    /// 等比例縮圖到最長邊 ≤ maxDimension（已夠小就原樣回傳）。輸出 scale=1 → 512 就是 512 實際像素，
+    /// 不會再乘上裝置 @3x 把記憶體膨脹回去。
+    static func downscaled(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let longest = max(image.size.width, image.size.height)
+        guard longest > maxDimension, longest > 0 else { return image }
+        let scale = maxDimension / longest
+        let newSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: newSize, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 
     /// 移除自訂花心照片（SunflowerAvatar 會回到預設的種子花心）。

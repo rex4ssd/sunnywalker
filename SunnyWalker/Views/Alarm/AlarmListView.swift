@@ -162,12 +162,12 @@ private struct AlarmCard: View {
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
-                .accessibilityLabel("編輯鬧鐘")
+                .accessibilityLabel(Text("編輯鬧鐘"))   // Text(LocalizedStringKey) → VoiceOver 跟著語言；純 String 是 verbatim
 
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
                     .labelsHidden()
-                    .accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")
+                    .accessibilityLabel(Text(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘"))
                     .padding(.trailing, 20)
                     .padding(.vertical, 10)
             }

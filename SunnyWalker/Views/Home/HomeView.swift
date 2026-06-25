@@ -70,7 +70,9 @@ struct HomeView: View {
     // while the view is visible (cheap: a few date comparisons). See checkForegroundAlarm().
     @State private var lastForegroundFiredKey: String?
     @State private var lastForegroundGuardLogMinute: Int = -1   // throttle checkForegroundAlarm logs
-    private let foregroundAlarmTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    // 鬧鐘觸發走「分」邊界（checkForegroundAlarm 一分鐘只觸發一次），不需每秒輪詢——改 2s 砍一半的
+    // 常駐喚醒（兒童床頭整夜亮屏的耗電來源），in-app 響鈴最多晚 ~2s 出現，無感。
+    private let foregroundAlarmTick = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     private var scene: DaytimeScene {
         DaytimeScene.current(hour: Calendar.current.component(.hour, from: currentTime))
@@ -974,7 +976,15 @@ private struct ClockHeaderView: View {
                 .font(SunnyFonts.subtitle())
                 .foregroundStyle(textColor.opacity(0.7))
         }
-        .onReceive(tick) { now = $0 }
+        // 時鐘只顯示 HH:mm（沒有秒）→ 同一分鐘內畫面不變。只有「顯示字串真的變了」才更新 state，
+        // 省掉每秒 59 次無謂的 numericText 轉場重繪（床頭整夜常駐時的主要耗電來源）；計時器仍 1Hz，
+        // 所以分鐘照樣準時翻，不會延遲。
+        .onReceive(tick) { newNow in
+            // 比「分鐘桶」(epoch 對齊整分) 而非格式化字串——省掉每秒 DateFormatter 配置，只在分鐘翻面更新。
+            if Int(newNow.timeIntervalSince1970 / 60) != Int(now.timeIntervalSince1970 / 60) {
+                now = newNow
+            }
+        }
     }
 
     private func formattedTime(_ date: Date) -> String {

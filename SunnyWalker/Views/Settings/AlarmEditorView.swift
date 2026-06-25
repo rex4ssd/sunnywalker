@@ -535,7 +535,7 @@ struct AlarmEditorView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Toggle(isOn: voiceDismissBinding) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Label("啟用口令關閉", systemImage: "mic.badge.checkmark")
+                        Label("啟用口令關閉", systemImage: "mic.fill")
                             .font(SunnyFonts.caption())
                             .foregroundStyle(voiceDismissAvailable ? SunnyColors.nightIndigo : SunnyColors.sunnyGray)
                         Text(voiceDismissAvailable
