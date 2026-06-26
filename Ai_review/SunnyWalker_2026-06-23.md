@@ -4,7 +4,7 @@
 > App 定位：7 歲小孩用、**100% 離線**語音互動鬧鐘 / 兒童時間小幫手。iOS 26、SwiftUI、AlarmKit、~12.6k LOC Swift。
 > Repo 同時含 Python `claude_loop` 4-agent orchestrator（自動每日造 app）。
 >
-> 🔎 **這份是「先寫下來給你看」**——除了寫回本檔，沒有改任何 code。你看完勾選要做的，我再動手。
+> **這份是「先寫下來給你看」**——除了寫回本檔，沒有改任何 code。你看完勾選要做的，我再動手。
 
 ---
 
@@ -18,14 +18,14 @@
 
 ## 1. 優化空間（待你決定再做）
 
-### 1A. 🔴 必修 — iOS app
+### 1A. 【高】 必修 — iOS app
 
 | # | 位置 | 問題 | 建議 |
 |---|---|---|---|
 | 1 | `Services/AlarmKitService.swift`（removeAlarm/syncAlarm 的 `try? stop()`/`try? cancel()`）| AlarmKit 取消/停止失敗被**靜默吞掉**，鬧鐘可能卡住一直響。兒童鬧鐘這是真實事故。 | 失敗要 log + fallback（例如改走通知模式停鈴）。 |
 | 2 | `Views/Alarm/AlarmListView.swift:285` | `try! ModelContainer(...)`：SwiftData store 損毀 / migration 失敗 → 整個 view crash。 | 確認是否只在 preview；若 production 可達，改 `do/catch` + in-memory fallback。 |
 
-### 1B. 🔴 必修 — i18n：英文模式洩漏中文（逐條 file:line）
+### 1B. 【高】 必修 — i18n：英文模式洩漏中文（逐條 file:line）
 
 模型：`Text("中文")` 字面值本身就是 String Catalog 的 key，**只有當該 key 有 `en` 值時**才會翻譯。下列 key **缺 `en` 值或未進 catalog**，英文模式直接顯示中文：
 
@@ -38,25 +38,25 @@
 | `Views/Settings/RecordingView.swift:110` | `L("錄音最長 %lld 分鐘…")` 格式 key 不在 catalog → fallback 露中文 | 補該格式 en 值 |
 | `Views/Settings/WakeHistoryView.swift:40,50,66,164` | `全部清除` / `匯出紀錄` / `確定清除全部起床紀錄？` / `刪除這筆紀錄` 四個 key 都不在 catalog | 全補 en（家長頁也要乾淨）|
 
-> ⚠️ 已驗證**不是**洩漏、不用改：ParentalGate 的「請大人來幫忙/取消/口令」、`新增鬧鐘`、`Text(verbatim: name)` 群組名、`#Preview` 內中文（不出貨）。`AlarmKitService.swift:76 AlarmButton("我起床了")` 是 `LocalizedStringResource`，跟著**系統語言**而非 app 內切換——這是 AlarmKit 先天限制，記為 known edge 即可。
+> 已驗證**不是**洩漏、不用改：ParentalGate 的「請大人來幫忙/取消/口令」、`新增鬧鐘`、`Text(verbatim: name)` 群組名、`#Preview` 內中文（不出貨）。`AlarmKitService.swift:76 AlarmButton("我起床了")` 是 `LocalizedStringResource`，跟著**系統語言**而非 app 內切換——這是 AlarmKit 先天限制，記為 known edge 即可。
 
-### 1C. 🟡 CPU / RAM
+### 1C. 【中】 CPU / RAM
 
 - **1Hz polling**：`HomeView.swift:73,289` `foregroundAlarmTick` 只要 Home 在前景就**每秒**跑 `checkForegroundAlarm()`。常駐兒童時鐘 = 持續喚醒。建議放寬節奏或讓無近期鬧鐘時 early-return。（註：`Timer.publish().autoconnect()` 存成 `let` + `.onReceive` **不是** retain cycle，SwiftUI 離場會自動拆訂閱；成本在輪詢不在洩漏。）
 - **整張花心照常駐記憶體**：`AppSettings.swift:140,367,385` `flowerImage: UIImage?` 在 init 就從硬碟載入並 `@Published` 整個 app 生命週期持有，即使沒選花朵吉祥物。`saveFlowerImage` 也未縮圖。建議：存檔前縮到 ≤512px、首次用到才 lazy load。另確認 6MB `new_icon.png` 只當 asset icon、沒被 `UIImage(named:)` 常駐。
 - **UserDefaults `didSet` 寫入抖動**：`AppSettings.swift:152–290` 每個設定 `didSet` 同步寫 UserDefaults；陣列設定（groupNames/groupMascots/…）任一變更就整包重寫。若有綁 slider/drag 會 thrash → debounce。
 
-### 1D. 🟡/🟢 Orchestrator（Python `claude_loop`）
+### 1D. 【中】/【低】 Orchestrator（Python `claude_loop`）
 
 | 嚴重度 | 位置 | 問題 | 修法 |
 |---|---|---|---|
-| 🔴 | `orchestrator.py:192-198` | subprocess timeout **只在 stdout 迴圈內檢查**；agent 靜默掛住 → `for line in proc.stdout` 永久阻塞、timeout 永不觸發、整條 pipeline 卡死。 | 用 watchdog thread / `threading.Timer` 到期 kill；現成 `_live_status` 每 3s thread 給它 kill 權。 |
-| 🔴 | `orchestrator.py:196,211` | `proc.kill()` 只殺 claude 本身，子孫程序（node/MCP/xcodebuild）不在同 process group → 殘留累積吃 RAM/CPU。 | `start_new_session=True` + `os.killpg(...)`；kill 後 `proc.wait()` 收屍。 |
-| 🔴 | `issue/...2026-06-13` 已記錄 | `.git/*.lock` 殘留會擋下一個 agent commit，只表現成 opaque FAILED。 | `Agent.run()` 前置清 stale lock（repo 已有 `remove_git_lock.sh`）。 |
-| 🟡 | `orchestrator.py:50-63` | token-limit 判定是 log tail 子字串掃描，含 `"429"`/`"credit"`/`"billing"`——agent 讀到含這些字的原始碼/測試輸出就誤觸 4 小時 cooldown，整個 supervisor 停數小時。 | 只掃 orchestrator 自身 error 行；拿掉裸 `429`/`credit`。 |
-| 🟡 | `ring.py` append 無鎖 | 手動 `sw next` 與 supervisor 子程序並跑 → baton 交錯損毀。 | `fcntl.flock` 在 `cmd_next/cmd_today` 期間鎖 `ring.lock`。 |
-| 🟡 | `supervise.py:298-304` | `consecutive_failures` 把「cooldown / approval gate / 非工作時段」也算 failure，`stop_after` 一設就容易誤觸「需人介入」退出。 | 只算真正 FAILED/timeout/token-pause。 |
-| 🟢 | `orchestrator.py:59,67-73` | `_live_status` 每 3s 重讀**整個** log（成長到 MB）→ 浪費 CPU/RAM。 | seek tail N KB。 |
+| 【高】 | `orchestrator.py:192-198` | subprocess timeout **只在 stdout 迴圈內檢查**；agent 靜默掛住 → `for line in proc.stdout` 永久阻塞、timeout 永不觸發、整條 pipeline 卡死。 | 用 watchdog thread / `threading.Timer` 到期 kill；現成 `_live_status` 每 3s thread 給它 kill 權。 |
+| 【高】 | `orchestrator.py:196,211` | `proc.kill()` 只殺 claude 本身，子孫程序（node/MCP/xcodebuild）不在同 process group → 殘留累積吃 RAM/CPU。 | `start_new_session=True` + `os.killpg(...)`；kill 後 `proc.wait()` 收屍。 |
+| 【高】 | `issue/...2026-06-13` 已記錄 | `.git/*.lock` 殘留會擋下一個 agent commit，只表現成 opaque FAILED。 | `Agent.run()` 前置清 stale lock（repo 已有 `remove_git_lock.sh`）。 |
+| 【中】 | `orchestrator.py:50-63` | token-limit 判定是 log tail 子字串掃描，含 `"429"`/`"credit"`/`"billing"`——agent 讀到含這些字的原始碼/測試輸出就誤觸 4 小時 cooldown，整個 supervisor 停數小時。 | 只掃 orchestrator 自身 error 行；拿掉裸 `429`/`credit`。 |
+| 【中】 | `ring.py` append 無鎖 | 手動 `sw next` 與 supervisor 子程序並跑 → baton 交錯損毀。 | `fcntl.flock` 在 `cmd_next/cmd_today` 期間鎖 `ring.lock`。 |
+| 【中】 | `supervise.py:298-304` | `consecutive_failures` 把「cooldown / approval gate / 非工作時段」也算 failure，`stop_after` 一設就容易誤觸「需人介入」退出。 | 只算真正 FAILED/timeout/token-pause。 |
+| 【低】 | `orchestrator.py:59,67-73` | `_live_status` 每 3s 重讀**整個** log（成長到 MB）→ 浪費 CPU/RAM。 | seek tail N KB。 |
 
 > 多處 `except Exception: pass`（notify/heartbeat/schedule/archive/supervise）建議至少 debug-log，別全吞。orchestrator 整體 heartbeat/ring/cooldown 設計穩健，這些是 robustness 補強。
 
@@ -137,7 +137,7 @@ Pro base 已出貨（解鎖：鬧鐘 6→∞、鈴聲庫 5→∞、單則 5s→3
 
 - `Ai_review/` 原本為空 → 無舊 note 可「做完刪除 / 未做保留」。本檔即起點。
 - 本檔內 §1/§2 已是「未做完」彙整；**下個週六（2026-06-27）**會依規則複製成 `Ai_review/SunnyWalker_2026-06-27-weekly.md`（原格式 + weekly），屆時把已做掉的勾除。
-- ⚠️ 資料夾大小寫：實際存在的是 `Ai_review/`（大寫 A），排程文中亦寫過 `/ai_review/`。本檔寫入 `Ai_review/`。**若你希望統一成小寫 `ai_review/`，跟我說、我一次改名 + 更新排程路徑。**
+- 資料夾大小寫：實際存在的是 `Ai_review/`（大寫 A），排程文中亦寫過 `/ai_review/`。本檔寫入 `Ai_review/`。**若你希望統一成小寫 `ai_review/`，跟我說、我一次改名 + 更新排程路徑。**
 
 ---
 

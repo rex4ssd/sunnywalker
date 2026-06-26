@@ -4,28 +4,28 @@
 > App 定位：7 歲小孩用、**100% 離線**語音互動鬧鐘 / 兒童時間小幫手。iOS 26、SwiftUI、AlarmKit。
 > Repo 同時含 Python `claude_loop` 4-agent orchestrator。
 >
-> 🔎 **本檔一樣是「先寫下來給你看」——除了寫回本檔，沒有改任何 code。** 你勾選要做的，我再動手。
+> **本檔一樣是「先寫下來給你看」——除了寫回本檔，沒有改任何 code。** 你勾選要做的，我再動手。
 > 今天是**週三**，非週六 → 依排程規則**不產生 weekly**。下一個週六（2026-06-27）才把未做完項目存成 `Ai_review/SunnyWalker_2026-06-27-weekly.md`。
 
 ---
 
 ## 0. 自上次 review（06-23）以來的變化 — 先對帳
 
-好消息：**06-23 點名的 🔴 必修，大多已在 commit `ec5816f` 修掉了**，而且這兩天還長出三個新功能。先把帳對清楚：
+好消息：**06-23 點名的 【高】 必修，大多已在 commit `ec5816f` 修掉了**，而且這兩天還長出三個新功能。先把帳對清楚：
 
-### ✅ 已修（06-23 → 今天已解）
+### 已修（06-23 → 今天已解）
 
 | 06-23 編號 | 項目 | 狀態 |
 |---|---|---|
-| §1A #1 | AlarmKit `try?` 靜默吞掉 stop/cancel 失敗 | ✅ 改成 `bestEffortStopCancel`：真失敗會 log，benign not-found 才靜默 |
-| §1A #2 | `AlarmListView:285 try! ModelContainer` crash 風險 | ✅ **查證為 preview-only**（在 `#Preview` 內），production 不可達 → 非缺陷，結案 |
-| §1B（大部分）| i18n 英文模式洩漏中文（6 處 Text/catalog）| ✅ HomeView 內插改 `String(...)` 對上 `%@` key；catalog 補了 已選取/選取/向日狀/全部清除/匯出紀錄/確定清除…/刪除這筆/鬧鐘上限/錄音最長 %lld 分鐘 |
-| §1D 🔴 | orchestrator subprocess timeout 永不觸發 | ✅ 改用 `threading.Timer` watchdog，靜默掛住也會到期 kill |
-| §1D 🔴 | `proc.kill()` 只殺 claude、子孫殘留 | ✅ `start_new_session=True` + `os.killpg(SIGKILL)` 整棵 process group 收掉 |
+| §1A #1 | AlarmKit `try?` 靜默吞掉 stop/cancel 失敗 | 改成 `bestEffortStopCancel`：真失敗會 log，benign not-found 才靜默 |
+| §1A #2 | `AlarmListView:285 try! ModelContainer` crash 風險 | **查證為 preview-only**（在 `#Preview` 內），production 不可達 → 非缺陷，結案 |
+| §1B（大部分）| i18n 英文模式洩漏中文（6 處 Text/catalog）| HomeView 內插改 `String(...)` 對上 `%@` key；catalog 補了 已選取/選取/向日狀/全部清除/匯出紀錄/確定清除…/刪除這筆/鬧鐘上限/錄音最長 %lld 分鐘 |
+| §1D 【高】 | orchestrator subprocess timeout 永不觸發 | 改用 `threading.Timer` watchdog，靜默掛住也會到期 kill |
+| §1D 【高】 | `proc.kill()` 只殺 claude、子孫殘留 | `start_new_session=True` + `os.killpg(SIGKILL)` 整棵 process group 收掉 |
 
-> 我有逐項 diff 比對：catalog 現在掃描結果是 **357 個 key、0 個中文字面 key 缺 `en`、0 個 `en` 值是空的** → Text() 路徑的洩漏確實清乾淨了。👍
+> 我有逐項 diff 比對：catalog 現在掃描結果是 **357 個 key、0 個中文字面 key 缺 `en`、0 個 `en` 值是空的** → Text() 路徑的洩漏確實清乾淨了。
 
-### 🆕 新增功能（06-22～06-23，06-23 review 沒涵蓋到，我這次補審）
+### 新增功能（06-22～06-23，06-23 review 沒涵蓋到，我這次補審）
 
 - **多人鬧鐘（groups）**：每個群組各自的鬧鐘清單、吉祥物、自訂花心、群組開關。
 - **報時（time chime）**：`ChimeSoundComposer` 用 `AVSpeechSynthesizer` 離線 render 成 CAF，連報 N 次。
@@ -40,7 +40,7 @@
 
 ## 1. 還沒做的優化（從 06-23 帶過來 + 本次新發現）
 
-### 1A. 🔴 i18n — 還有一類洩漏沒清：**「非 Text 的純 String 路徑」**
+### 1A. 【高】 i18n — 還有一類洩漏沒清：**「非 Text 的純 String 路徑」**
 
 06-23 的修法只蓋到 `Text("中文")` 走 String Catalog 的 key。但有一類字串**根本不經過 catalog**，所以英文模式照樣露中文。這是這次新挖到的、最值得修的一條：
 
@@ -54,21 +54,21 @@
 
 > 一句話總結這次的 i18n：**Text() 那批已清乾淨，剩下的是「String/accessibilityLabel/LocalizedStringResource/匯出模板」這些不走 catalog 的路徑。** 工不大，但 §1A 前兩條（methodLabel、accessibilityLabel）是家長頁/VoiceOver 會直接看到的，建議跟著上一批一起收掉。
 
-### 1B. 🟡 CPU / RAM（06-23 §1C，**尚未動**，仍 open）
+### 1B. 【中】 CPU / RAM（06-23 §1C，**尚未動**，仍 open）
 
 - **HomeView 有 3 個 1Hz Timer 常駐**：`foregroundAlarmTick`（:73）、`tick`（:968）、`unlockTick`（:1023）全是 `every: 1`。兒童時鐘長時間擺在前景 = 每秒喚醒 ×3。建議：無近期鬧鐘/未在解鎖流程時 early-return 或放寬節奏（報時/待辦已示範 15s tick 的好做法，可參考）。
 - **整張花心照常駐記憶體 + 未縮圖**：`AppSettings.swift:140` init 就 `loadFlowerImageFromDisk()` 並 `@Published` 整個生命週期持有；`saveFlowerImage`（:385-389）直接 `pngData()` 寫檔、**沒縮到 ≤512px**。建議存檔前縮圖 + 首次用到才 lazy load。
 - **UserDefaults `didSet` 寫入抖動**（06-23 §1C 第三點）：陣列設定任一變更整包重寫，若綁 slider/drag 會 thrash → debounce。（未複查，沿用 06-23 判斷。）
 
-### 1C. 🟡/🟢 Orchestrator（06-23 §1D 剩下的，**尚未動**，仍 open）
+### 1C. 【中】/【低】 Orchestrator（06-23 §1D 剩下的，**尚未動**，仍 open）
 
 | 嚴重度 | 位置 | 問題 | 修法 |
 |---|---|---|---|
-| 🟡 | `orchestrator.py:52-55` | token-limit 判定仍含裸 `"429"`/`"credit"`/`"billing"` 子字串；agent 讀到含這些字的原始碼/測試輸出就誤觸 4 小時 cooldown | 只掃 orchestrator 自身 error 行，拿掉裸 `429`/`credit` |
-| 🟡 | `lib/ring.py`（append_* 無鎖）| 手動 `sw next` 與 supervisor 並跑 → baton 交錯損毀 | `fcntl.flock` 鎖 `ring.lock` |
-| 🟡 | `supervise.py` `consecutive_failures` | 把 cooldown / approval gate / 非工作時段也算 failure，`stop_after` 易誤觸退出 | 只算真正 FAILED/timeout/token-pause |
-| 🟢 | `orchestrator.py:71`（`_live_status`）| 每 3s `read_text()` **整個** log（會長到 MB）| seek tail N KB |
-| 🟢 | 多處 `except Exception: pass` | 全吞錯難 debug | 至少 debug-log |
+| 【中】 | `orchestrator.py:52-55` | token-limit 判定仍含裸 `"429"`/`"credit"`/`"billing"` 子字串；agent 讀到含這些字的原始碼/測試輸出就誤觸 4 小時 cooldown | 只掃 orchestrator 自身 error 行，拿掉裸 `429`/`credit` |
+| 【中】 | `lib/ring.py`（append_* 無鎖）| 手動 `sw next` 與 supervisor 並跑 → baton 交錯損毀 | `fcntl.flock` 鎖 `ring.lock` |
+| 【中】 | `supervise.py` `consecutive_failures` | 把 cooldown / approval gate / 非工作時段也算 failure，`stop_after` 易誤觸退出 | 只算真正 FAILED/timeout/token-pause |
+| 【低】 | `orchestrator.py:71`（`_live_status`）| 每 3s `read_text()` **整個** log（會長到 MB）| seek tail N KB |
+| 【低】 | 多處 `except Exception: pass` | 全吞錯難 debug | 至少 debug-log |
 
 ---
 
@@ -78,7 +78,7 @@
 
 1. **背景整夜自動停鈴** — 架構已限縮為「keep-alive 撐住時 ≤10 分鐘」；**真機整夜 + 耗電驗證仍待做**。1 星負評最高風險點，上架前務必驗。
 2. **溫和提醒長音截斷** — 已用短 CAF + 堆疊 burst 修好並真機驗證；仍 open：(a) cutoff-probe 找 iOS 真正截斷點、(b) ≥30s 錄音自動裁切 + UI 警告。
-3. **無效 SF Symbol `mic.badge.checkmark`** — ✅ 已定位：`AlarmEditorView.swift:538 Label("啟用口令關閉", systemImage:"mic.badge.checkmark")`，**仍在、未換**。會 log `No symbol named`、圖示不顯示。換成 `mic.badge.plus` 或 `checkmark.circle` 之類。**工最小、建議順手修。**
+3. **無效 SF Symbol `mic.badge.checkmark`** — 已定位：`AlarmEditorView.swift:538 Label("啟用口令關閉", systemImage:"mic.badge.checkmark")`，**仍在、未換**。會 log `No symbol named`、圖示不顯示。換成 `mic.badge.plus` 或 `checkmark.circle` 之類。**工最小、建議順手修。**
 4. **前景 AlarmRingView ringTimeout 不寫 WakeRecord** — 無回應自動關閉沒記錄，統計低估。補 `"timeout"` record（註：`methodLabel` 已預留 `case "timeout": 沒有回應`，所以寫入端補上就完整）。
 5. **貪睡（snooze）完全未實作** — 原型已全 revert，`snooze/貪睡` 字串散在 7 個檔（SunnyWalkerApp/Alarm/StopAlarmIntent/AlarmRingView/AlarmScheduler/AudioRecorder/AlarmKitService）。卡在需 Xcode 驗證 iOS 26 `AlarmConfiguration` initializer。
 6. **strict mode 死碼殘留** — `requireAppToStop`、`scheduleNagsIfNeeded`、AudioRecorder strict gate、孤兒「貪睡模式」字串 → 清理待辦。
@@ -90,7 +90,7 @@
 - 成長聲音自動剪輯（on-device 可行）。
 - 睡前床邊故事（搭 BedSideManager）。
 - 吉卜力視覺二/三波（A5 視差、A8 字型、B4 彩蛋、B5 動態鬧鐘卡、C 瞳孔細節）。
-  - ⚠️ 注意：06-16 已有 commit `a4b3f27 scrub Ghibli references`（App Review 4.1）。**對外文案/識別字一律不可出現「Ghibli/吉卜力」**，二/三波只做「風格」不掛名。
+  - 注意：06-16 已有 commit `a4b3f27 scrub Ghibli references`（App Review 4.1）。**對外文案/識別字一律不可出現「Ghibli/吉卜力」**，二/三波只做「風格」不掛名。
 
 ### 2C. 已規劃未做的 Pro 加值（定價已鎖 US$1.99 終身買斷）
 
@@ -107,7 +107,7 @@ Pro base 已出貨（鬧鐘 6→∞、鈴聲庫 5→∞、單則 5s→30s、家�
 - **語音互動「我起床了」才能關鬧鐘** → 比一般 okay-to-wake 多了互動 / 自理訓練。
 - 手繪水彩 + 吉祥物 + 獎勵（star burst / confetti）→ 情感黏著。
 - 家長錄音叫醒 + 起床紀錄 → 情感 + 數據雙價值。
-- 🆕 **報時 + 待辦語音 + 多人群組** 已補上「不只是單點鬧鐘」的縱深。
+- **報時 + 待辦語音 + 多人群組** 已補上「不只是單點鬧鐘」的縱深。
 
 ### 缺點 / 可補強（對齊本次競品掃描，見 §4A）
 - **缺「可視化分步 routine + 視覺計時器」**：Woohoo / Happy Kids Timer / Timer for Kids 的核心都是「一步步走完早晨/睡前流程」。SunnyWalker 的「待辦語音提醒」已是雛形 → **升級成分步 routine + 倒數計時器**就直接對打競品核心。
@@ -150,19 +150,19 @@ Pro base 已出貨（鬧鐘 6→∞、鈴聲庫 5→∞、單則 5s→30s、家�
 
 ## 5. note 整理結果
 
-- 現存舊檔只有 `Ai_review/SunnyWalker_2026-06-23.md`。**今天非週六，不做刪除/weekly**——依規則 weekly 在週六（06-27）才把「未做完」彙整成 `SunnyWalker_2026-06-27-weekly.md`，屆時把 §0「✅ 已修」那批勾除、只留 open 項。
+- 現存舊檔只有 `Ai_review/SunnyWalker_2026-06-23.md`。**今天非週六，不做刪除/weekly**——依規則 weekly 在週六（06-27）才把「未做完」彙整成 `SunnyWalker_2026-06-27-weekly.md`，屆時把 §0「已修」那批勾除、只留 open 項。
 - 本檔 §0 已把 06-23 → 今天的「做完 vs 還沒做」對帳清楚；§1/§2 即「未做完」彙整，可直接當週六 weekly 的素材。
-- ⚠️ 資料夾大小寫：實際是 `Ai_review/`（大寫 A），排程文寫過 `/ai_review/`。本檔寫入 `Ai_review/`。要統一成小寫跟我說，一次改名 + 更新排程路徑。
+- 資料夾大小寫：實際是 `Ai_review/`（大寫 A），排程文寫過 `/ai_review/`。本檔寫入 `Ai_review/`。要統一成小寫跟我說，一次改名 + 更新排程路徑。
 
 ---
 
 ## 6. 本次進度（2026-06-24）
 
 - [x] Review 專案結構 + 對帳 06-23 → 今天（git log / diff）
-- [x] 驗證 06-23 🔴 必修：AlarmKit 吞錯 ✅修 / `try!` ✅查證 preview-only / i18n Text 批 ✅修 / orchestrator timeout+killpg ✅修
+- [x] 驗證 06-23 【高】 必修：AlarmKit 吞錯修 / `try!`查證 preview-only / i18n Text 批修 / orchestrator timeout+killpg修
 - [x] 補審 06-22～23 新功能（groups / 報時 chime / 待辦 todo）→ 結構穩、無重大缺陷
 - [x] 新發現：i18n「非 Text 純 String 路徑」洩漏（methodLabel / accessibilityLabel / Intent / 匯出模板）
-- [x] 複查仍 open 的 CPU/RAM（3×1Hz timer、flowerImage 未縮圖）與 orchestrator 🟡/🟢
+- [x] 複查仍 open 的 CPU/RAM（3×1Hz timer、flowerImage 未縮圖）與 orchestrator 【中】/【低】
 - [x] 各項功能缺陷盤點（mic.badge.checkmark 已定位仍在、snooze、背景停鈴…）
 - [x] 競品掃描刷新（Woohoo / Happy Kids Timer / Alarmy…）+ 商業/變現
 - [x] note 整理 + 建立今日報告（本檔）

@@ -4,7 +4,7 @@
 > App 定位：7 歲小孩用、**100% 離線**語音互動鬧鐘 / 兒童時間小幫手。iOS 26、SwiftUI、AlarmKit。Swift ≈ **12.75k LOC**。
 > Repo 同時含 Python `claude_loop` 4-agent orchestrator。
 >
-> 🔎 **本檔一樣是「先寫下來給你看」——除了寫回本檔，沒有改任何 code。** 你勾選要做的，我再動手。
+> **本檔一樣是「先寫下來給你看」——除了寫回本檔，沒有改任何 code。** 你勾選要做的，我再動手。
 > 今天是**週四**，非週六 → 依排程規則**不產生 weekly**。下一個週六（2026-06-27）才把未做完項目存成 `Ai_review/SunnyWalker_2026-06-27-weekly.md`。
 
 ---
@@ -15,13 +15,13 @@
 
 | commit | 內容 | 評價 |
 |---|---|---|
-| `6f49bcd` | a11y：寫死字級 → 語意字體，支援 Dynamic Type（大字不破版）| ✅ 好。兒童 / 長輩家長放大字體不破版，過審友善 |
-| `75fc30e` | Home GroupBanner 去掉 pill chrome，貼合水彩風 | ✅ 純視覺，無風險 |
-| `07fefeb` | 補 ConfettiSwiftUI MIT 致謝（in-app 開源致謝畫面）| ✅ 授權合規，上架必要，做對了 |
+| `6f49bcd` | a11y：寫死字級 → 語意字體，支援 Dynamic Type（大字不破版）| 好。兒童 / 長輩家長放大字體不破版，過審友善 |
+| `75fc30e` | Home GroupBanner 去掉 pill chrome，貼合水彩風 | 純視覺，無風險 |
+| `07fefeb` | 補 ConfettiSwiftUI MIT 致謝（in-app 開源致謝畫面）| 授權合規，上架必要，做對了 |
 
 **結論：06-24 列的 open 項全部原封不動仍 open。** 我這次逐條回去用 file:line 複查，順手抓到 **兩個 06-24 寫得不夠精準、需要更正的判斷**（見下），其餘照舊。
 
-### 🔧 對 06-24 的兩條更正（fact-check 後）
+### 對 06-24 的兩條更正（fact-check 後）
 
 1. **`methodLabel` 不是「起床紀錄列表」洩漏，而是「匯出 .md 模板」洩漏。**
    `WakeHistoryView.swift` 其實有**兩個** methodLabel：
@@ -30,42 +30,42 @@
    → 所以這條的真正性質是 **§1A 的「匯出模板全中文」那一條**，家長頁列表本身乾淨。**優先序下修**（只有家長按「匯出」分享給英語家庭時才看得到）。
 
 2. **`ringTimeout` 不寫 WakeRecord —「背景路徑」其實已修，剩「前景路徑」仍缺。**
-   - 背景 auto-stop：`AlarmAutoStopService` → UserDefaults queue → `HomeView.swift:467-482 drainTimeoutRecords()` 會 `insert(WakeRecord(dismissMethod:"timeout"))`，且 `methodLabel` 已有 `"timeout"` 對應 → **背景無回應已會記錄、統計不再低估**。✅
+   - 背景 auto-stop：`AlarmAutoStopService` → UserDefaults queue → `HomeView.swift:467-482 drainTimeoutRecords()` 會 `insert(WakeRecord(dismissMethod:"timeout"))`，且 `methodLabel` 已有 `"timeout"` 對應 → **背景無回應已會記錄、統計不再低估**。
    - 前景路徑：`AlarmRingView.handleAutoStop()`（:310）只播 `timeout_sad.wav` + `dismiss()`，**沒有 `insert(WakeRecord)`**。→ App 開在前景、響到逾時自動關時，**這一筆仍漏記**。屬小缺口，補一行 insert 即完整（與背景路徑一致）。
 
 ---
 
 ## 1. 還沒做的優化（從 06-24 帶過來，已逐條 file:line 複查仍 open）
 
-### 1A. 🟡 i18n — 不走 String Catalog 的「純 String / 模板」路徑（catalog 本身已乾淨）
+### 1A. 【中】 i18n — 不走 String Catalog 的「純 String / 模板」路徑（catalog 本身已乾淨）
 
 > 複查：`Localizable.xcstrings` 共 **357 key、0 個中文 key 缺 en、0 個 en 值為空** → `Text()` catalog 路徑徹底乾淨，這批不用再動。剩下的全是不經 catalog 的路徑：
 
 | 嚴重度 | 位置 | 內容 | 修法 |
 |---|---|---|---|
-| 🟡（VoiceOver 可見）| `Views/Alarm/AlarmListView.swift:170` | `.accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")` — String literal 不本地化 | 包 `Text(...)` 或 `L(...)`，補 en |
-| 🟢（捷徑/系統 UI）| `Intents/StopAlarmIntent.swift:64` 等 | `title="關閉鬧鐘"` 等 `LocalizedStringResource` 跟系統語言走、字面當 key | 補 en 值（AlarmKit/Intents 先天 edge，優先序中低）|
-| 🟢（家長匯出）| `Views/Settings/WakeHistoryView.swift:246-270` | 匯出 `.md` 全中文模板（`# SunnyWalker 起床紀錄` / `## 統計總覽` / `methodLabel` 純 String…）| 英文模式輸出英文模板；分享給英語家庭才乾淨。優先序低 |
+| 【中】（VoiceOver 可見）| `Views/Alarm/AlarmListView.swift:170` | `.accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")` — String literal 不本地化 | 包 `Text(...)` 或 `L(...)`，補 en |
+| 【低】（捷徑/系統 UI）| `Intents/StopAlarmIntent.swift:64` 等 | `title="關閉鬧鐘"` 等 `LocalizedStringResource` 跟系統語言走、字面當 key | 補 en 值（AlarmKit/Intents 先天 edge，優先序中低）|
+| 【低】（家長匯出）| `Views/Settings/WakeHistoryView.swift:246-270` | 匯出 `.md` 全中文模板（`# SunnyWalker 起床紀錄` / `## 統計總覽` / `methodLabel` 純 String…）| 英文模式輸出英文模板；分享給英語家庭才乾淨。優先序低 |
 
 > 一句話：**家長頁、App 內畫面（Text 路徑）英文模式已乾淨**；剩 `accessibilityLabel`（VoiceOver 唸中文）+ Intent + 匯出模板三類不走 catalog 的。前者工最小、建議順手收。
 
-### 1B. 🟡 CPU / RAM（仍 open，未動）
+### 1B. 【中】 CPU / RAM（仍 open，未動）
 
 - **HomeView 仍有 3 個 1Hz Timer 常駐**：`foregroundAlarmTick`（:73）、`tick`（:960）、`unlockTick`（:1015）全是 `every: 1`。兒童時鐘長擺前景 = 每秒喚醒 ×3。對照 `TodoBadgesView`（:30）已用 **15s** tick 的好做法 → 建議：無近期鬧鐘 / 未在解鎖流程時 early-return，或拉長到 `unlockTick`/`tick` 只在真正需要秒級時才跑。
 - **整張花心照常駐記憶體 + 未縮圖**：`AppSettings.swift:140` init 即 `loadFlowerImageFromDisk()` 並 `@Published`（:367）整個生命週期持有；`saveFlowerImage`（:385-389）直接 `pngData()` 寫檔、**沒縮到 ≤512px**。建議存檔前縮圖 + 首次用到才 lazy load。
 - **UserDefaults `didSet` 寫入抖動**（沿用 06-23/24 判斷，未複查）：陣列設定任一變更整包重寫，若綁 slider/drag → debounce。
 
-### 1C. 🟡/🟢 Orchestrator（Python，仍 open，未動）
+### 1C. 【中】/【低】 Orchestrator（Python，仍 open，未動）
 
 | 嚴重度 | 位置 | 問題 | 修法 |
 |---|---|---|---|
-| 🟡 | `orchestrator.py` token-limit 判定 | 仍含裸 `"429"`/`"credit"`/`"billing"` 子字串；agent 讀到含這些字的原始碼 / 測試輸出 → 誤觸 4 小時 cooldown | 只掃 orchestrator 自身 error 行，拿掉裸 `429`/`credit` |
-| 🟡 | `lib/ring.py`（append 無鎖）| 手動 `sw next` 與 supervisor 並跑 → baton 交錯損毀 | `fcntl.flock` 鎖 `ring.lock` |
-| 🟡 | `supervise.py consecutive_failures` | 把 cooldown / approval gate / 非工作時段也算 failure，`stop_after` 易誤觸退出 | 只算真正 FAILED/timeout/token-pause |
-| 🟢 | `orchestrator.py _live_status` | 每 3s `read_text()` 整個 log（會長到 MB）| seek tail N KB |
-| 🟢 | 多處 `except Exception: pass` | 全吞錯難 debug | 至少 debug-log |
+| 【中】 | `orchestrator.py` token-limit 判定 | 仍含裸 `"429"`/`"credit"`/`"billing"` 子字串；agent 讀到含這些字的原始碼 / 測試輸出 → 誤觸 4 小時 cooldown | 只掃 orchestrator 自身 error 行，拿掉裸 `429`/`credit` |
+| 【中】 | `lib/ring.py`（append 無鎖）| 手動 `sw next` 與 supervisor 並跑 → baton 交錯損毀 | `fcntl.flock` 鎖 `ring.lock` |
+| 【中】 | `supervise.py consecutive_failures` | 把 cooldown / approval gate / 非工作時段也算 failure，`stop_after` 易誤觸退出 | 只算真正 FAILED/timeout/token-pause |
+| 【低】 | `orchestrator.py _live_status` | 每 3s `read_text()` 整個 log（會長到 MB）| seek tail N KB |
+| 【低】 | 多處 `except Exception: pass` | 全吞錯難 debug | 至少 debug-log |
 
-> 註：06-23 點名的 orchestrator 🔴（subprocess timeout 永不觸發、`proc.kill()` 殺不乾淨子孫）已於 `ec5816f` 用 watchdog + `killpg` 修掉，本批是剩下的 robustness 補強。
+> 註：06-23 點名的 orchestrator 【高】（subprocess timeout 永不觸發、`proc.kill()` 殺不乾淨子孫）已於 `ec5816f` 用 watchdog + `killpg` 修掉，本批是剩下的 robustness 補強。
 
 ---
 
@@ -73,12 +73,12 @@
 
 ### 2A. 未解 bug / 待真機驗證
 
-1. 🔴 **背景整夜自動停鈴** — 架構限縮為「keep-alive ≤10 分鐘」；**真機整夜 + 耗電驗證仍待做**。1 星負評最高風險點，上架前務必驗。**（仍 open）**
-2. 🟡 **溫和提醒長音截斷** — 已用短 CAF + 堆疊 burst 修好並真機驗證；仍 open：(a) cutoff-probe 找 iOS 真正截斷點、(b) ≥30s 錄音自動裁切 + UI 警告。
-3. 🟡 **無效 SF Symbol `mic.badge.checkmark`** — **複查：仍在** `Views/Settings/AlarmEditorView.swift:538 Label("啟用口令關閉", systemImage:"mic.badge.checkmark")`。會 log `No symbol named`、圖示不顯示。換 `mic.badge.plus` / `checkmark.circle`。**一行、工最小，建議順手修。**
-4. 🟢 **前景 ringTimeout 不寫 WakeRecord** — **更正：背景路徑已修**（`drainTimeoutRecords` 已 insert `"timeout"`）；**剩前景 `AlarmRingView.handleAutoStop()`（:310）仍未 insert**。補一行即與背景一致。
-5. 🟡 **貪睡（snooze）完全未實作** — 原型已全 revert，`snooze/貪睡` 字串散在 7 個檔。卡在需 Xcode 驗證 iOS 26 `AlarmConfiguration` initializer。
-6. 🟢 **strict mode 死碼殘留** — `requireAppToStop`、`scheduleNagsIfNeeded`、AudioRecorder strict gate、孤兒「貪睡模式」字串 → 清理待辦。
+1. 【高】 **背景整夜自動停鈴** — 架構限縮為「keep-alive ≤10 分鐘」；**真機整夜 + 耗電驗證仍待做**。1 星負評最高風險點，上架前務必驗。**（仍 open）**
+2. 【中】 **溫和提醒長音截斷** — 已用短 CAF + 堆疊 burst 修好並真機驗證；仍 open：(a) cutoff-probe 找 iOS 真正截斷點、(b) ≥30s 錄音自動裁切 + UI 警告。
+3. 【中】 **無效 SF Symbol `mic.badge.checkmark`** — **複查：仍在** `Views/Settings/AlarmEditorView.swift:538 Label("啟用口令關閉", systemImage:"mic.badge.checkmark")`。會 log `No symbol named`、圖示不顯示。換 `mic.badge.plus` / `checkmark.circle`。**一行、工最小，建議順手修。**
+4. 【低】 **前景 ringTimeout 不寫 WakeRecord** — **更正：背景路徑已修**（`drainTimeoutRecords` 已 insert `"timeout"`）；**剩前景 `AlarmRingView.handleAutoStop()`（:310）仍未 insert**。補一行即與背景一致。
+5. 【中】 **貪睡（snooze）完全未實作** — 原型已全 revert，`snooze/貪睡` 字串散在 7 個檔。卡在需 Xcode 驗證 iOS 26 `AlarmConfiguration` initializer。
+6. 【低】 **strict mode 死碼殘留** — `requireAppToStop`、`scheduleNagsIfNeeded`、AudioRecorder strict gate、孤兒「貪睡模式」字串 → 清理待辦。
 
 ### 2B. 未做的功能 TODO
 
@@ -86,7 +86,7 @@
 - 小孩錄音 + CloudKit 家庭同步（Pro v2，需重過 Kids 隱私審）。
 - 成長聲音自動剪輯（on-device 可行）、睡前床邊故事（搭 BedSideManager）。
 - 吉卜力視覺二/三波（A5 視差、A8 字型、B4 彩蛋、B5 動態鬧鐘卡、C 瞳孔細節）。
-  - ⚠️ `a4b3f27` 已 scrub Ghibli references（App Review 4.1）。**對外文案 / 識別字一律不可出現「Ghibli/吉卜力」**，二/三波只做「風格」不掛名。
+  - `a4b3f27` 已 scrub Ghibli references（App Review 4.1）。**對外文案 / 識別字一律不可出現「Ghibli/吉卜力」**，二/三波只做「風格」不掛名。
 
 ### 2C. 已規劃未做的 Pro 加值（定價已鎖 US$1.99 終身買斷）
 
@@ -148,16 +148,16 @@ Pro base 已出貨（鬧鐘 6→∞、鈴聲庫 5→∞、單則 5s→30s、家�
 ## 5. note 整理結果
 
 - 現存 `Ai_review/`：`SunnyWalker_2026-06-23.md`、`SunnyWalker_2026-06-24.md`，加本檔 `2026-06-25.md`。
-- 今天**週四，非週六** → 依排程規則**不刪除舊檔、不產生 weekly**。下個**週六（2026-06-27）**才把「未做完」彙整成 `Ai_review/SunnyWalker_2026-06-27-weekly.md`（原格式 + weekly），屆時把已做掉的（06-24 §0 ✅ 那批 + 本檔 §0 的 3 個 commit + 兩條更正）勾除、只留 open。
+- 今天**週四，非週六** → 依排程規則**不刪除舊檔、不產生 weekly**。下個**週六（2026-06-27）**才把「未做完」彙整成 `Ai_review/SunnyWalker_2026-06-27-weekly.md`（原格式 + weekly），屆時把已做掉的（06-24 §0 那批 + 本檔 §0 的 3 個 commit + 兩條更正）勾除、只留 open。
 - 本檔 §1/§2 即「未做完」彙整，可直接當週六 weekly 素材。
-- ⚠️ **資料夾大小寫**：實際是 `Ai_review/`（大寫 A），排程文寫過 `/ai_review/`。本檔寫入 `Ai_review/`。要統一成小寫跟我說，一次改名 + 更新排程路徑。
+- **資料夾大小寫**：實際是 `Ai_review/`（大寫 A），排程文寫過 `/ai_review/`。本檔寫入 `Ai_review/`。要統一成小寫跟我說，一次改名 + 更新排程路徑。
 
 ---
 
 ## 6. 本次進度（2026-06-25）
 
 - [x] Review 專案結構 + 對帳 06-24 → 今天（git log：3 commit，皆品質/合規補強，未碰 open 項）
-- [x] 逐條 file:line 複查 06-24 open 項仍在：`mic.badge.checkmark`✓在、`accessibilityLabel:170`✓在、3×1Hz timer✓在、flowerImage 未縮圖✓在
+- [x] 逐條 file:line 複查 06-24 open 項仍在：`mic.badge.checkmark`在、`accessibilityLabel:170`在、3×1Hz timer在、flowerImage 未縮圖在
 - [x] fact-check 更正兩條：methodLabel（列表已本地化，只剩匯出模板洩漏）、ringTimeout（背景已寫 timeout record，剩前景缺一行）
 - [x] catalog 複掃：357 key / 0 缺 en / 0 空 en → Text 路徑徹底乾淨
 - [x] 競品掃描刷新（新增 REMI、Time To Wake）+ 商業/變現更新（okay-to-wake 綠燈列為近零成本免費亮點）
