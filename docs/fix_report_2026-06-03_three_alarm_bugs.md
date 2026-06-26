@@ -1,6 +1,6 @@
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
-> ⚠️ **2026-06-04 已更新 — 部分內容已被取代。** 本報告描述的是「AlarmKit 尚未生效、UN 為 fallback」的當日狀態。隔天發現關屏不響的真因是 **AlarmKit 從未被簽進 binary**（`project.yml` 沒設 `CODE_SIGN_ENTITLEMENTS`、`NSAlarmKitUsageDescription` 被移除），已啟用 AlarmKit 並修好。**現況以 `fix_report_2026-06-04_enable_alarmkit.md` 為準**；下方「AlarmKit 還沒批 / UN 是 fallback / 長期才推 AlarmKit」等說法已不適用。
+> **2026-06-04 已更新 — 部分內容已被取代。** 本報告描述的是「AlarmKit 尚未生效、UN 為 fallback」的當日狀態。隔天發現關屏不響的真因是 **AlarmKit 從未被簽進 binary**（`project.yml` 沒設 `CODE_SIGN_ENTITLEMENTS`、`NSAlarmKitUsageDescription` 被移除），已啟用 AlarmKit 並修好。**現況以 `fix_report_2026-06-04_enable_alarmkit.md` 為準**；下方「AlarmKit 還沒批 / UN 是 fallback / 長期才推 AlarmKit」等說法已不適用。
 
 ---
 
@@ -63,7 +63,7 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 
 ---
 
-## ⚠️ 還沒做 / 真機驗證清單
+## 還沒做 / 真機驗證清單
 
 1. **無法在這裡編譯**（iOS app 要在你 Mac 上 build）。AVAudioFile / scenePhase API 我已逐行手動核對，但請在真機跑過。
 2. 前一個 session 留下的 `Services/AppSettings.swift` 是新檔 —— build 前先 `xcodegen generate`（`project.yml` 是 `- path: SunnyWalker` 整夾 glob，會自動納入），否則會 "Cannot find 'AppSettings' in scope"。
@@ -92,7 +92,7 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 
 ### 修正 C — 全鏈路診斷 log（你要的）
 每個關鍵點都加了帶 emoji 前綴的 print，Xcode console 可直接 filter：
-`🔔` 通知排程/觸發 · `🚀` AppDelegate launch · `🏠` HomeView 路由 · `🎬` AlarmRingView 起音 · `🔊` AudioPlayer/session · `🎤` 語音辨識
+`` 通知排程/觸發 · `` AppDelegate launch · `` HomeView 路由 · `` AlarmRingView 起音 · `` AudioPlayer/session · `` 語音辨識
 追一次鬧鐘流程，把這幾行貼回來就能定位卡在哪。
 
 ### 改動檔案（第二輪）
@@ -107,8 +107,8 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 
 ### 真機測試重點
 1. **先確認走哪條路徑**：看 console `AlarmKitAuthorized=` 那行。`false` = UN 路徑（目前狀態）。
-2. **自訂聲音**：進該鬧鐘**重存一次**（觸發 self-heal/重排）→ 等鬧鐘 → 第一聲橫幅就該是自訂音。console 應出現 `🔔 ... using CUSTOM banner sound`。若橫幅變**靜音**（caf fall through）回報我，改回 default。
-3. **聲控**：點橫幅進 app → 等 5s 開始聽 → 說「我起床了」。console 看 `🎤 listening` 後**不該**馬上斷；錄音 loop 後仍能 match。
+2. **自訂聲音**：進該鬧鐘**重存一次**（觸發 self-heal/重排）→ 等鬧鐘 → 第一聲橫幅就該是自訂音。console 應出現 `... using CUSTOM banner sound`。若橫幅變**靜音**（caf fall through）回報我，改回 default。
+3. **聲控**：點橫幅進 app → 等 5s 開始聽 → 說「我起床了」。console 看 `listening` 後**不該**馬上斷；錄音 loop 後仍能 match。
 4. AlarmKit 全螢幕鬧鐘要等 Apple 批 entitlement 才會生效，那才是長期解；在那之前 UN 是 fallback。
 
 ---
@@ -123,34 +123,34 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 `UNNotificationSound(named:)` 找不到檔 / 格式不對 / 超過 30 秒，會**靜默 fallback 成預設鈴**，不報錯——所以最難查。已把整條路插滿 log。
 
 **加了哪些 log（Xcode console filter 用）：**
-- `🎚️ Exporter:` — m4a 來源是否存在、大小；caf 是否寫出、大小、失敗原因。
-- `🔔 AlarmScheduler:` — 選了什麼聲音、`existsInLibrarySounds=` caf 在不在、`Library/Sounds contents=` 整夾列表。
-- `🔔 AppDelegate.willPresent / didReceive:` — 鬧鐘**實際 fired 當下** content.sound 是什麼 + identifier。
+- `Exporter:` — m4a 來源是否存在、大小；caf 是否寫出、大小、失敗原因。
+- `AlarmScheduler:` — 選了什麼聲音、`existsInLibrarySounds=` caf 在不在、`Library/Sounds contents=` 整夾列表。
+- `AppDelegate.willPresent / didReceive:` — 鬧鐘**實際 fired 當下** content.sound 是什麼 + identifier。
 
-**請這樣測一次，把 🎚️ / 🔔 開頭那幾行貼回來：**
+**請這樣測一次，把 / 開頭那幾行貼回來：**
 1. 進那顆「REx'費得瑞」鬧鐘 → **重新存一次**（觸發 export + 重排）。
 2. 把鬧鐘設 1 分鐘後 → 切到背景 → 等黑標響。
 3. console 會出現三段關鍵 log，一看就知道斷在哪：
-   - `🎚️ Exporter: SOURCE m4a MISSING` → 錄音實體檔對不到（recordingName 問題）。
+   - `Exporter: SOURCE m4a MISSING` → 錄音實體檔對不到（recordingName 問題）。
    - `existsInLibrarySounds=false` → caf 沒成功產生。
    - caf 在、但 `willPresent content.sound` 還是 default → 是 iOS 嫌格式/長度 → 下一步改成**直接錄 caf**（不走 m4a 轉檔）。
 
-**⚠️ 一個 OS 硬限制要先知道：** 黑標（一般通知）**在背景無法開麥克風**。所以「黑標下直接聲控停鬧鐘」用 UNNotification 是做不到的，一定要點進 app 才有錄音/聲控。要在鎖屏/背景直接聲控，只有 **AlarmKit 全螢幕鬧鐘**做得到，而那要等 Apple 批 entitlement。這不是 bug，是路徑本身的限制。
+**一個 OS 硬限制要先知道：** 黑標（一般通知）**在背景無法開麥克風**。所以「黑標下直接聲控停鬧鐘」用 UNNotification 是做不到的，一定要點進 app 才有錄音/聲控。要在鎖屏/背景直接聲控，只有 **AlarmKit 全螢幕鬧鐘**做得到，而那要等 Apple 批 entitlement。這不是 bug，是路徑本身的限制。
 
 ---
 
 # 第四輪 — 現況確認 + commit（2026-06-03 傍晚）
 
 **實機結果：**
-- ✅ **黑標自定聲音：成功**（移到背景，黑標響的就是家長自訂錄音，不再是預設鈴）。
-- ✅ app 內聲控停鬧鐘：正常（點進 app 後說「我起床了」可停）。
-- ⚠️ **黑標/鎖屏下無法直接聲控** → 要點黑標進 SunnyWalker 才有錄音/聲控（按 X 是退出 app）。
+- **黑標自定聲音：成功**（移到背景，黑標響的就是家長自訂錄音，不再是預設鈴）。
+- app 內聲控停鬧鐘：正常（點進 app 後說「我起床了」可停）。
+- **黑標/鎖屏下無法直接聲控** → 要點黑標進 SunnyWalker 才有錄音/聲控（按 X 是退出 app）。
 
-**這個 ⚠️ 不是 bug，是 iOS 平台限制：**
+**這個 不是 bug，是 iOS 平台限制：**
 > **任何 app 都不能從背景通知啟動麥克風。** 聲控辨識**一定**要 app 在前景才能跑。
 > 不論走 UNNotification 還是 AlarmKit，小孩都得先讓 app 到前景（點黑標 / 點 AlarmKit stop），麥克風才會開。沒有繞過的方法。
 
-**log 看不到的原因：** 截圖開在 Issue Navigator（⚠️ 編譯警告）。runtime log 在底部 **Debug Console**（`⌘⇧C`），filter 打 `🔔`/`🎚️`/`🎤`。
+**log 看不到的原因：** 截圖開在 Issue Navigator（編譯警告）。runtime log 在底部 **Debug Console**（`⌘⇧C`），filter 打 ``/``/``。
 
 ## 下一步可選方向（給 Rex 決定）
 
@@ -173,9 +173,9 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 
 ### 2. 每顆鬧鐘「貪睡模式」（必須打開 App 才能停）
 - `Alarm.requireAppToStop`（optional Bool，遷移安全；`effectiveRequireAppToStop`）。`AlarmEditorView` 加勾選 + 說明。
-- 機制：打勾的鬧鐘，除了主通知，`AlarmScheduler` 另排一串 **nag 連發通知**（下次發生 +1…+N 分，N = min(響鈴時長, 9)，壓在 iOS 64 則上限內）。在通知按 ✕ 只關掉那一則，下一分鐘的 nag 又響 → **逼你打開 App**。
+- 機制：打勾的鬧鐘，除了主通知，`AlarmScheduler` 另排一串 **nag 連發通知**（下次發生 +1…+N 分，N = min(響鈴時長, 9)，壓在 iOS 64 則上限內）。在通知按 只關掉那一則，下一分鐘的 nag 又響 → **逼你打開 App**。
 - 一打開 App（`AlarmRingView.onAppear`）就 `cancelNags()`：只刪 nag、不刪主鬧鐘（重複鬧鐘明天照響）。
-- 不打勾＝原行為，✕ 即停。
+- 不打勾＝原行為，即停。
 - 限制：重複鬧鐘的 nag 只排「下次發生」，靠 App 下次開啟 re-arm 續期（每天會開 App 就沒問題）。
 
 ### 3. 新 App icon（拿掉 SW 字）
@@ -191,4 +191,4 @@ AlarmKit **不會 re-arm 一個已經 fired + stopped 的 id**。alarm 進 termi
 | `Views/Alarm/AlarmRingView.swift` | onAppear cancelNags |
 | `Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` | 新 icon |
 
-測試重點：貪睡模式鬧鐘 → 響時在通知按 ✕ → 應該下一分鐘又響；打開 App 完成起床任務 → 才真的停。普通鬧鐘 ✕ 即停不變。
+測試重點：貪睡模式鬧鐘 → 響時在通知按 → 應該下一分鐘又響；打開 App 完成起床任務 → 才真的停。普通鬧鐘 即停不變。

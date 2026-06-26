@@ -1,4 +1,4 @@
-> ⚠️ **2026-06-04 已更新 — 結論已改採 AlarmKit。** 下方分析（Tier 1/2、Apple 限制）仍正確，但「已實作：背景聆聽常駐」一節的方向已**不採用於 shipping**：AlarmKit 啟用授權後，`BackgroundListeningManager` 會被完全停用（麥克風只在前景 `AlarmRingView` 響鈴時開）。因此「雙重響鈴」「橘點整夜長亮的 App Review 風險」等 caveat 在 AlarmKit shipping 設定下**已不成立**。另注意：`UIBackgroundModes: audio` 在 AlarmKit 設定下已無用途，建議移除以免 2.5.4 退件。現況詳見 `fix_report_2026-06-04_enable_alarmkit.md`。
+> **2026-06-04 已更新 — 結論已改採 AlarmKit。** 下方分析（Tier 1/2、Apple 限制）仍正確，但「已實作：背景聆聽常駐」一節的方向已**不採用於 shipping**：AlarmKit 啟用授權後，`BackgroundListeningManager` 會被完全停用（麥克風只在前景 `AlarmRingView` 響鈴時開）。因此「雙重響鈴」「橘點整夜長亮的 App Review 風險」等 caveat 在 AlarmKit shipping 設定下**已不成立**。另注意：`UIBackgroundModes: audio` 在 AlarmKit 設定下已無用途，建議移除以免 2.5.4 退件。現況詳見 `fix_report_2026-06-04_enable_alarmkit.md`。
 
 ---
 
@@ -17,8 +17,8 @@ Apple 官方限制（已查證）：
 > 只要 App 在前景開好 `.record`/`.playAndRecord` session 並持續錄音/播放，帶著 `UIBackgroundModes: audio` 進背景就會**繼續執行不被 suspend**；一旦停止錄/播，系統就把它 suspend。
 
 所以：
-- ✅ recorder app 能背景錄 = 使用者**在前景**按下「開始錄音」，session 一路活著（橘點長亮）。
-- ❌ 被 suspend 的 App **不能**靠「local notification 一響」就啟動麥克風。
+- recorder app 能背景錄 = 使用者**在前景**按下「開始錄音」，session 一路活著（橘點長亮）。
+- 被 suspend 的 App **不能**靠「local notification 一響」就啟動麥克風。
 
 → SunnyWalker 要免點聲控，**必須在前景就開好錄音 session，並讓它一路活到鬧鐘響**。沒有捷徑能在睡著後才從零啟動麥克風。
 
@@ -69,7 +69,7 @@ Apple 官方限制（已查證）：
 - Settings → 「背景聲控（實驗）」Toggle + 橘點/耗電警告。
 - `UIBackgroundModes: audio` 已在 `project.yml`，無需改 Info.plist。
 
-### ⚠️ 已知 caveat（實驗功能，測試時注意）
+### 已知 caveat（實驗功能，測試時注意）
 1. **雙重響鈴**：背景聆聽自己響的同時，原本的 UNNotification 也會響（沒停掉通知）。要單一聲源的話，之後可在 enabled 時不排通知——但那樣聆聽失敗就完全沒鬧鐘，風險自負。
 2. **錄音衝突**：聆聽中（engine 在跑）又去錄新鬧鐘音（AVAudioRecorder）可能打架。建議錄音前先關「背景聆聽」。
 3. **App Review**：橘點整夜長亮、兒童 App always-on mic，上架審核風險高，先當 local 實驗。

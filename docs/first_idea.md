@@ -5,7 +5,7 @@ SunnyWake (SunnyWake: 兒童語音互動鬧鐘) - 保留了 Sunny 的溫暖，�
 
 本文件為 AI 開發助手（如 Cursor, GitHub Copilot）的系統提示與實作藍圖。目標是開發一款專為 7 歲兒童設計的「語音互動鬧鐘」，具備家長錄音、本地語音辨識關閉等功能。必須完全符合 Apple App Store 的「兒童類別」與 COPPA 隱私規範。
 
-## 💻 1. 環境準備 (Environment Setup)
+## 1. 環境準備 (Environment Setup)
 
 AI 助手在開始編寫程式碼前，請協助使用者確認並初始化以下開發環境：
 
@@ -43,7 +43,7 @@ hound = "3.5"       # 處理 WAV 音訊格式
 
 ---
 
-## 🚀 2. 核心功能實作 (Core Features)
+## 2. 核心功能實作 (Core Features)
 
 請依照以下順序分階段實作：
 
@@ -73,7 +73,7 @@ hound = "3.5"       # 處理 WAV 音訊格式
 
 ---
 
-## 🎨 3. 視覺與 UI/UX 設計 (Visual Design for 7-year-olds)
+## 3. 視覺與 UI/UX 設計 (Visual Design for 7-year-olds)
 
 前端 UI 實作請遵循以下兒童友善的設計原則：
 
@@ -89,12 +89,12 @@ hound = "3.5"       # 處理 WAV 音訊格式
 
 ### 介面元素與回饋 (UI Elements & Feedback)
 
-* **圖示為主**：減少文字閱讀負擔。設定用「齒輪 ⚙️」加「鎖頭 🔒」表示（暗示需要家長解鎖），錄音用「大麥克風 🎤」，鬧鐘響起用「太陽/月亮 ☀️🌙」。
-* **視覺回饋**：當孩子說出「好的」成功關閉鬧鐘時，全螢幕噴發彩帶（Confetti 動畫），並顯示一個巨大的「你好棒！🌟」圖案。
+* **圖示為主**：減少文字閱讀負擔。設定用「齒輪」加「鎖頭」表示（暗示需要家長解鎖），錄音用「大麥克風」，鬧鐘響起用「太陽/月亮」。
+* **視覺回饋**：當孩子說出「好的」成功關閉鬧鐘時，全螢幕噴發彩帶（Confetti 動畫），並顯示一個巨大的「你好棒！」圖案。
 
 ---
 
-## 🔒 4. App Store 上架與隱私合規 (App Store Compliance)
+## 4. App Store 上架與隱私合規 (App Store Compliance)
 
 AI 在配置專案時，必須確保符合 Apple 針對兒童類別的嚴格規定：
 

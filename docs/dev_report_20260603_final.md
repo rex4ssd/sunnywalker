@@ -1,11 +1,11 @@
 # SunnyWalker 收工報告 — 2026-06-03 (Final)
 
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
 
 ---
 
-## ✅ 本次完成
+## 本次完成
 
 | 功能 | 說明 |
 |------|------|
@@ -13,7 +13,7 @@
 | 向左滑刪除鬧鐘 | `ScrollView+LazyVStack` → `List`，swipeActions 生效 |
 | 時間滾輪數字看不到 | iOS 26 Liquid Glass 問題，加 `.colorScheme(.light)` 修復 |
 | 語音辨識英文模式 | `SpeechRecognizer` 改為 locale-aware，英文用 `en-US` + 英文 keywords |
-| 語言切換到主畫面 | FAB 加 🌐 Menu，無家長驗證 |
+| 語言切換到主畫面 | FAB 加 Menu，無家長驗證 |
 | FAB 標籤多語系失效 | `fabLabel(String)` → `fabLabel(LocalizedStringKey)` |
 | 時鐘 12h/24h 統一 | 兩者都改用 `DateFormatter + en_US_POSIX`，不再受 zh_TW locale 干擾 |
 | Settings 頁面 | 整合：時鐘格式、語言、錄音間隔、起床紀錄、匯入匯出 |
@@ -28,7 +28,7 @@
 
 ---
 
-## ❌ 未解（留給下一輪）
+## 未解（留給下一輪）
 
 ### 問題 1：自定錄音不會在鬧鐘一響時播放，要點到 app 才切換
 

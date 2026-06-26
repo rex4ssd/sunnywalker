@@ -1,6 +1,6 @@
 # SunnyWalker 開發日誌 — 2026-06-03
 
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
 
 > 本次 session 從 UI bug 開始，一路挖到 AlarmKit entitlement、iOS 26 Liquid Glass、
@@ -48,7 +48,7 @@
 - **檔案**：`SpeechRecognizer.swift`
 
 ### 7. 語言切換移到主畫面
-- **做法**：FAB 最上方加 🌐 Menu，直接切三種語言（跟隨系統 / English / 繁體中文），無家長驗證。
+- **做法**：FAB 最上方加 Menu，直接切三種語言（跟隨系統 / English / 繁體中文），無家長驗證。
 - FAB 標籤改 `LocalizedStringKey` 讓 xcstrings 翻譯生效（解決英文模式仍顯示中文標籤的問題）。
 - **檔案**：`HomeView.swift`
 
@@ -58,7 +58,7 @@
   - 語言切換 Picker
   - 播放間隔 Stepper（0–5 秒）
   - 家長專區：起床紀錄 + 匯入/匯出（進入才跳 ParentalGate）
-- 主頁 FAB 移除獨立的「起床紀錄」和「匯入/匯出」按鈕，統一進⚙️ 設定。
+- 主頁 FAB 移除獨立的「起床紀錄」和「匯入/匯出」按鈕，統一進設定。
 - **新增** `AppSettings.swift`：`use24HourClock`、`recordingGapSeconds` 存 UserDefaults。
 
 ### 9. 12h / 24h 時間格式統一

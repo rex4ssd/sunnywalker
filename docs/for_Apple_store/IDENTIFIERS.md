@@ -1,6 +1,6 @@
 # SunnyWalker — Apple 識別碼總表 / Identifiers
 
-> 所有上架要用的 ID 集中在這裡。**註冊後不可更改**的標 🔒。
+> 所有上架要用的 ID 集中在這裡。**註冊後不可更改**的標。
 > 修改 App 設定（bundle id / entitlement）前先看這份。
 > 參照：`lode_iphone/docs/for_Apple_store/IDENTIFIERS.md`
 
@@ -11,7 +11,7 @@
 | 項目 | 值 |
 |---|---|
 | Apple Developer 帳號 | RUEI YI WU |
-| Team ID 🔒 | `NHY8MKW8NH` |
+| Team ID | `NHY8MKW8NH` |
 | 角色 | Admin |
 | 設定來源 | `project.pbxproj` → `DEVELOPMENT_TEAM` |
 
@@ -21,7 +21,7 @@
 
 | 用途 | Bundle ID | 備註 |
 |---|---|---|
-| **主 App（App Store 版）** 🔒 | `app.rexcode.sunnywalker` | App Store Connect 註冊後不可改 |
+| **主 App（App Store 版）** | `app.rexcode.sunnywalker` | App Store Connect 註冊後不可改 |
 | 測試 target | `app.rexcode.sunnywalkertests` | 不上架 |
 
 - 桌面顯示名稱（home screen）：`SunnyWalker`（`Info.plist` → `CFBundleDisplayName`）
@@ -56,9 +56,9 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 
 | 欄位 | URL | 狀態 |
 |---|---|---|
-| Support URL | `https://rexcode.app/sunny_walker/support/` | ✅ 已建立 |
-| Privacy Policy URL | `https://rexcode.app/sunny_walker/privacy/` | ✅ 已建立 |
-| Marketing URL（選填） | `https://rexcode.app/sunny_walker/` | ✅ 已建立 |
+| Support URL | `https://rexcode.app/sunny_walker/support/` | 已建立 |
+| Privacy Policy URL | `https://rexcode.app/sunny_walker/privacy/` | 已建立 |
+| Marketing URL（選填） | `https://rexcode.app/sunny_walker/` | 已建立 |
 
 ---
 
@@ -66,7 +66,7 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 
 | Key | 值 | 狀態 |
 |---|---|---|
-| （無）| — | ✅ **不需任何 entitlement** |
+| （無）| — | **不需任何 entitlement** |
 
 **AlarmKit 不需要 entitlement，也不需向 Apple 申請。** 只靠 `Info.plist` 的
 `NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()` 即可。

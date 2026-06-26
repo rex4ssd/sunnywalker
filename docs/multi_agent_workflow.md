@@ -105,7 +105,7 @@ ring_process.md (append-only)
   - `a_code.log`（看 A 改了什麼，決定要跑哪些測試）
 - **輸出**：
   - `b_validate.log`（原始 stdout）
-  - `b_summary.md`（人類/AI 可讀的摘要：✅ 編譯通過 / ❌ 3 個 warning / 🔥 5 個 error）
+  - `b_summary.md`（人類/AI 可讀的摘要：編譯通過 / 3 個 warning / 5 個 error）
   - `b_status.json`（`{"build": "pass", "tests": "fail", "errors": [...]}` ）
 
 ### 1.3 AI C — Reporter + CI
@@ -115,7 +115,7 @@ ring_process.md (append-only)
 - **輸入**：`a_code.log` + `b_summary.md`
 - **輸出**：
   - `c_report.md`（日報：今日完成項、build 狀態、明日預告）
-  - `git commit -m "Day N: <主題> [A:✅ B:⚠️]"`（標準化 commit message）
+  - `git commit -m "Day N: <主題> [A:B:]"`（標準化 commit message）
   - `c_status.json`
 
 ### 1.4 AI D — Reviewer
@@ -225,9 +225,9 @@ Model:  claude-sonnet-4-6
 ~ SunnyWalker/Models/Alarm.swift
 
 ### Stamps
-✅ Spec section 7 Day 3 satisfied
-✅ No third-party SDK added
-⚠️ Weekday repeat not yet wired in UI
+Spec section 7 Day 3 satisfied
+No third-party SDK added
+Weekday repeat not yet wired in UI
 
 ### For next (B — Validator)
 Please run `scripts/validate.sh`. Expect build pass, no tests yet, 1 lint warning

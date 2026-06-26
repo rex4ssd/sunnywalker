@@ -1,6 +1,6 @@
 # Session 回顧：踩雷 & 無效的 implement（2026-06-03）
 
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
 
 > 接手自斷掉的 `sunnay_0603`，處理鬧鐘自訂聲音、聲控、背景聲控、貪睡模式、icon。
@@ -9,26 +9,26 @@
 
 ---
 
-## ❌ 無效 / 白做的 implement
+## 無效 / 白做的 implement
 
 ### 1. 第一輪改 AlarmKit 側的自訂聲音，完全沒效（最大教訓）
 - **做了什麼**：在 `AlarmKitService` 把 `sound: .named(soundFileName)` 指到匯出的 caf、加 `cancel` 再 `schedule`。
 - **為什麼沒效**：這台真機 **AlarmKit entitlement 還沒批** → `requestAuthorization()` 失敗 → `isAuthorized=false` → AlarmKit 整條是 dormant 的。真正在響的是 `AlarmScheduler`（UNNotification 舊路徑）。改 AlarmKit 等於改一條沒在跑的路。
 - **正解**：改 `AlarmScheduler` 的 `content.sound`（它本來寫死 `.default`）。
-- **教訓**：🔴 **動手修之前，先確認「現在到底走哪條路徑」**。看是全螢幕鬧鐘還是黑色通知橫幅、看 `AlarmKitAuthorized=` log。一個 isAuthorized 的判斷就決定改哪邊，賭錯整輪白做。
+- **教訓**：**動手修之前，先確認「現在到底走哪條路徑」**。看是全螢幕鬧鐘還是黑色通知橫幅、看 `AlarmKitAuthorized=` log。一個 isAuthorized 的判斷就決定改哪邊，賭錯整輪白做。
 
 ### 2. 一開始斷言「背景不能開麥克風」——講錯了
 - **錯在哪**：說得太絕對。Apple 實際限制是「**背景只能延續前景啟動的 session，不能從背景啟動**」。recorder app 能整夜錄，是因為使用者在前景就按了開始錄。
 - **修正**：查證 Apple 文件後改口，並據此做了 Tier2 背景聆聽（前景啟 session → 背景保活）。
-- **教訓**：🟡 平台能力的「不可能」要先查證再講，別憑印象。
+- **教訓**：平台能力的「不可能」要先查證再講，別憑印象。
 
 ### 3. 加的 log 自己造成 compile error
 - `print(... recognizer.locale?.identifier ...)` — `SFSpeechRecognizer.locale` 是**非 optional** 的 `Locale`，`?.` 直接編譯失敗。
-- **教訓**：🟡 加 debug log 也要顧型別；optional chaining 用在非 optional 上會擋掉整個 build。
+- **教訓**：加 debug log 也要顧型別；optional chaining 用在非 optional 上會擋掉整個 build。
 
 ---
 
-## ⚠️ 踩到的雷（root cause）
+## 踩到的雷（root cause）
 
 1. **AudioPlayer gap-loop 每次重播都重設 AVAudioSession 為 `.playback`** → 把 `SpeechRecognizer` 的 `.playAndRecord` 麥克風打掉，錄音一 loop（幾秒後）聲控就死 → 「聲控失效」。修法：session 只在 `play()` 設一次，loop 只重建 player。
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 🧪 還沒在真機驗證 / 已知 caveat
+## 還沒在真機驗證 / 已知 caveat
 - 背景聆聽（Tier2）橘點整夜長亮 → **兒童 App 上架審核最大風險**（非技術）。預設關。
 - 背景聆聽自響時 UNNotification 也會響 → 雙聲源；錄音時要先關背景聆聽（engine 打架）。
 - 貪睡模式 nag：重複鬧鐘只排「下次發生」，靠下次開 App re-arm 續期。

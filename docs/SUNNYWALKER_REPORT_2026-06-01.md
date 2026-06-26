@@ -1,6 +1,6 @@
 # SunnyWalker — 工作報告 2026-06-01
 
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「申請 / 等批准 / portal 開啟 Alarms capability / 解除 entitlements 註解」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
 
 ## 本次 Session 完成項目
@@ -59,8 +59,8 @@ guard !AlarmKitService.shared.isAuthorized else { return }
 | github_rexcode | `f56b864` | page.html: SunnyWalker topbar dropdown + footer links |
 | SunnyWalker | `05e7975` | docs: iphone_concern + fix AlarmScheduler double-alarm |
 
-> ⚠️ `github_rexcode/sunny_walker/index.md`（Ghibli IP）的 commit 因 HEAD.lock 卡住未完成。  
-> 請在 terminal 執行：  
+> `github_rexcode/sunny_walker/index.md`（Ghibli IP）的 commit 因 HEAD.lock 卡住未完成。
+> 請在 terminal 執行：
 > ```bash
 > rm -f '/Users/lion/Documents/github_rexcode/.git/HEAD.lock' '/Users/lion/Documents/github_rexcode/.git/index.lock'
 > cd /Users/lion/Documents/github_rexcode
@@ -72,7 +72,7 @@ guard !AlarmKitService.shared.isAuthorized else { return }
 
 ## 尚未完成 — 上架前仍需處理
 
-### 🔴 Swift 原始碼（最大工程量）
+### Swift 原始碼（最大工程量）
 
 16 個 Swift 檔案仍有 Ghibli/Totoro IP，161+ 行 code-level 引用：
 
@@ -85,34 +85,34 @@ guard !AlarmKitService.shared.isAuthorized else { return }
 
 需要的改名：`GhibliColors→SunnyColors`、`GhibliFonts→SunnyFonts`、`GhibliButton→SunnyButton`、`TotoroAvatar→SunnyAvatar`、`totoroGray→sunnyGray`。
 
-### 🔴 `totoro_breath.caf` 音效檔
+### `totoro_breath.caf` 音效檔
 
 - 路徑：`SunnyWalker/Theme/Sounds/totoro_breath.caf`
 - 仍在 bundle 內，檔名含 IP
 - `AlarmKitService.swift` comment 內有 `sound: .named("totoro_breath.caf")`
 - 修法：改名為 `sunny_wake.caf`，同步更新 comment
 
-### 🔴 App Icon 有 alpha 透明（RGBA）
+### App Icon 有 alpha 透明（RGBA）
 
 - App Store Connect 拒絕含 alpha 的 1024px icon
 - 需重出為 RGB（無 alpha），Xcode Simulator → Export 或 Preview 另存
 
-### 🔴 DEVELOPMENT_TEAM 未設（無法 Archive）
+### DEVELOPMENT_TEAM 未設（無法 Archive）
 
 Xcode → Target SunnyWalker → Signing & Capabilities → Team = `NHY8MKW8NH`
 
-### 🔴 Info.plist 缺 ITSAppUsesNonExemptEncryption
+### Info.plist 缺 ITSAppUsesNonExemptEncryption
 
 ```xml
 <key>ITSAppUsesNonExemptEncryption</key>
 <false/>
 ```
 
-### 🔴 截圖全無
+### 截圖全無
 
 最少需要 iPhone 6.9"（1320×2868）一組。先修好 IP + Icon 再截。
 
-### 🟡 Info.plist 補 iPad orientation
+### Info.plist 補 iPad orientation
 
 ```xml
 <key>UISupportedInterfaceOrientations~ipad</key>
@@ -121,15 +121,15 @@ Xcode → Target SunnyWalker → Signing & Capabilities → Team = `NHY8MKW8NH`
 </array>
 ```
 
-### 🟡 UILaunchScreen UIColorName 是空字串
+### UILaunchScreen UIColorName 是空字串
 
 建議填入 Asset Catalog 顏色名（避免啟動白閃）。
 
-### 🟡 scheduleTestAlarm() 確認不可從 UI 觸達
+### scheduleTestAlarm() 確認不可從 UI 觸達
 
 `AlarmKitService.swift` line 109 有 60 秒測試計時器，建議用 `#if DEBUG` 包起來。
 
-### ⚠️ AlarmKit entitlement — 需 Apple 批准（外部步驟）
+### AlarmKit entitlement — 需 Apple 批准（外部步驟）
 
 已宣告 `com.apple.developer.alarmkit = true`，需在 developer.apple.com 申請 Alarms capability 批准。
 

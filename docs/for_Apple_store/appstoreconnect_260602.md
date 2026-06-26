@@ -1,5 +1,5 @@
 
-**1. AlarmKit — 不需申請、不需 entitlement** ✅
+**1. AlarmKit — 不需申請、不需 entitlement**
 
 AlarmKit **不需向 Apple 申請任何 entitlement / capability**。只靠 `Info.plist` 的
 `NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()` 即可，

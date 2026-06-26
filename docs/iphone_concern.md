@@ -11,24 +11,24 @@
 
 | 類別 | 狀態 |
 |---|---|
-| 功能開發 P0–P6 | ✅ 完成（60 tests pass） |
-| Swift 原始碼 IP 問題 | ✅ **修復**：GhibliColors→SunnyColors 等，16 檔全清零 |
-| totoro_breath.caf | ✅ **修復**：→ sunny_wake.caf |
-| App Icon alpha（RGBA） | ✅ **修復**：→ RGB 無透明 |
-| DEVELOPMENT_TEAM | ✅ **修復**：NHY8MKW8NH 已寫入 project.pbxproj |
-| ITSAppUsesNonExemptEncryption | ✅ **修復**：false 已加入 Info.plist |
-| iPad orientation key | ✅ **修復**：~ipad Portrait 已加入 Info.plist |
-| scheduleTestAlarm | ✅ **修復**：#if DEBUG … #endif 包覆 |
-| AlarmScheduler double-alarm | ✅ **修復**：isAuthorized guard 已加 |
-| Bundle ID | ✅ **更新**：com.m2k.sunnywalker → app.rexcode.sunnywalker |
-| AlarmKit entitlement 批准 | ⏳ **等待中**：已申請，等 Apple 批准 |
-| iOS 26 beta 限制 | 🟡 App Store 要等 iOS 26 GM，TestFlight 可先測 |
-| 截圖 | 🔴 **待做**：最少 6.9" 一組（Simulator ⌘S） |
-| Support / Privacy URL | ✅ 已建立（rexcode.app） |
-| PrivacyInfo.xcprivacy | ✅ 完整 |
-| Usage descriptions (Info.plist) | ✅ AlarmKit / Mic / Speech 三項齊全 |
-| App Store Connect 帳號設定 | ❌ **待做**：尚未建立 App 項目 |
-| 送審 metadata（描述/關鍵字） | ✅ 見 `github_rexcode/sunny_walker/APP_STORE_LISTING.md` |
+| 功能開發 P0–P6 | 完成（60 tests pass） |
+| Swift 原始碼 IP 問題 | **修復**：GhibliColors→SunnyColors 等，16 檔全清零 |
+| totoro_breath.caf | **修復**：→ sunny_wake.caf |
+| App Icon alpha（RGBA） | **修復**：→ RGB 無透明 |
+| DEVELOPMENT_TEAM | **修復**：NHY8MKW8NH 已寫入 project.pbxproj |
+| ITSAppUsesNonExemptEncryption | **修復**：false 已加入 Info.plist |
+| iPad orientation key | **修復**：~ipad Portrait 已加入 Info.plist |
+| scheduleTestAlarm | **修復**：#if DEBUG … #endif 包覆 |
+| AlarmScheduler double-alarm | **修復**：isAuthorized guard 已加 |
+| Bundle ID | **更新**：com.m2k.sunnywalker → app.rexcode.sunnywalker |
+| AlarmKit entitlement 批准 | **等待中**：已申請，等 Apple 批准 |
+| iOS 26 beta 限制 | App Store 要等 iOS 26 GM，TestFlight 可先測 |
+| 截圖 | **待做**：最少 6.9" 一組（Simulator ⌘S） |
+| Support / Privacy URL | 已建立（rexcode.app） |
+| PrivacyInfo.xcprivacy | 完整 |
+| Usage descriptions (Info.plist) | AlarmKit / Mic / Speech 三項齊全 |
+| App Store Connect 帳號設定 | **待做**：尚未建立 App 項目 |
+| 送審 metadata（描述/關鍵字） | 見 `github_rexcode/sunny_walker/APP_STORE_LISTING.md` |
 
 ---
 
@@ -36,19 +36,19 @@
 
 | 項目 | 值 | 狀態 |
 |---|---|---|
-| Bundle ID（主 App） | `app.rexcode.sunnywalker` | ✅ 已設 |
-| Bundle ID（Tests） | `app.rexcode.sunnywalkertests` | ✅ 已設（不上架） |
-| Team ID | `NHY8MKW8NH`（RUEI YI WU，同 Lode） | ✅ |
-| DEVELOPMENT_TEAM（project.pbxproj） | `NHY8MKW8NH` | ✅ 已設定 |
-| Marketing Version | `1.0.0` | ✅ |
-| Build Number | `1` | ✅ |
-| Min iOS | `26.0` | ✅（AlarmKit 需求） |
-| Targeted Devices | `1,2`（iPhone + iPad） | ✅ |
-| SKU（App Store Connect 內部） | `sunnywalker-ios-001` | ❌ 待在 ASC 建立 |
+| Bundle ID（主 App） | `app.rexcode.sunnywalker` | 已設 |
+| Bundle ID（Tests） | `app.rexcode.sunnywalkertests` | 已設（不上架） |
+| Team ID | `NHY8MKW8NH`（RUEI YI WU，同 Lode） | |
+| DEVELOPMENT_TEAM（project.pbxproj） | `NHY8MKW8NH` | 已設定 |
+| Marketing Version | `1.0.0` | |
+| Build Number | `1` | |
+| Min iOS | `26.0` |（AlarmKit 需求） |
+| Targeted Devices | `1,2`（iPhone + iPad） | |
+| SKU（App Store Connect 內部） | `sunnywalker-ios-001` | 待在 ASC 建立 |
 
 ---
 
-## 2. ✅ 已修復項目（原上架硬性擋路，2026-06-01 全部解決）
+## 2. 已修復項目（原上架硬性擋路，2026-06-01 全部解決）
 
 ### 2-A. Ghibli / Totoro IP（最高優先）
 
@@ -56,11 +56,11 @@
 
 | 影響範圍 | 檔案 | 嚴重度 |
 |---|---|---|
-| 吉祥物元件 | `Views/Components/TotoroAvatar.swift`<br>`Views/Components/GhibliButton.swift` | 🔴 最高（視覺 UI 直接呈現龍貓造型） |
-| 主題顏色 | `Theme/GhibliColors.swift`（含 `totoroGray`） | 🔴 高（API 命名 + 顏色注釋引用 Totoro） |
-| 字型主題 | `Theme/GhibliFonts.swift` | 🔴 高 |
-| 大量引用 | `AlarmEditorView.swift`（26次）、`AlarmListView.swift`（22次）、`HomeView.swift`（17次）等 12 檔 | 🔴 高 |
-| Accessibility label | `TotoroAvatar.swift` → `.accessibilityLabel("龍貓")`<br>`.accessibilityHint("SunnyWalker 吉祥物")` | 🔴 需同步改 |
+| 吉祥物元件 | `Views/Components/TotoroAvatar.swift`<br>`Views/Components/GhibliButton.swift` | 最高（視覺 UI 直接呈現龍貓造型） |
+| 主題顏色 | `Theme/GhibliColors.swift`（含 `totoroGray`） | 高（API 命名 + 顏色注釋引用 Totoro） |
+| 字型主題 | `Theme/GhibliFonts.swift` | 高 |
+| 大量引用 | `AlarmEditorView.swift`（26次）、`AlarmListView.swift`（22次）、`HomeView.swift`（17次）等 12 檔 | 高 |
+| Accessibility label | `TotoroAvatar.swift` → `.accessibilityLabel("龍貓")`<br>`.accessibilityHint("SunnyWalker 吉祥物")` | 需同步改 |
 
 **修法**：設計原創吉祥物「小晴（Sunny）」，替換龍貓外觀，重命名所有 Ghibli*/Totoro* 符號：
 
@@ -84,9 +84,9 @@ totoroGray    → sunnyGray（依新角色顏色命名）
 
 ---
 
-### 2-C. AlarmKit — 不需 entitlement、不需申請 ✅
+### 2-C. AlarmKit — 不需 entitlement、不需申請
 
-> ⚠️ 更正：早期筆記寫「需 Apple 申請審核」**不正確**。
+> 更正：早期筆記寫「需 Apple 申請審核」**不正確**。
 
 AlarmKit 不需要任何 entitlement，Developer Portal 也沒有可申請的 Alarms capability
 （Capabilities / App Services / Capability Requests 三處皆查無）。`SunnyWalker.entitlements`
@@ -94,7 +94,7 @@ AlarmKit 不需要任何 entitlement，Developer Portal 也沒有可申請的 Al
 `NSAlarmKitUsageDescription` ＋ runtime `AlarmManager.requestAuthorization()`。
 
 **行動**：無 portal 操作。只需確認 App ID `app.rexcode.sunnywalker` 用**自動簽章**即可。
-（⚠️ 唯一要再驗的是：entitlements 留空下，真機 `requestAuthorization()` 仍要回 `authorized`。）
+（唯一要再驗的是：entitlements 留空下，真機 `requestAuthorization()` 仍要回 `authorized`。）
 
 ---
 
@@ -106,7 +106,7 @@ AlarmKit 不需要任何 entitlement，Developer Portal 也沒有可申請的 Al
 
 ---
 
-### 2-E. ✅ Info.plist ITSAppUsesNonExemptEncryption — 已確認
+### 2-E. Info.plist ITSAppUsesNonExemptEncryption — 已確認
 
 `SunnyWalker/Info.plist` 第 46–47 行已有：
 ```xml
@@ -131,7 +131,7 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 
 ---
 
-## 3. ✅ 已就緒項目
+## 3. 已就緒項目
 
 | 項目 | 說明 |
 |---|---|
@@ -156,11 +156,11 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 > Team：RUEI YI WU / NHY8MKW8NH
 
 1. **Identifiers** → 新增（或確認已有）App ID `app.rexcode.sunnywalker`
-   - ❌ 不用勾 Alarms（AlarmKit 無此 capability，見 §2-C）
-   - ❌ 不用勾 Push Notifications（fallback 走 **本地**通知 `UNUserNotificationCenter`，本地通知不需任何 capability；Push 只給遠端 APNs）
+   - 不用勾 Alarms（AlarmKit 無此 capability，見 §2-C）
+   - 不用勾 Push Notifications（fallback 走 **本地**通知 `UNUserNotificationCenter`，本地通知不需任何 capability；Push 只給遠端 APNs）
 2. **Certificates** → 確認 Distribution Certificate 未過期
 3. **Profiles** → 用**自動簽章**即可（不需手動建含特殊 entitlement 的 profile）
-4. ~~AlarmKit 申請~~ → ✅ 不需申請（見 §2-C）
+4. ~~AlarmKit 申請~~ → 不需申請（見 §2-C）
 
 ---
 
@@ -172,19 +172,19 @@ App Store 送審強制需要至少一組 6.9" 截圖（iPhone 16 Pro Max）。
 |---|---|---|
 | App Name | `SunnyWalker: Kids Alarm`（23字） | 備好，待填 |
 | Subtitle | `Parent voice · AlarmKit alarm`（30字） | 備好，待填 |
-| SKU | `sunnywalker-ios-001` | ❌ 未建立 |
+| SKU | `sunnywalker-ios-001` | 未建立 |
 | Primary / Secondary Category | Education / Utilities | 已決定 |
 | Age Rating | 4+ | 已決定 |
 | Price | Free | 已決定 |
-| Support URL | `https://rexcode.app/sunny_walker/support/` | ✅ |
-| Privacy Policy URL | `https://rexcode.app/sunny_walker/privacy/` | ✅ |
-| Description EN / ZH-Hant | APP_STORE_LISTING.md §2–3 | ✅ 備好 |
-| Keywords EN（89字） | `alarm,kids,children,alarmkit,parent,voice,wake,silent,toddler,task,morning,routine,ios26` | ✅ 備好 |
-| Promotional Text | APP_STORE_LISTING.md §2 | ✅ 備好 |
-| What's New v1.0 | APP_STORE_LISTING.md §2 | ✅ 備好 |
-| App Privacy 問卷 | **Data Not Collected** | ❌ 待填 |
-| 截圖 6.9" | 🔴 未做 | |
-| Build 上傳 | 🔴 未 Archive | |
+| Support URL | `https://rexcode.app/sunny_walker/support/` | |
+| Privacy Policy URL | `https://rexcode.app/sunny_walker/privacy/` | |
+| Description EN / ZH-Hant | APP_STORE_LISTING.md §2–3 | 備好 |
+| Keywords EN（89字） | `alarm,kids,children,alarmkit,parent,voice,wake,silent,toddler,task,morning,routine,ios26` | 備好 |
+| Promotional Text | APP_STORE_LISTING.md §2 | 備好 |
+| What's New v1.0 | APP_STORE_LISTING.md §2 | 備好 |
+| App Privacy 問卷 | **Data Not Collected** | 待填 |
+| 截圖 6.9" | 未做 | |
+| Build 上傳 | 未 Archive | |
 
 ---
 
@@ -223,7 +223,7 @@ To test the alarm flow:
 
 ---
 
-## 8. ✅ PrivacyInfo.xcprivacy — On-device 已確認
+## 8. PrivacyInfo.xcprivacy — On-device 已確認
 
 `SunnyWalker/Services/SpeechRecognizer.swift:49`：
 ```swift
@@ -240,11 +240,11 @@ newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
 
 | # | 項目 | 說明 |
 |---|---|---|
-| 1 | ✅ AlarmKit | 不需 entitlement、不需申請（見 §2-C）。改為待辦：真機再驗 `requestAuthorization()` 回 authorized |
-| 2 | 🔴 截圖 | Simulator ⌘S，6.9"（必）、6.7"、13" iPad（建議） |
-| 3 | 🔴 App Store Connect 建立 App | SKU `sunnywalker-ios-001`，填 APP_STORE_LISTING.md 文案 |
-| 4 | 🔴 Archive + 上傳 build | Xcode → Product → Archive → Distribute |
-| 5 | 🟡 iOS 26 GM 後正式送審 | TestFlight 可先跑，GM 出後再提交審核 |
+| 1 | AlarmKit | 不需 entitlement、不需申請（見 §2-C）。改為待辦：真機再驗 `requestAuthorization()` 回 authorized |
+| 2 | 截圖 | Simulator ⌘S，6.9"（必）、6.7"、13" iPad（建議） |
+| 3 | App Store Connect 建立 App | SKU `sunnywalker-ios-001`，填 APP_STORE_LISTING.md 文案 |
+| 4 | Archive + 上傳 build | Xcode → Product → Archive → Distribute |
+| 5 | iOS 26 GM 後正式送審 | TestFlight 可先跑，GM 出後再提交審核 |
 
 ---
 
@@ -254,10 +254,10 @@ newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
 [ ] §2-A  替換所有 Ghibli/Totoro IP（16 Swift 檔）→ SunnyColors / SunnyAvatar / SunnyButton
 [ ] §2-B  App Icon 1024×1024 原創設計完成，存入 Assets.xcassets
 [ ] §2-D  Xcode Signing → Team = NHY8MKW8NH
-[x] §2-E  Info.plist ITSAppUsesNonExemptEncryption = false ✅ 已確認存在
+[x] §2-E  Info.plist ITSAppUsesNonExemptEncryption = false 已確認存在
 [ ] §4    Apple Developer Portal：建立 App ID app.rexcode.sunnywalker + AlarmKit capability
 [ ] §2-C  等 AlarmKit entitlement 批准
-[x] §8    SpeechRecognizer requiresOnDeviceRecognition = true ✅ 已確認（SpeechRecognizer.swift:49）
+[x] §8    SpeechRecognizer requiresOnDeviceRecognition = true 已確認（SpeechRecognizer.swift:49）
 [ ] §2-F  iOS 26 真機：鎖屏→靜音→響鈴→語音關閉 全流程驗收
 [ ] §2-F  Simulator 截圖：6.9"（必）、6.7"（建議）、13" iPad（建議）
 [ ] §5    App Store Connect 建立 App，填入 APP_STORE_LISTING.md 所有 metadata
@@ -271,6 +271,6 @@ newRequest.requiresOnDeviceRecognition = true  // 100% offline — never remove
 
 ## 11. 無法存取的參考文件
 
-> ⚠️ `/Users/lion/Documents/lode/docs/MaterialsRequiredforAppleStore.md` 本次工作階段**未掛載**，無法讀取。  
-> 建議：手動對照該文件，確認有無本頁未涵蓋的 Apple 要求。  
+> `/Users/lion/Documents/lode/docs/MaterialsRequiredforAppleStore.md` 本次工作階段**未掛載**，無法讀取。
+> 建議：手動對照該文件，確認有無本頁未涵蓋的 Apple 要求。
 > 本文件的對照基準為 `lode_iphone/docs/for_Apple_store/IDENTIFIERS.md`（目前最完整的參照）。

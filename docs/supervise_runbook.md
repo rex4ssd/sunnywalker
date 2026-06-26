@@ -14,7 +14,7 @@ python supervise.py \
     --model claude-sonnet-4-6
 ```
 
-- **前景執行**，terminal 直接看到 `⟳` 進度、`✅ pass`、`❌ fail`
+- **前景執行**，terminal 直接看到 `⟳` 進度、`pass`、`fail`
 - Ctrl+C 乾淨退場（lock 自動清除）
 - 關掉 terminal 也會乾淨退場（SIGHUP handler）
 - **重新執行就能接上**：狀態在 `ring.md`，supervisor 自動從上次停的地方繼續
@@ -162,7 +162,7 @@ tail -f orchestrator/logs/$(date +%F)/*.log
 ### 一鍵掃整體進度
 
 ```bash
-python sw.py progress      # ★ 總進度 % + milestones + 今日 4 agents
+python sw.py progress      # 總進度 % + milestones + 今日 4 agents
 python sw.py status        # MAIN_ENTRY
 python sw.py schedule      # cooldown / approval 狀態
 ```
@@ -170,23 +170,23 @@ python sw.py schedule      # cooldown / approval 狀態
 `python sw.py progress` 輸出範例：
 
 ```
-📊  SunnyWalker — Progress Snapshot
+ SunnyWalker — Progress Snapshot
 =============================================
 Overall: Day 3 of 7  (2 day(s) complete)
   [████████░░░░░░░░░░░░░░░░░░░░░░]  29%
 
 Today (Day 3):
-  [A:✅] → [B:🟡] → [C:⬜] → [D:⬜]
+  [A:] → [B:] → [C:] → [D:]
 
 Milestones:
-  ✅  Day 1: Project skeleton, Models, Theme
-  ✅  Day 2: HomeView, AlarmListView (dummy data)
-  🟡  Day 3: AlarmScheduler + local notifications
-  ⬜  Day 4: AudioRecorder + RecordingView
+  Day 1: Project skeleton, Models, Theme
+  Day 2: HomeView, AlarmListView (dummy data)
+  Day 3: AlarmScheduler + local notifications
+  Day 4: AudioRecorder + RecordingView
   ...
 
-Latest D verdict: ✅  on_track  (Day 2)
-Latest B build:  ⚠️  yellow  (build: pass, tests: 6 passed, lint: 1 warning)
+Latest D verdict:  on_track  (Day 2)
+Latest B build:  yellow  (build: pass, tests: 6 passed, lint: 1 warning)
 ```
 
 ---

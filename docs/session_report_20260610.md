@@ -10,10 +10,10 @@
 
 | # | 項目 | 嚴重度 | 狀態 |
 |---|------|--------|------|
-| 1 | 背景自動停鈴失效（黑標一直響、時間到不消失） | P0 | ✅ 真機驗證成功 |
-| 2 | 幽靈鬧鐘（not-found）讓 watchdog 每 5s 無限空轉、背景持續耗電 | P1 | ✅ 已修 |
-| 3 | iOS 26 / Swift 6 編譯警告 10 項 | P3 | ✅ 修 9、刻意保留 2 |
-| 4 | 新增 lifecycle forensics 持久化診斷 | — | ✅ 已加（純 log） |
+| 1 | 背景自動停鈴失效（黑標一直響、時間到不消失） | P0 | 真機驗證成功 |
+| 2 | 幽靈鬧鐘（not-found）讓 watchdog 每 5s 無限空轉、背景持續耗電 | P1 | 已修 |
+| 3 | iOS 26 / Swift 6 編譯警告 10 項 | P3 | 修 9、刻意保留 2 |
+| 4 | 新增 lifecycle forensics 持久化診斷 | — | 已加（純 log） |
 
 ---
 
@@ -46,10 +46,10 @@ background：同步 setActive(false) → 關掉 keep-alive session → app 失�
 
 ### 驗證（成功 log 關鍵）
 ```
-🏠 scenePhase → background: stopped mic, KEEPING keep-alive audio session for AlarmAutoStop
-🛡️ interruption BEGAN … recoverPlayback: RECOVERED on attempt 3 — keep-alive restored
-🛡️ DispatchTimer fired for FACB65DA
-🔔 stop(FACB65DA) — state BEFORE=alerting → AFTER=scheduled   ← 黑標停了
+scenePhase → background: stopped mic, KEEPING keep-alive audio session for AlarmAutoStop
+interruption BEGAN … recoverPlayback: RECOVERED on attempt 3 — keep-alive restored
+DispatchTimer fired for FACB65DA
+stop(FACB65DA) — state BEFORE=alerting → AFTER=scheduled   ← 黑標停了
 ```
 
 ---
@@ -74,7 +74,7 @@ background：同步 setActive(false) → 關掉 keep-alive session → app 失�
 修好 9 項（程式碼），deployment target 為 iOS 26 故可直接用新 API：
 
 - **`storageKey` actor isolation（Swift 6 error）** — `LocalizationManager`(@MainActor) 的常數被 nonisolated 的 `SunnyLocalization` 讀取 → 標 `nonisolated static let`。
-- **`Text + Text` deprecated × 4**（AlarmEditorView 3、RingtonePickerSheet 1）— 改字串插值 `Text("☀️ \(Text(...))")`，在地化照舊。
+- **`Text + Text` deprecated × 4**（AlarmEditorView 3、RingtonePickerSheet 1）— 改字串插值 `Text("\(Text(...))")`，在地化照舊。
 - **VoiceLibraryView export 4 警告** — `exportAsynchronously` / `.status` / `.error` deprecated（iOS 18）+ non-Sendable closure 捕捉 → 整段改 `try await exporter.export(to:as:)`。
 
 刻意**保留 2 項**：
@@ -84,7 +84,7 @@ background：同步 setActive(false) → 關掉 keep-alive session → app 失�
 
 ---
 
-## 4. 新增 — Lifecycle forensics 持久化診斷（🔬）
+## 4. 新增 — Lifecycle forensics 持久化診斷（）
 
 為了在「process 在背景被殺、沒有 log」時也能事後重建時間軸，加了純 log（不改行為）：
 
@@ -92,7 +92,7 @@ background：同步 setActive(false) → 關掉 keep-alive session → app 失�
 - BGTask-fired marker、AppDelegate `didEnterBackground` / `willTerminate` marker。
 - `logLifecycleForensics(context:)`：開 app／冷啟動／BGTask 喚醒時印心跳、BGTask、每顆 armed 鬧鐘的 AlarmKit 狀態、UN delivered/pending 數。
 
-> 問題已定位，可保留當長期黑盒，或日後精簡時整段移除（搜尋 `🔬`）。
+> 問題已定位，可保留當長期黑盒，或日後精簡時整段移除（搜尋 ``）。
 
 ---
 

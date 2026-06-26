@@ -1,6 +1,6 @@
 # SunnyWalker — Session Report 2026-06-04
 
-> 🔴 **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
+> **2026-06-10 更正：** AlarmKit **不需 entitlement、也不需向 Apple 申請**。本文中任何「entitlement 還沒批 / 等 Apple 批 / uncomment entitlement / portal 開啟 capability」的敘述已**不適用**；現行 repo 的 `SunnyWalker.entitlements` 留空、不設 `CODE_SIGN_ENTITLEMENTS`。最新結論見 `docs/alarmkit_entitlement_and_submit.md`。
 
 
 ## 一、App Store 上架前置審查
@@ -9,11 +9,11 @@
 
 | 嚴重度 | 項目 |
 |---|---|
-| 🔴 必修 | AlarmKit entitlement 仍在 comment — 真機已批准，需 uncomment 並 rebuild |
-| 🔴 必修 | SettingsView 兩份（HomeView.swift inline vs 獨立檔），獨立版未進 build target |
-| 🔴 必修 | Privacy usage description 只有中文（NSMicrophoneUsageDescription 等） |
-| 🟡 待辦 | 截圖（iPhone 6.9" 必填）、隱私政策 URL、年齡分級問卷 |
-| ✅ 已 OK | App icon 1024×1024 RGB 無 alpha、ITSAppUsesNonExemptEncryption = false |
+| 必修 | AlarmKit entitlement 仍在 comment — 真機已批准，需 uncomment 並 rebuild |
+| 必修 | SettingsView 兩份（HomeView.swift inline vs 獨立檔），獨立版未進 build target |
+| 必修 | Privacy usage description 只有中文（NSMicrophoneUsageDescription 等） |
+| 待辦 | 截圖（iPhone 6.9" 必填）、隱私政策 URL、年齡分級問卷 |
+| 已 OK | App icon 1024×1024 RGB 無 alpha、ITSAppUsesNonExemptEncryption = false |
 
 ---
 
@@ -35,8 +35,8 @@
 
 **新檔案：** `Views/Settings/RingtonePickerSheet.swift`
 
-- 兩段式列表：內建音效（☀️ 陽光起床 / 🍃 樹葉沙沙）+ 我的錄音（VoiceClip library）
-- 每項可預聽，已選項右側顯示 ✅
+- 兩段式列表：內建音效（陽光起床 / 樹葉沙沙）+ 我的錄音（VoiceClip library）
+- 每項可預聽，已選項右側顯示
 - 選 VoiceClip 時自動呼叫 `AlarmSoundExporter.exportLockScreenCAF` → 寫入 `soundFileName`
 - `AlarmEditorView` 新增「鈴聲」列（在關鬧鐘方式之前），`ringtoneDisplayKey: LocalizedStringKey` 確保多語言
 
@@ -57,7 +57,7 @@
 
 | 項目 | 修改內容 |
 |---|---|
-| Language 從 Settings 移除 | 首頁已有 🌐 按鈕，Settings 內的 Language section 刪除 |
+| Language 從 Settings 移除 | 首頁已有 按鈕，Settings 內的 Language section 刪除 |
 | 家長識別移到 Settings 按鈕 | 點齒輪 → ParentalGate → 才開 SettingsView；SettingsView 內所有 sub-gate 全部移除，BedSide 直接 toggle |
 | 錄音管理移到第一列 | 移出家長專區，放在 List 最頂端獨立 Section |
 | 主頁鬧鐘列麥克風 icon 移除 | `AlarmCard` 只剩 toggle，錄音統一走 Settings → 錄音管理 |

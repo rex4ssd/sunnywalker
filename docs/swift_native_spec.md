@@ -33,7 +33,7 @@
 # Interface: SwiftUI
 # Language: Swift
 # Storage: SwiftData（iOS 17+）
-# Include Tests: ✅
+# Include Tests:
 ```
 
 ### Info.plist 必填鍵
@@ -52,7 +52,7 @@
 
 ### Capabilities（Xcode → Signing & Capabilities）
 - Push Notifications：**不要**勾（會被誤判收集資料）
-- Background Modes → Audio：✅（鬧鐘響時前景播音）
+- Background Modes → Audio：（鬧鐘響時前景播音）
 
 ---
 
@@ -123,19 +123,19 @@ enum GhibliColors {
     // 天空藍：龍貓躺在草地上看的天空
     static let skyBlue       = Color(red: 0.62, green: 0.82, blue: 0.91)  // #9ED1E8
     static let cloudWhite    = Color(red: 0.98, green: 0.97, blue: 0.93)  // #FAF8ED
-    
+
     // 森林綠：龍貓的森林、風之谷
     static let forestDeep    = Color(red: 0.27, green: 0.43, blue: 0.34)  // #456E57
     static let leafFresh     = Color(red: 0.56, green: 0.74, blue: 0.45)  // #8FBC72
-    
+
     // 麥田金：風起、神隱少女的燈籠
     static let wheatGold     = Color(red: 0.95, green: 0.78, blue: 0.36)  // #F3C75C
     static let lanternOrange = Color(red: 0.93, green: 0.55, blue: 0.31)  // #ED8C4F
-    
+
     // 夜空：龍貓夜晚等公車、千與千尋的湯屋
     static let nightIndigo   = Color(red: 0.18, green: 0.21, blue: 0.42)  // #2E366B
     static let starGold      = Color(red: 0.99, green: 0.95, blue: 0.74)  // #FCF2BD
-    
+
     // 龍貓灰
     static let totoroGray    = Color(red: 0.42, green: 0.42, blue: 0.45)  // #6B6B73
 }
@@ -192,7 +192,7 @@ struct ParentalGateView: View {
     @State private var answer = ""
     @State private var question = GateQuestion.random()
     let onSuccess: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 24) {
             Text("請大人幫忙").font(.title2)
@@ -212,7 +212,7 @@ struct GateQuestion {
     let prompt: String
     let options: [String]
     let correct: String
-    
+
     static func random() -> GateQuestion {
         // 範例：將星期照順序排列、找出最大的兩位數、選出三角形
         // 重點：用「概念題」而非單純算術，更符合 Apple 兒童指南
@@ -231,19 +231,19 @@ final class AudioRecorder: ObservableObject {
     private var recorder: AVAudioRecorder?
     @Published var isRecording = false
     @Published var currentURL: URL?
-    
+
     func start(named name: String) throws {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
         try session.setActive(true)
-        
+
         let url = FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Recordings/\(name).m4a")
         try? FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(),
             withIntermediateDirectories: true)
-        
+
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVSampleRateKey: 44100,
@@ -255,7 +255,7 @@ final class AudioRecorder: ObservableObject {
         currentURL = url
         isRecording = true
     }
-    
+
     func stop() {
         recorder?.stop()
         isRecording = false
@@ -273,37 +273,37 @@ import UserNotifications
 @MainActor
 final class AlarmScheduler {
     static let shared = AlarmScheduler()
-    
+
     func requestPermission() async throws {
         try await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound, .badge])
     }
-    
+
     func schedule(alarm: Alarm) async throws {
         let content = UNMutableNotificationContent()
         content.title = "起床囉！"
         content.body = "點開來聽 \(alarm.recordingName)"
-        
+
         // 自訂音檔（≤30s，必須放在 main bundle 或 Library/Sounds）
         content.sound = UNNotificationSound(
             named: UNNotificationSoundName(rawValue: alarm.soundFileName)
         )
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
         content.userInfo = ["alarmID": alarm.id.uuidString]
-        
+
         var date = DateComponents()
         date.hour = alarm.hour
         date.minute = alarm.minute
-        
+
         let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
         let req = UNNotificationRequest(
             identifier: alarm.id.uuidString,
             content: content,
             trigger: trigger)
-        
+
         try await UNUserNotificationCenter.current().add(req)
     }
-    
+
     func cancel(_ alarmID: UUID) {
         UNUserNotificationCenter.current()
             .removePendingNotificationRequests(withIdentifiers: [alarmID.uuidString])
@@ -323,36 +323,36 @@ import AVFoundation
 final class SpeechRecognizer: ObservableObject {
     @Published var recognizedText = ""
     @Published var matchedKeyword: String?
-    
+
     private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-TW"))!
     private let audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
-    
+
     private let keywords = ["我起床了", "好的", "知道了", "起床囉"]
-    
+
     func startListening(onMatch: @escaping (String) -> Void) throws {
         guard recognizer.supportsOnDeviceRecognition else {
             throw NSError(domain: "Speech", code: -1)
         }
-        
+
         request = SFSpeechAudioBufferRecognitionRequest()
-        request?.requiresOnDeviceRecognition = true  // ⭐️ 關鍵：100% 離線
+        request?.requiresOnDeviceRecognition = true  // 關鍵：100% 離線
         request?.shouldReportPartialResults = true
-        
+
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             self.request?.append(buffer)
         }
-        
+
         audioEngine.prepare()
         try audioEngine.start()
-        
+
         task = recognizer.recognitionTask(with: request!) { [weak self] result, error in
             guard let self, let text = result?.bestTranscription.formattedString else { return }
             self.recognizedText = text
-            
+
             if let hit = self.keywords.first(where: { text.contains($0) }) {
                 self.matchedKeyword = hit
                 onMatch(hit)
@@ -360,7 +360,7 @@ final class SpeechRecognizer: ObservableObject {
             }
         }
     }
-    
+
     func stop() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -384,7 +384,7 @@ final class SpeechRecognizer: ObservableObject {
                                           ├─ 龍貓在搖動，雲朵飄
                                           └─ 偵測到「我起床了」
                                               ├─ 停止播放 + 停止辨識
-                                              ├─ 切到 RewardView（彩帶+「你好棒！🌟」）
+                                              ├─ 切到 RewardView（彩帶+「你好棒！」）
                                               └─ 3 秒後回 HomeView
 ```
 
@@ -405,7 +405,7 @@ final class Alarm {
     var isEnabled: Bool
     var recordingName: String // 對應 VoiceClip
     var createdAt: Date
-    
+
     init(label: String, hour: Int, minute: Int, recordingName: String) {
         self.id = UUID()
         self.label = label
@@ -434,7 +434,7 @@ final class VoiceClip {
 
 ### 6.1 兒童類別必要設定（App Store Connect）
 - App Information → Category: **Primary: Kids**
-- Age Rating → Made for Kids: ✅ **Ages 6–8**
+- Age Rating → Made for Kids: **Ages 6–8**
 - Kids Age Band：選 6–8（你的 TA 是 7 歲）
 
 ### 6.2 隱私問卷（Privacy Nutrition Label）
