@@ -2562,18 +2562,6 @@
         }
       }
     },
-    "開啟鬧鐘" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn alarm on" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開啟鬧鐘" } }
-      }
-    },
-    "關閉鬧鐘" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn alarm off" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關閉鬧鐘" } }
-      }
-    },
     "六" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4098,7 +4086,6 @@
       }
     },
     "編輯鬧鐘" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5425,6 +5412,23 @@
         }
       }
     },
+    "開啟鬧鐘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn alarm on"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟鬧鐘"
+          }
+        }
+      }
+    },
     "關閉" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5455,6 +5459,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉床邊模式"
+          }
+        }
+      }
+    },
+    "關閉鬧鐘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn alarm off"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉鬧鐘"
           }
         }
       }
