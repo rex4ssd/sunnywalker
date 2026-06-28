@@ -56,6 +56,7 @@
 
 ### 2A. 未解 bug / 待真機驗證
 
+0. 【高·新 06-28】 **App Store 二度被拒 — Guideline 2.3 Accurate Metadata（審查員找不到 SunnyWalker Pro）。** Submission `0ff0f2b5-…`、Version 1.3.20260615 (14)。根因：Pro 入口刻意藏在「家長閘 3 位數乘法題 + 設定頁最底部」（符合 Made-for-Kids 1.3），審查員卡在乘法閘進不了設定。Pro 是真功能（`StoreService.swift` 279 行等），**不可移除描述**。修法（選項 A，不改 build）：ASC 回信附精確路徑 + 2 截圖（草稿在 `03_todo_fectures/appstoreconnect/app_review_reject_260627_fix.md`，ASC 純文字、勿用反引號/markdown/「×」）。**長期 SOP**：在 ASC「App Review Information → Notes」預先寫死 Pro 路徑 + 測試帳號乘法答法，避免每次送審重踩。**需你本人在 ASC 操作；本週商業第一優先——沒過審其他都先擱。** 另需核對 free-tier 鬧鐘上限數字（本 weekly §2C 寫 6 / reject doc 寫 10，須三方一致避免再踩 2.3）。
 1. 【高】 **背景整夜自動停鈴** — 架構限縮「keep-alive ≤10 分鐘」；真機整夜 + 耗電驗證仍待做。1 星負評最高風險，上架前務必驗。（需 Xcode + 真機）
 2. 【中】 **前景 `handleAutoStop` 不寫 WakeRecord** — `AlarmRingView.swift:311-326` 只播 `timeout_sad.wav` + `dismiss()`，缺 `insert(WakeRecord(dismissMethod:"timeout"))`（背景路徑 `drainTimeoutRecords` 已補）→ 前景逾時自動關漏記，回應率/準時率分母低估。補一行即一致。**工最小，建議先收。**
 3. 【中】 **溫和提醒長音截斷** — 短 CAF + 堆疊 burst 已修並真機驗證；剩 (a) cutoff-probe 找 iOS 真正截斷點、(b) ≥30s 錄音自動裁切 + UI 警告。
