@@ -215,6 +215,10 @@ struct HomeView: View {
                     try? await Task.sleep(nanoseconds: 500_000_000)
                     drainTimeoutRecords()
                 }
+                // 🔬 響鈴診斷：掃「已送達通知」重建上一次響鈴「響幾聲/多久」，落成 AlarmRingLog
+                //    顯示在「起床紀錄」。用來查 iPad「有時只響2聲就停」。（app 被關期間沒 code 在跑，
+                //    只能事後從 delivered 通知重建；收資料請從 App icon 開，不要點橫幅。）
+                captureRingDiagnostics()
                 checkPendingAlarm()
                 // Foreground = in-app ring. Cancel AlarmKit so it can't fire its system banner while
                 // we're on-screen (which would background us and break voice-stop). The 1s
@@ -482,6 +486,34 @@ struct HomeView: View {
             ))
         }
         print("🏠 drainTimeoutRecords: \(pending.count) timeout WakeRecord(s) inserted")
+    }
+
+    /// 🔬 響鈴診斷：回前景時掃「已送達通知」重建上一次「實際響幾聲/多久」，落成 AlarmRingLog。
+    /// dedup：同一鬧鐘、firedAt 相差 < 90s 視為同一次響鈴（多次開 app 不重複記）。
+    private func captureRingDiagnostics() {
+        Task { @MainActor in
+            let deliveries = await AlarmAutoStopService.shared.collectRingDeliveries()
+            guard !deliveries.isEmpty else { return }
+            for d in deliveries {
+                let aid = d.alarmID
+                let lo = d.firedAt.addingTimeInterval(-90)
+                let hi = d.firedAt.addingTimeInterval(90)
+                var desc = FetchDescriptor<AlarmRingLog>(
+                    predicate: #Predicate { $0.alarmID == aid && $0.firedAt > lo && $0.firedAt < hi }
+                )
+                desc.fetchLimit = 1
+                if let existing = try? modelContext.fetch(desc), !existing.isEmpty { continue }
+                let label = alarms.first(where: { $0.id == d.alarmID })?.label ?? d.label
+                modelContext.insert(AlarmRingLog(
+                    alarmID: d.alarmID,
+                    alarmLabel: label,
+                    firedAt: d.firedAt,
+                    soundCount: d.count,
+                    spanSeconds: d.spanSeconds
+                ))
+                print("🔬 captureRingDiagnostics: \(d.alarmID.uuidString.prefix(8)) 響 \(d.count) 次 / \(d.spanSeconds)s @ \(d.firedAt)")
+            }
+        }
     }
 
     /// Leaving foreground → re-arm AlarmKit so the lock-screen / silent-mode alarm fires.

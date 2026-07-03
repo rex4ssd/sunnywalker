@@ -53,6 +53,7 @@
 		9755A93FDAED01AD518AA530 /* mascot_greet_08.aiff in Resources */ = {isa = PBXBuildFile; fileRef = A78A4E3EF2804681F00AFC87 /* mascot_greet_08.aiff */; };
 		9963F75094590316808918F3 /* WakeHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E8F50B718D9D7CBCD731146 /* WakeHistoryView.swift */; };
 		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
+		ACB1138CDE53DBCB3CB3FAA4 /* AlarmRingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160DF5850A30909A1D36773F /* AlarmRingLog.swift */; };
 		AE34FEC3FB8419495514DA29 /* VoiceClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8E8B44056E1DBE4A0429A7 /* VoiceClip.swift */; };
 		B7A6F243CAAAAC2F718D95FB /* AlarmRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A37A57C8FCFE4F4D092654 /* AlarmRingView.swift */; };
 		B89E35BE8DA029C56D5E300A /* RewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2F46A3941FEE3E76A4346 /* RewardView.swift */; };
@@ -96,6 +97,7 @@
 		1025175993B11094CCAC30F5 /* Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animations.swift; sourceTree = "<group>"; };
 		14909DF5F592C0045CF04728 /* AlarmListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmListView.swift; sourceTree = "<group>"; };
 		152B960BF89216BE38D306F6 /* GiraffeAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiraffeAvatar.swift; sourceTree = "<group>"; };
+		160DF5850A30909A1D36773F /* AlarmRingLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmRingLog.swift; sourceTree = "<group>"; };
 		17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowerCenterEditorView.swift; sourceTree = "<group>"; };
@@ -265,6 +267,7 @@
 			isa = PBXGroup;
 			children = (
 				60114EB5C3B3CEE759BABCDF /* Alarm.swift */,
+				160DF5850A30909A1D36773F /* AlarmRingLog.swift */,
 				8115D639C5C1CDC1E1B91038 /* TodoPlayRecord.swift */,
 				8A8E8B44056E1DBE4A0429A7 /* VoiceClip.swift */,
 				6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */,
@@ -473,6 +476,7 @@
 				786B629EF4275830D91689C6 /* AlarmIOView.swift in Sources */,
 				68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */,
 				8672D8B3917813013073515A /* AlarmListView.swift in Sources */,
+				ACB1138CDE53DBCB3CB3FAA4 /* AlarmRingLog.swift in Sources */,
 				B7A6F243CAAAAC2F718D95FB /* AlarmRingView.swift in Sources */,
 				6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */,
 				443AE8609D04C19C84D54B4A /* Animations.swift in Sources */,

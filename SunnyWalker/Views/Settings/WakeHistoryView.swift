@@ -9,6 +9,9 @@ struct WakeHistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\WakeRecord.wokeAt, order: .reverse)])
     private var records: [WakeRecord]
+    // 🔬 響鈴診斷：每次開 app 從「已送達通知」重建的「實際響幾聲/多久」。查 iPad「有時只響2聲」用。
+    @Query(sort: [SortDescriptor(\AlarmRingLog.firedAt, order: .reverse)])
+    private var ringLogs: [AlarmRingLog]
 
     @State private var showingExporter = false
     @State private var exportDocument = MarkdownDocument(text: "")
@@ -18,7 +21,7 @@ struct WakeHistoryView: View {
         NavigationStack {
             ZStack {
                 SunnyColors.cloudWhite.ignoresSafeArea()
-                if records.isEmpty {
+                if records.isEmpty && ringLogs.isEmpty {
                     emptyState
                 } else {
                     recordList
@@ -32,7 +35,7 @@ struct WakeHistoryView: View {
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
                 }
-                if !records.isEmpty {
+                if !(records.isEmpty && ringLogs.isEmpty) {
                     ToolbarItemGroup(placement: .confirmationAction) {
                         Button {
                             showingClearAllConfirm = true
@@ -44,7 +47,7 @@ struct WakeHistoryView: View {
                         .tint(SunnyColors.sunnyGray)
 
                         Button {
-                            exportDocument = MarkdownDocument(text: WakeHistoryMarkdown.build(from: records))
+                            exportDocument = MarkdownDocument(text: WakeHistoryMarkdown.build(from: records, ringLogs: ringLogs))
                             showingExporter = true
                         } label: {
                             Label("匯出紀錄", systemImage: "square.and.arrow.up")
@@ -78,7 +81,14 @@ struct WakeHistoryView: View {
     }
 
     private func clearAll() {
-        withAnimation { for r in records { modelContext.delete(r) } }
+        withAnimation {
+            for r in records { modelContext.delete(r) }
+            for r in ringLogs { modelContext.delete(r) }
+        }
+    }
+
+    private func delete(_ log: AlarmRingLog) {
+        withAnimation { modelContext.delete(log) }
     }
 
     // MARK: - Empty state
@@ -102,12 +112,74 @@ struct WakeHistoryView: View {
     private var recordList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
+                if !ringLogs.isEmpty {
+                    HStack {
+                        Text("響鈴診斷（每次開 App 自動記錄）")
+                            .font(SunnyFonts.caption(13))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                        Spacer()
+                    }
+                    ForEach(ringLogs) { log in
+                        RingLogCard(log: log) { delete(log) }
+                    }
+                    if !records.isEmpty {
+                        HStack {
+                            Text("起床紀錄")
+                                .font(SunnyFonts.caption(13))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                            Spacer()
+                        }
+                        .padding(.top, 6)
+                    }
+                }
                 ForEach(records) { record in
                     WakeRecordCard(record: record) { delete(record) }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
+        }
+    }
+}
+
+// MARK: - RingLogCard（響鈴診斷卡）
+
+private struct RingLogCard: View {
+    let log: AlarmRingLog
+    var onDelete: () -> Void
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d, HH:mm:ss"
+        return formatter.string(from: log.firedAt)
+    }
+
+    var body: some View {
+        WatercolorCard {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "bell.badge")
+                    .font(.title3)
+                    .foregroundStyle(SunnyColors.sunnyGray)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(log.summary)
+                        .font(SunnyFonts.body(16.2))
+                        .foregroundStyle(SunnyColors.nightIndigo)
+                    Text("\(formattedDate)　\(log.alarmLabel.isEmpty ? "" : log.alarmLabel)")
+                        .font(SunnyFonts.caption(12))
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Button(action: onDelete) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.55))
+                }
+                .accessibilityLabel("刪除這筆診斷")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
     }
 }
@@ -225,7 +297,7 @@ enum WakeHistoryMarkdown {
         }
     }
 
-    static func build(from records: [WakeRecord], now: Date = .now) -> String {
+    static func build(from records: [WakeRecord], ringLogs: [AlarmRingLog] = [], now: Date = .now) -> String {
         let total = records.count
         let responded = records.filter { isResponded($0.dismissMethod) }
         let noResponse = total - responded.count
@@ -269,11 +341,27 @@ enum WakeHistoryMarkdown {
             md += "| \(when) | \(label) | \(method) | \(secs) |\n"
         }
 
+        // 🔬 響鈴診斷：每次開 app 從「已送達通知」重建的「實際響幾聲/多久」。
+        //    響幾次 = 送達的鬧鐘通知則數；響幾秒 = 頭尾通知送達時間差。
+        //    「只響 2 次」= iOS 只送達 2 則（把後面 rep 丟了）；「響滿 ~30 秒」= 全部送達。
+        if !ringLogs.isEmpty {
+            let dfs = DateFormatter()
+            dfs.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            md += "\n## 響鈴診斷（實測「有時只響2聲」）\n\n"
+            md += "| 響鈴時間 | 鬧鐘 | 響幾次 | 響幾秒 |\n"
+            md += "|---|---|---|---|\n"
+            for log in ringLogs {
+                let when = dfs.string(from: log.firedAt)
+                let label = log.alarmLabel.isEmpty ? "—" : log.alarmLabel
+                md += "| \(when) | \(label) | \(log.soundCount) | \(log.spanSeconds) |\n"
+            }
+        }
+
         return md
     }
 }
 
 #Preview {
     WakeHistoryView()
-        .modelContainer(for: WakeRecord.self, inMemory: true)
+        .modelContainer(for: [WakeRecord.self, AlarmRingLog.self], inMemory: true)
 }

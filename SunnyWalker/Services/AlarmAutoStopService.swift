@@ -173,6 +173,76 @@ final class AlarmAutoStopService {
         }
     }
 
+    // MARK: - 響鈴診斷（reconstruct actual ring from delivered notifications）
+    //
+    // 「持續 ~30s」提醒模式是 baseline + rep-k 短音通知堆疊而成。app 被關掉期間沒有 app code
+    // 在跑，無法即時記錄「響幾聲/多久」。這裡在回前景時掃「已送達通知」事後重建：同一顆鬧鐘
+    // 的 delivered 通知共用 threadIdentifier(=alarmID)，各自帶實際送達時間 (.date)——
+    // 則數 ≈ 響幾聲、頭尾時間差 = 響多久。結果由 HomeView 落成 AlarmRingLog 顯示在「起床紀錄」。
+
+    /// 一次響鈴的重建結果（不碰 SwiftData：service 只回結構，落庫由 HomeView 負責）。
+    struct RingDelivery {
+        let alarmID: UUID
+        let label: String        // 通知 body（＝鬧鐘 label 或早安語）快照
+        let firedAt: Date        // 最早一則的送達時間
+        let count: Int           // 送達則數 ≈ 響幾聲
+        let spanSeconds: Int     // 頭尾送達時間差
+    }
+
+    /// 一則「已送達通知」的精簡快照——把 UNNotification 抽成純資料，好把重建邏輯拉出來單元測試。
+    struct DeliveredInfo {
+        let identifier: String
+        let threadIdentifier: String
+        let categoryIdentifier: String
+        let body: String
+        let date: Date
+    }
+
+    /// 純函式：把「已送達通知」快照重建成每顆鬧鐘的響鈴摘要（無 UN 依賴 → 可單元測試）。
+    ///   • 只算鬧鐘通知（category = SUNNYWAKE_ALARM），排除 strict-mode 的 -nag- 連發（分鐘級）。
+    ///   • 依 threadIdentifier(=alarmID) 分組：count=送達則數、firedAt=最早送達、
+    ///     spanSeconds=頭尾送達時間差（四捨五入到秒）。
+    ///   • 依 firedAt 由新到舊排序，讓 UI / 測試可預期。
+    nonisolated static func reconstructRingDeliveries(from delivered: [DeliveredInfo]) -> [RingDelivery] {
+        var groups: [String: [DeliveredInfo]] = [:]
+        for n in delivered
+        where n.categoryIdentifier == "SUNNYWAKE_ALARM" && !n.identifier.contains("-nag-") {
+            guard !n.threadIdentifier.isEmpty else { continue }
+            groups[n.threadIdentifier, default: []].append(n)
+        }
+        var out: [RingDelivery] = []
+        for (tid, notes) in groups {
+            guard let alarmID = UUID(uuidString: tid),
+                  let first = notes.min(by: { $0.date < $1.date }),
+                  let last = notes.max(by: { $0.date < $1.date }) else { continue }
+            out.append(RingDelivery(
+                alarmID: alarmID,
+                label: first.body,
+                firedAt: first.date,
+                count: notes.count,
+                spanSeconds: Int(last.date.timeIntervalSince(first.date).rounded())
+            ))
+        }
+        return out.sorted { $0.firedAt > $1.firedAt }
+    }
+
+    /// 掃 Notification Center 目前「已送達」的鬧鐘通知，重建每顆鬧鐘上一次「實際響幾聲、響多久」。
+    /// ⚠️ 只反映「開 app 當下」還留在通知中心的通知：使用者若已清掉/點掉通知會少算。
+    ///    收集資料時請從 App icon 開 app，不要點橫幅（點橫幅會觸發 cancelNags 清掉 rep 通知）。
+    func collectRingDeliveries() async -> [RingDelivery] {
+        let delivered = await UNUserNotificationCenter.current().deliveredNotifications()
+        let infos = delivered.map {
+            DeliveredInfo(
+                identifier: $0.request.identifier,
+                threadIdentifier: $0.request.content.threadIdentifier,
+                categoryIdentifier: $0.request.content.categoryIdentifier,
+                body: $0.request.content.body,
+                date: $0.date
+            )
+        }
+        return Self.reconstructRingDeliveries(from: infos)
+    }
+
     private func queueTimeoutRecord(for entry: ArmedEntry, stoppedAt: Date = Date()) {
         let firedAt = entry.alertingSeenAt
             ?? entry.stopAt.addingTimeInterval(-Double(entry.ringSeconds ?? 0))

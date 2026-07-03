@@ -560,6 +560,94 @@ final class WakeRecordTests: XCTestCase {
     }
 }
 
+/// 響鈴診斷：從「已送達通知」重建「響幾聲/多久」的純邏輯測試（查 iPad「有時只響2聲」用）。
+final class RingDeliveryReconstructionTests: XCTestCase {
+
+    private typealias Info = AlarmAutoStopService.DeliveredInfo
+
+    private func info(_ id: String, thread: String, secondsAfter t0: Date, offset: TimeInterval,
+                      category: String = "SUNNYWAKE_ALARM", body: String = "早安！") -> Info {
+        Info(identifier: id, threadIdentifier: thread, categoryIdentifier: category,
+             body: body, date: t0.addingTimeInterval(offset))
+    }
+
+    /// 「只響 2 聲就停」：iOS 只送達 baseline + 1 顆 rep（相差 4s）→ count=2, span=4。
+    func testTwoBeepCase() {
+        let t0 = Date()
+        let uuid = UUID()
+        let s = uuid.uuidString
+        let deliveries = [
+            info(s, thread: s, secondsAfter: t0, offset: 0),
+            info("\(s)-rep-1", thread: s, secondsAfter: t0, offset: 4),
+        ]
+        let out = AlarmAutoStopService.reconstructRingDeliveries(from: deliveries)
+        XCTAssertEqual(out.count, 1)
+        XCTAssertEqual(out.first?.alarmID, uuid)
+        XCTAssertEqual(out.first?.count, 2)
+        XCTAssertEqual(out.first?.spanSeconds, 4)
+        XCTAssertEqual(out.first?.firedAt, t0)
+    }
+
+    /// 「響滿 ~30s」：baseline + 6 顆 rep 每 5s 一顆 → count=7, span=30。
+    func testFullThirtySecondsCase() {
+        let t0 = Date()
+        let s = UUID().uuidString
+        var deliveries = [info(s, thread: s, secondsAfter: t0, offset: 0)]
+        for k in 1...6 { deliveries.append(info("\(s)-rep-\(k)", thread: s, secondsAfter: t0, offset: Double(k) * 5)) }
+        let out = AlarmAutoStopService.reconstructRingDeliveries(from: deliveries)
+        XCTAssertEqual(out.first?.count, 7)
+        XCTAssertEqual(out.first?.spanSeconds, 30)
+    }
+
+    /// strict-mode 的 -nag- 連發（分鐘級）不算進響鈴 burst。
+    func testNagNotificationsExcluded() {
+        let t0 = Date()
+        let s = UUID().uuidString
+        let deliveries = [
+            info(s, thread: s, secondsAfter: t0, offset: 0),
+            info("\(s)-nag-1", thread: s, secondsAfter: t0, offset: 60),
+            info("\(s)-nag-2", thread: s, secondsAfter: t0, offset: 120),
+        ]
+        let out = AlarmAutoStopService.reconstructRingDeliveries(from: deliveries)
+        XCTAssertEqual(out.first?.count, 1)
+        XCTAssertEqual(out.first?.spanSeconds, 0)
+    }
+
+    /// 非鬧鐘類（其它 category）與空 threadIdentifier 一律忽略。
+    func testNonAlarmAndEmptyThreadIgnored() {
+        let t0 = Date()
+        let s = UUID().uuidString
+        let deliveries = [
+            info(s, thread: s, secondsAfter: t0, offset: 0),
+            info("other", thread: "other-thread", secondsAfter: t0, offset: 1, category: "SOMETHING_ELSE"),
+            info("empty", thread: "", secondsAfter: t0, offset: 2),
+        ]
+        let out = AlarmAutoStopService.reconstructRingDeliveries(from: deliveries)
+        XCTAssertEqual(out.count, 1)
+        XCTAssertEqual(out.first?.count, 1)
+    }
+
+    /// 兩顆不同鬧鐘 → 兩組，依 firedAt 由新到舊排序。
+    func testTwoAlarmsGroupedAndSorted() {
+        let t0 = Date()
+        let older = UUID(), newer = UUID()
+        let deliveries = [
+            info(older.uuidString, thread: older.uuidString, secondsAfter: t0, offset: 0),
+            info(newer.uuidString, thread: newer.uuidString, secondsAfter: t0, offset: 3600),
+        ]
+        let out = AlarmAutoStopService.reconstructRingDeliveries(from: deliveries)
+        XCTAssertEqual(out.count, 2)
+        XCTAssertEqual(out.first?.alarmID, newer, "最近響的排最前")
+        XCTAssertEqual(out.last?.alarmID, older)
+    }
+
+    func testAlarmRingLogSummary() {
+        let log = AlarmRingLog(alarmID: UUID(), alarmLabel: "早起", firedAt: Date(),
+                               soundCount: 2, spanSeconds: 4)
+        XCTAssertEqual(log.summary, "響 2 次 / 4 秒")
+    }
+}
+
 /// Day 28: Alarm model edge-case tests.
 final class AlarmModelEdgeCaseTests: XCTestCase {
 
