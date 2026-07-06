@@ -57,6 +57,10 @@ targets:
         NSAlarmKitUsageDescription: "SunnyWalker 需要鬧鐘權限，才能在鎖屏和靜音模式下叫醒小朋友。"
         NSMicrophoneUsageDescription: "鬧鐘需要聽你說「我起床了」才能關掉喔！聲音只留在這台 iPhone 裡，不會傳出去。"
         NSSpeechRecognitionUsageDescription: "用來聽懂你說的話，把鬧鐘關掉。所有辨識都在這台裝置上完成。"
+        CFBundleURLTypes:
+          - CFBundleURLName: app.rexcode.sunnywalker
+            CFBundleURLSchemes:
+              - rexsunny
         UIBackgroundModes:
           - audio
           - processing   # BGProcessingTask — AlarmAutoStopService Layer 1（背景自動停鈴保險）

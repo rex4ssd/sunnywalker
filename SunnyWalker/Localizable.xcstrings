@@ -38,6 +38,16 @@
         }
       }
     },
+    "%@　%@" : {
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@　%2$@"
+          }
+        }
+      }
+    },
     "%@ s" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4599,7 +4609,6 @@
       }
     },
     "起床紀錄" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5539,6 +5548,9 @@
           }
         }
       }
+    },
+    "響鈴診斷（每次開 App 自動記錄）" : {
+
     },
     "預設：系統鬧鐘，破靜音、持續響直到關掉（最會叫醒人）。但 app 被滑掉殺掉後會一直響、較耗電。" : {
       "extractionState" : "stale",
