@@ -235,19 +235,27 @@ final class StoreService: ObservableObject {
                 return
             case .verified(let appTx):
                 var raw = appTx.originalAppVersion
+                // Sandbox / Xcode environments ALWAYS report originalAppVersion "1.0" (Apple-documented),
+                // so it carries no real install history there — it must never drive the grandfather grant.
+                // App Review runs in sandbox: builds 14 was rejected (2026-06-27 & 07-07) precisely because
+                // the reviewer's device was mis-grandfathered to Pro, hiding the purchase row and price.
+                var environmentTrusted = appTx.environment == .production
                 #if DEBUG
                 // StoreKit LOCAL TESTING reports the CURRENT build as originalAppVersion (e.g. "13"),
                 // which can't represent an old install. To test the grandfather path on a dev build,
-                // set scheme env SW_FAKE_ORIGINAL_BUILD to any value < firstPaidBuild (e.g. "5").
+                // set scheme env SW_FAKE_ORIGINAL_BUILD to any value < firstPaidBuild (e.g. "5") —
+                // it also marks the environment as trusted so the .xcode env doesn't block the test.
                 // (Production uses the real AppTransaction value, so this never affects shipping.)
                 if let fake = ProcessInfo.processInfo.environment["SW_FAKE_ORIGINAL_BUILD"], !fake.isEmpty {
                     proLog("🧪[Pro] SW_FAKE_ORIGINAL_BUILD=\(fake) overrides StoreKit-testing originalAppVersion=\"\(raw)\"")
                     raw = fake
+                    environmentTrusted = true
                 }
                 #endif
                 let parsed = Self.leadingInt(raw)
-                let grant = Self.isGrandfatheredOriginalVersion(raw)
-                proLog("🔑[Pro] AppTransaction VERIFIED: originalAppVersion=\"\(raw)\" parsedBuild=\(parsed.map(String.init) ?? "nil") cutoff=\(Self.firstPaidBuild) grandfather=\(grant)")
+                let grant = Self.shouldGrandfather(originalAppVersion: raw,
+                                                   isProductionEnvironment: environmentTrusted)
+                proLog("🔑[Pro] AppTransaction VERIFIED: env=\(appTx.environment.rawValue) trusted=\(environmentTrusted) originalAppVersion=\"\(raw)\" parsedBuild=\(parsed.map(String.init) ?? "nil") cutoff=\(Self.firstPaidBuild) grandfather=\(grant)")
                 if grant {
                     d.set(true, forKey: Self.grandfatheredKey)
                     d.set(true, forKey: Self.proUnlockedKey)   // grant immediately; refreshEntitlement mirrors it
@@ -255,11 +263,25 @@ final class StoreService: ObservableObject {
                 } else {
                     proLog("🆕[Pro] paid-era user → free tier (Pro available to purchase)")
                 }
-                d.set(true, forKey: Self.resolvedKey)   // definitive answer → freeze (Release)
+                // Freeze only on a definitive PRODUCTION answer. A sandbox answer is throwaway:
+                // freezing it would permanently deny a genuine free-era customer who once ran a
+                // TestFlight build in this container — they must re-resolve on the App Store copy.
+                if environmentTrusted {
+                    d.set(true, forKey: Self.resolvedKey)
+                }
             }
         } catch {
             proLog("🛒[Pro] AppTransaction THREW: \(error) — will retry next launch")
         }
+    }
+
+    /// Pure & testable: the ONE grandfather decision. `originalAppVersion` is only meaningful in the
+    /// production environment — sandbox (App Review, TestFlight) and Xcode always report "1.0",
+    /// which would falsely grandfather every reviewer/tester. Outside production: never grant.
+    nonisolated static func shouldGrandfather(originalAppVersion: String,
+                                              isProductionEnvironment: Bool) -> Bool {
+        guard isProductionEnvironment else { return false }
+        return isGrandfatheredOriginalVersion(originalAppVersion)
     }
 
     /// Pure & testable. `AppTransaction.originalAppVersion` on iOS is the ORIGINAL `CFBundleVersion`
