@@ -162,6 +162,50 @@ Thank you.
 
 ---
 
+## 週末操作 runbook（2026-07-11/12）
+
+> Code 已完成（2026-07-07）：`hotfix/1.3-b15` 分支 commit `de6b6b4`（版本 1.3.20260615、build 15，
+> 測試全綠）；同修正已帶回 main（`139fca5`，main build 起始改 16）。
+
+### Step 1 — Archive & Upload（Mac）
+
+```bash
+cd ~/Documents/SunnyWalker && git switch hotfix/1.3-b15
+open SunnyWalker.xcodeproj
+```
+
+1. Xcode 目標選 **Any iOS Device (arm64)**。
+2. Product → **Archive**。完成後 Organizer 確認版本 = **1.3.20260615 (15)**。
+3. **Distribute App → App Store Connect → Upload**（一路預設）。
+4. 等 ASC 處理完（約 10–30 分鐘，會收到 email）。
+
+### Step 2 — 截圖（3 張，用 build 15）
+
+⚠️ **不要用收響鈴診斷資料的 iPad 10 截圖**——想看到「購買列」需要乾淨容器（舊裝置的
+sandbox sticky grandfather 還在，會顯示「已解鎖」），而刪 app 重裝會清光錄音檔和診斷資料。
+**用 iPhone 15 或其他 iPad**：先刪掉舊 app → TestFlight 裝 build 15 → 截圖。
+（截圖語言建議切英文介面，reviewer 好對照；價格顯示什麼幣別都沒關係。）
+
+| # | 畫面 | 內容 |
+|---|---|---|
+| 1 | 家長閘 | 主畫面右下齒輪 → 三位數乘法題畫面 |
+| 2 | 設定頁最底 | 「SunnyWalker Pro」列 + 右側本地化價格 |
+| 3 | 購買頁 | ProUpgradeView：權益清單 + 購買鈕上的價格 + Restore |
+
+### Step 3 — App Store Connect
+
+1. **My Apps → SunnyWalker → 被拒的 1.3.20260615 版本頁**：Build 區塊移除 build 14 → 選 **build 15**。
+2. 確認 **In-App Purchases 區塊掛著 `app.rexcode.sunnywalker.pro.lifetime`**（首個 IAP 必須隨版本送審）。
+3. **App Review 訊息串**（Resolution Center）→ Reply：貼下方回信草稿 + 附 3 張截圖。
+4. **Submit for Review**。
+
+### Step 4 —（可選）順手驗證
+
+TestFlight build 15 裝在乾淨裝置上：設定頁最底應顯示**購買列＋價格**（= reviewer 將看到的
+畫面）。若顯示「已解鎖」= 容器有舊 sticky flag，刪掉重裝即可。
+
+---
+
 ## 為什麼不走「移除 metadata 的 Pro 描述」
 
 同 260627 的結論：Pro 是完整實作的真功能（StoreKit 2 + 購買頁 + feature gating + 測試），砍描述是自殘。這次更明確——問題根本不在 metadata，在 grandfather 判定誤傷 sandbox。修 code 才是正解。
