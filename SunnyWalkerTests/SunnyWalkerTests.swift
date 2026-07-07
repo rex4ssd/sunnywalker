@@ -150,6 +150,27 @@ final class GrandfatherSignalTests: XCTestCase {
         }
         XCTAssertNil(StoreService.leadingInt("abc"))
     }
+
+    func testSandboxEnvironmentNeverGrandfathers() {
+        // Sandbox (App Review, TestFlight) and Xcode ALWAYS report originalAppVersion "1.0"
+        // (Apple-documented), so it carries no install history there. Build 14 was rejected twice
+        // (2026-06-27, 07-07) because "1.0" < firstPaidBuild mis-grandfathered the reviewer's
+        // device to Pro, hiding the purchase row and the localized price.
+        for v in ["1.0", "1", "5", "10"] {
+            XCTAssertFalse(StoreService.shouldGrandfather(originalAppVersion: v,
+                                                          isProductionEnvironment: false),
+                           "outside production, originalAppVersion \(v) must NOT grandfather")
+        }
+    }
+
+    func testProductionEnvironmentKeepsGrandfatherRules() {
+        // Production originalAppVersion is real → the build-cutoff rules apply unchanged.
+        XCTAssertTrue(StoreService.shouldGrandfather(originalAppVersion: "1.0", isProductionEnvironment: true))
+        XCTAssertTrue(StoreService.shouldGrandfather(originalAppVersion: "10", isProductionEnvironment: true))
+        XCTAssertFalse(StoreService.shouldGrandfather(originalAppVersion: "11", isProductionEnvironment: true))
+        XCTAssertFalse(StoreService.shouldGrandfather(originalAppVersion: "14", isProductionEnvironment: true))
+        XCTAssertFalse(StoreService.shouldGrandfather(originalAppVersion: "garbage", isProductionEnvironment: true))
+    }
 }
 
 @MainActor
