@@ -90,9 +90,11 @@ final class FeatureLimitsTests: XCTestCase {
         super.tearDown()
     }
 
+    // 這裡的數字故意寫死（不引用 freeMax* 常數，否則變恆真式）：
+    // 調整 FeatureLimits 免費上限時，這個測試「應該」紅，強迫確認是有意的改動。
     func testFreeTierCaps() {
         FeatureLimits.isPro = false
-        XCTAssertEqual(FeatureLimits.maxAlarms, 6)
+        XCTAssertEqual(FeatureLimits.maxAlarms, 10)
         XCTAssertEqual(FeatureLimits.maxVoiceClips, 5)
         XCTAssertEqual(FeatureLimits.maxVoiceClipSeconds, 5)
         XCTAssertEqual(FeatureLimits.maxAlarmRecordingSeconds, 180)

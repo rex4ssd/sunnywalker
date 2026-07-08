@@ -24,7 +24,7 @@ enum FeatureLimits {
 
     // Free-tier baselines + the one finite Pro value. Named so the caps below AND the Pro upsell
     // copy (ProUpgradeView) read the same numbers — no literal cap is hardcoded in any view.
-    static let freeMaxAlarms = 6
+    static let freeMaxAlarms = 10
     static let freeMaxVoiceClips = 5
     static let freeMaxVoiceClipSeconds: Double = 5
     static let proMaxVoiceClipSeconds: Double = 30
