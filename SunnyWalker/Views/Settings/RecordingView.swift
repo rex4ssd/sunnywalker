@@ -140,7 +140,7 @@ struct RecordingView: View {
                     stopRecording()
                 }
             } else {
-                SunnyButton(hasRecording ? "重新錄音 🎙️" : "開始錄音 🎙️",
+                SunnyButton(hasRecording ? "重新錄音 🎙️" : "開始錄音 🎙️",  // i18n-ignore: SunnyButton 單一 LocalizedStringKey overload，三元正確查表
                              color: SunnyColors.lanternOrange) {
                     startRecording()
                 }

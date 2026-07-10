@@ -159,7 +159,7 @@ private struct AlarmCard: View {
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
                     .labelsHidden()
-                    .accessibilityLabel(alarm.isEnabled ? "關閉鬧鐘" : "開啟鬧鐘")
+                    .accessibilityLabel(alarm.isEnabled ? String(localized: "關閉鬧鐘") : String(localized: "開啟鬧鐘"))
                     .padding(.trailing, 20)
                     .padding(.vertical, 18)
             }

@@ -93,7 +93,7 @@ struct AlarmEditorView: View {
                 if !playing { previewingRow = nil }
             }
             .onDisappear { previewPlayer.stop() }
-            .navigationTitle(isEditing ? "編輯鬧鐘" : "新增鬧鐘")
+            .navigationTitle(isEditing ? String(localized: "編輯鬧鐘") : String(localized: "新增鬧鐘"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -103,7 +103,7 @@ struct AlarmEditorView: View {
                 }
                 // Save lives in the top-right corner (opposite Cancel), iOS-standard sheet layout.
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? "儲存修改" : "儲存鬧鐘") { saveAlarm() }
+                    Button(isEditing ? String(localized: "儲存修改") : String(localized: "儲存鬧鐘")) { saveAlarm() }
                         .font(SunnyFonts.caption())
                         .fontWeight(.semibold)
                         .foregroundStyle(SunnyColors.lanternOrange)

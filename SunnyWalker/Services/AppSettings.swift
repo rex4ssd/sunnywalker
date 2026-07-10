@@ -55,12 +55,13 @@ enum MascotTheme: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var displayName: String {
+        // String(localized:)：純字面值 return 不查 Catalog，英文介面會漏出中文。
         switch self {
-        case .sunnyAlarm: return "小鬧晴"
-        case .sunny:   return "小晴（灰色精靈）"
-        case .giraffe: return "長頸鹿"
-        case .bunny:   return "小兔子"
-        case .bear:    return "小熊"
+        case .sunnyAlarm: return String(localized: "小鬧晴")
+        case .sunny:   return String(localized: "小晴（灰色精靈）")
+        case .giraffe: return String(localized: "長頸鹿")
+        case .bunny:   return String(localized: "小兔子")
+        case .bear:    return String(localized: "小熊")
         }
     }
 

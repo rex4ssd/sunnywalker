@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "關閉鬧鐘" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off alarm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉鬧鐘"
+          }
+        }
+      }
+    },
+    "開啟鬧鐘" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on alarm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟鬧鐘"
+          }
+        }
+      }
+    },
     "、" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1295,7 +1327,20 @@
       }
     },
     "z" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z"
+          }
+        }
+      }
     },
     "一" : {
       "extractionState" : "stale",
@@ -2447,7 +2492,20 @@
       }
     },
     "已選取" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取"
+          }
+        }
+      }
     },
     "已選自錄鈴聲，可以開啟口令關閉。" : {
       "extractionState" : "stale",
@@ -3956,7 +4014,20 @@
       }
     },
     "選取" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取"
+          }
+        }
+      }
     },
     "選擇鈴聲 🎵" : {
       "extractionState" : "stale",
