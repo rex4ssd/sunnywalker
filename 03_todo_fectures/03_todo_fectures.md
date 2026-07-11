@@ -21,3 +21,14 @@
 -----------------------------------------------------------------
 ## complete, fetures
 
+
+-----------------------------------------------------------------
+## 深色模式對比掃描（2026-07-11）— 幾乎全 false positive
+SunnyWalker 是 adaptive（沒鎖 light/dark，跟系統）。`darkmode_validate.py`（`py cmd_entry.py 19`）
+掃到 5 ERROR + 1 WARN，逐一黑底複核：
+- **吉祥物眼白（勿改）**：`GiraffeAvatar.swift:171`、`SunnyAvatar.swift:57`、`MascotView.swift:351/436`
+  的 `Circle().fill(Color.white)` 是角色眼白（上面疊 `ink` 瞳孔），兩個模式都該是白 → 正確。
+- **low priority**：`VoiceLibraryView.swift:576` 錄音命名卡 `.background(Color.white)` 配 `nightIndigo`
+  （固定深）文字 → 深色模式仍可讀（深字白底），只是白卡在深色 UI 偏亮、不一致。要一致可換 adaptive 卡色（設計取捨，非 bug）。
+- **verify**：`KidBrowser/HomeView.swift:136` `.background(Color(hex:"#FFD8A8"))` peach 裝飾底 → 確認上面文字對比即可。
+結論：無「黑底看不見」的真雷，本批不改 code。
