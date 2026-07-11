@@ -7,7 +7,7 @@
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "SunnyWalker"
           }
         }
@@ -19,7 +19,7 @@
       "localizations" : {
         "zh-Hant" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "SunnyWalker"
           }
         }

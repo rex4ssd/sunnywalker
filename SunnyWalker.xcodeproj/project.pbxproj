@@ -394,7 +394,7 @@
 				};
 			};
 			buildConfigurationList = 3CB33E2368DAD785BABEE546 /* Build configuration list for PBXProject "SunnyWalker" */;
-			developmentRegion = "zh-Hant";
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,

@@ -3,7 +3,10 @@ options:
   bundleIdPrefix: app.rexcode   # App Store identity (team NHY8MKW8NH / WU RUEI-YI) — see docs/for_Apple_store/IDENTIFIERS.md
   deploymentTarget:
     iOS: "26.0"   # AlarmKit requires iOS 26 (pbxproj already targets 26.0; keep xcodegen in sync)
-  developmentLanguage: zh-Hant
+  # 2026-07-11 zh-Hant → en：CFBundleDevelopmentRegion 是「使用者語言沒對應翻譯時的 fallback」。
+  # 家族硬規則「預設英文」——法文/日文等非中非英裝置（含 App Review 測試機）必須看到英文。
+  # catalog 的 sourceLanguage 照舊 zh-Hant（key 是中文），兩者管的事不同、可以不一致。
+  developmentLanguage: en
   groupSortPosition: top
 settings:
   base:
