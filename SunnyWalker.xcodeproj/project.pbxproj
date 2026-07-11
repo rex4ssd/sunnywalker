@@ -34,6 +34,7 @@
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
 		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
+		5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */ = {isa = PBXBuildFile; productRef = AF524B3678D76C29F3F856BC /* AppVersionKit */; };
 		5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */; };
 		6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */; };
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
@@ -129,6 +130,7 @@
 		8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
 		93963ADBD63660CB7F06E3F9 /* mascot_greet_06.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_06.aiff; sourceTree = "<group>"; };
 		9A1D83BDF0D7A50AA1D837D3 /* mascot_greet_01.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_01.aiff; sourceTree = "<group>"; };
+		9BB6DA4BAB485C44E5751F60 /* common_lib_ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = common_lib_ios; path = ../common_lib_ios; sourceTree = SOURCE_ROOT; };
 		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
 		9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
 		9CE7FA83B8576CE1FFA1F10E /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
@@ -154,6 +156,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */,
+				5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +166,7 @@
 		095C19C14024F6CD35129004 = {
 			isa = PBXGroup;
 			children = (
+				EF6534F7DAAF3DFC479942D8 /* Packages */,
 				64D650D499538406B85A625F /* SunnyWalker */,
 				5426B93631556471059DA32A /* SunnyWalkerTests */,
 				C638D6224AA4077166EFFC67 /* Products */,
@@ -307,6 +311,14 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		EF6534F7DAAF3DFC479942D8 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				9BB6DA4BAB485C44E5751F60 /* common_lib_ios */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		EFBEA798C78CDDC40F5F236A /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -371,6 +383,7 @@
 			name = SunnyWalker;
 			packageProductDependencies = (
 				E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */,
+				AF524B3678D76C29F3F856BC /* AppVersionKit */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -405,6 +418,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1FB439FC771E79D1ADA1EA9C /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
+				2A31E9EEA09D288409D8FF95 /* XCLocalSwiftPackageReference "../common_lib_ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C638D6224AA4077166EFFC67 /* Products */;
@@ -742,6 +756,13 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		2A31E9EEA09D288409D8FF95 /* XCLocalSwiftPackageReference "../common_lib_ios" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../common_lib_ios;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
 		1FB439FC771E79D1ADA1EA9C /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -754,6 +775,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AF524B3678D76C29F3F856BC /* AppVersionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppVersionKit;
+		};
 		E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1FB439FC771E79D1ADA1EA9C /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;

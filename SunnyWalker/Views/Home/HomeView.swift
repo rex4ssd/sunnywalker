@@ -1,5 +1,6 @@
 // SunnyWalker — HomeView.swift  |  Day 20  |  DEBUG overlay removed; bed-side mode
 
+import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
 import SwiftUI
 import SwiftData
 import UIKit
@@ -967,6 +968,18 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                // App version — the very last section. Shared AppVersionKit component (Foundation +
+                // SwiftUI only); "First launch" is the build recorded on first ever launch. Bilingual
+                // labels so non-Chinese devices (family default-English rule) still read it.
+                VersionInfoSection(
+                    labels: VersionInfoCardLabels(
+                        version: "版本 Version",
+                        build: "建置 Build",
+                        firstLaunch: "首次啟動 First launch"
+                    ),
+                    header: "關於 About"
+                )
             }
             .navigationTitle(Text("settings_label"))
             .navigationBarTitleDisplayMode(.inline)

@@ -1,5 +1,6 @@
 // SunnyWalker — SunnyWalkerApp.swift  |  Day 16  |  AlarmKit auth on launch
 
+import AppVersionKit
 import BackgroundTasks
 import SwiftUI
 import SwiftData
@@ -27,6 +28,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Apple's signed AppTransaction inside StoreService.start() (called from SunnyWalkerApp's
         // .task). It's account-bound, so it no longer depends on launch-ordering or on-device state —
         // nothing to do here at didFinishLaunching.
+
+        // Record the build number the very first time the app is ever launched (idempotent — only
+        // writes on the first run). Powers the "首次啟動 First launch" row in Settings' version card.
+        AppVersion.registerFirstLaunch()
 
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
