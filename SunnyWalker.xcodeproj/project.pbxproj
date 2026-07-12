@@ -40,6 +40,7 @@
 		68AA8103FE36E816FF107BBF /* AlarmKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3463A26A5896E472E0EBDCA1 /* AlarmKitService.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
+		6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = FE6227AC7C66AB194D6512AB /* AppLocalization */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
 		786B629EF4275830D91689C6 /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E49492007B21D867DE139A /* AlarmIOView.swift */; };
 		7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */; };
@@ -157,6 +158,7 @@
 			files = (
 				7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */,
 				5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */,
+				6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -384,6 +386,7 @@
 			packageProductDependencies = (
 				E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */,
 				AF524B3678D76C29F3F856BC /* AppVersionKit */,
+				FE6227AC7C66AB194D6512AB /* AppLocalization */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -783,6 +786,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 1FB439FC771E79D1ADA1EA9C /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
 			productName = ConfettiSwiftUI;
+		};
+		FE6227AC7C66AB194D6512AB /* AppLocalization */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppLocalization;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

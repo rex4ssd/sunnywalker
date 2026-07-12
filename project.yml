@@ -27,8 +27,8 @@ packages:
   ConfettiSwiftUI:
     url: https://github.com/simibac/ConfettiSwiftUI
     from: 1.1.0
-  # Local shared component library (kids-app family). Only the zero-dependency AppVersionKit
-  # product is linked here (Foundation + SwiftUI) for the unified version card in Settings.
+  # Local shared component library (kids-app family): AppVersionKit (unified version card in
+  # Settings) + AppLocalization (shared LanguageStore engine behind LocalizationManager).
   CommonLibIOS:
     path: ../common_lib_ios
 
@@ -49,6 +49,8 @@ targets:
       - package: ConfettiSwiftUI
       - package: CommonLibIOS
         product: AppVersionKit
+      - package: CommonLibIOS
+        product: AppLocalization
     info:
       path: SunnyWalker/Info.plist
       properties:
