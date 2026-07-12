@@ -3,7 +3,8 @@
 import AppLocalization // qualified AppLocalization.L(zh,en) for the shared-shelf row label
 import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
 import KidsFamilyShelf // family cross-promo shelf in Settings (parent-gated)
-import KidsParentalUI  // shared ParentalGate (family-wide 3-digit × 1-digit multiplication gate)
+import KidsParentalUI  // shared ParentalGate (family-wide multiplication gate) + KidsReviewPrompt
+import StoreKit        // @Environment(\.requestReview) — Apple's rate-limited review request
 import SwiftUI
 import SwiftData
 import UIKit
@@ -807,6 +808,16 @@ struct SettingsView: View {
     // AppSettings unlock window (gate success / 立即解鎖 / 立即上鎖).
     @Environment(ParentalUnlockSession.self) private var parentalSession
 
+    // Review prompt (shared KidsReviewPrompt). Made for Kids 鐵則: only ever triggered HERE,
+    // on the parent page behind the parental gate — never in the child/general flow.
+    @Environment(\.requestReview) private var requestReview
+    @Query private var wakeRecords: [WakeRecord]
+    /// "The app has genuinely worked for a while" signal: successful wake-ups the child dismissed
+    /// (voice / button / fallback). "timeout" rows are unanswered auto-stops — excluded.
+    private var successfulWakeCount: Int {
+        wakeRecords.filter { $0.dismissMethod != "timeout" }.count
+    }
+
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
     @State private var showingVoiceLib  = false
     @State private var showingHistory   = false
@@ -1042,6 +1053,14 @@ struct SettingsView: View {
         .onAppear {
             settings.clearExpiredParentalUnlockIfNeeded()
             unlockNow = Date()
+            // 評分請求（共用 KidsReviewPrompt）：家長頁 onAppear、孩子已有 ≥3 次成功起床紀錄
+            // 才記正向時刻。per-version 只真正請求一次，Apple 再自行限流（365 天最多 3 次）。
+            // Made for Kids 鐵則：只能在 parental gate 之後的家長頁觸發，絕不進兒童流程。
+            if successfulWakeCount >= 3 {
+                KidsReviewPrompt.recordPositiveMoment(kind: "parentPageAfterWakes", threshold: 1) {
+                    requestReview()
+                }
+            }
         }
         .onReceive(unlockTick) { now in
             unlockNow = now
