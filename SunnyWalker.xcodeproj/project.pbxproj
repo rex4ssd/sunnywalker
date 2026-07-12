@@ -33,6 +33,7 @@
 		57240F19036ABC19D8492C85 /* mascot_greet_03.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 4ECB4C11C43AEB5AB6279680 /* mascot_greet_03.aiff */; };
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
 		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
+		59277C55BE1CC3596E94B882 /* KidsParentalUI in Frameworks */ = {isa = PBXBuildFile; productRef = D25CE2ECC557C0882D150501 /* KidsParentalUI */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
 		5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */ = {isa = PBXBuildFile; productRef = AF524B3678D76C29F3F856BC /* AppVersionKit */; };
 		5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */; };
@@ -68,7 +69,6 @@
 		EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FB50906ADD3045D02D04AC2 /* PermissionManager.swift */; };
 		F3417E034F113A67319AC0D7 /* CloudBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = E082FE6D44313D96DE49E326 /* CloudBackground.swift */; };
 		F5649E1A09CA9E061FA1E461 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */; };
-		F611542339033C21D36F581C /* ParentalGateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */; };
 		FA4F45BE8BE1B4337AE67240 /* mascot_greet_05.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 0FFCF603715C926028FDA7FA /* mascot_greet_05.aiff */; };
 /* End PBXBuildFile section */
 
@@ -104,7 +104,6 @@
 		3B95C4905637E5F644D212ED /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		3C92C8D1710737421F80BF59 /* leaf_rustle.caf */ = {isa = PBXFileReference; path = leaf_rustle.caf; sourceTree = "<group>"; };
 		3D1F158233E1E9163C959DD3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParentalGateView.swift; sourceTree = "<group>"; };
 		402591D9D880D83E7903B948 /* AudioRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRecorder.swift; sourceTree = "<group>"; };
 		427040A89B54DA26678D1F99 /* mascot_greet_04.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_04.aiff; sourceTree = "<group>"; };
 		46A29B4B7C206E35F4EB5B97 /* SunnyWalker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SunnyWalker.entitlements; sourceTree = "<group>"; };
@@ -159,6 +158,7 @@
 				7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */,
 				5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */,
 				6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */,
+				59277C55BE1CC3596E94B882 /* KidsParentalUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,7 +192,6 @@
 			children = (
 				5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */,
 				26E49492007B21D867DE139A /* AlarmIOView.swift */,
-				3DD4D5BB8865D7F2CCD6A36D /* ParentalGateView.swift */,
 				A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */,
 				892C0B175BB78C133BDF4A9A /* RecordingView.swift */,
 				3A9A3B1D0C7F32B69EB73774 /* RingtonePickerSheet.swift */,
@@ -387,6 +386,7 @@
 				E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */,
 				AF524B3678D76C29F3F856BC /* AppVersionKit */,
 				FE6227AC7C66AB194D6512AB /* AppLocalization */,
+				D25CE2ECC557C0882D150501 /* KidsParentalUI */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -488,7 +488,6 @@
 				2DA0605B3066C673363408B3 /* MarkdownAlarmIO.swift in Sources */,
 				2A6E1323194D61C957BA4877 /* MascotView.swift in Sources */,
 				1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */,
-				F611542339033C21D36F581C /* ParentalGateView.swift in Sources */,
 				EEB48CC687CFDC2476613F74 /* PermissionManager.swift in Sources */,
 				2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */,
 				002BA53BDAF65EF7827240D8 /* RecordingView.swift in Sources */,
@@ -781,6 +780,10 @@
 		AF524B3678D76C29F3F856BC /* AppVersionKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppVersionKit;
+		};
+		D25CE2ECC557C0882D150501 /* KidsParentalUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KidsParentalUI;
 		};
 		E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;

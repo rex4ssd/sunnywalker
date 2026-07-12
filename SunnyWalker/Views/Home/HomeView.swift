@@ -1,6 +1,7 @@
 // SunnyWalker — HomeView.swift  |  Day 20  |  DEBUG overlay removed; bed-side mode
 
 import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
+import KidsParentalUI  // shared ParentalGate (family-wide 3-digit × 1-digit multiplication gate)
 import SwiftUI
 import SwiftData
 import UIKit
@@ -624,13 +625,22 @@ struct HomeView: View {
                 showingAddAlarm = true
             }
         }) {
-            ParentalGateView(onSuccess: {
-                // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
-                // isn't re-challenged for every Settings / New Alarm within that window. They can end
-                // it early with "立即上鎖" in Settings.
-                settings.beginParentalUnlockWindow()
-                gateDidSucceed = true
-            })
+            // Shared family-wide gate (KidsParentalUI). Callback style: onUnlock fires the moment
+            // the parent answers correctly, then we close the sheet ourselves (the shared gate
+            // doesn't self-dismiss like the old app-local ParentalGateView did).
+            ParentalGate(
+                accent: SunnyColors.lanternOrange,
+                background: SunnyColors.cloudWhite,
+                onCancel: { showingParentalGate = false },
+                onUnlock: {
+                    // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
+                    // isn't re-challenged for every Settings / New Alarm within that window. They can
+                    // end it early with "立即上鎖" in Settings.
+                    settings.beginParentalUnlockWindow()
+                    gateDidSucceed = true
+                    showingParentalGate = false
+                }
+            ) { Color.clear }
         }
         .sheet(isPresented: $showingAddAlarm) {
             AlarmEditorView()
@@ -639,11 +649,17 @@ struct HomeView: View {
         .sheet(isPresented: $showingParentalForSettings, onDismiss: {
             if gateSettingsOK { gateSettingsOK = false; showingSettings = true }
         }) {
-            ParentalGateView(onSuccess: {
-                // Same as the New Alarm gate: passing it starts the temporary-unlock window.
-                settings.beginParentalUnlockWindow()
-                gateSettingsOK = true
-            })
+            ParentalGate(
+                accent: SunnyColors.lanternOrange,
+                background: SunnyColors.cloudWhite,
+                onCancel: { showingParentalForSettings = false },
+                onUnlock: {
+                    // Same as the New Alarm gate: passing it starts the temporary-unlock window.
+                    settings.beginParentalUnlockWindow()
+                    gateSettingsOK = true
+                    showingParentalForSettings = false
+                }
+            ) { Color.clear }
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()

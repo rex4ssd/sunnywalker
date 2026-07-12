@@ -51,6 +51,8 @@ targets:
         product: AppVersionKit
       - package: CommonLibIOS
         product: AppLocalization
+      - package: CommonLibIOS
+        product: KidsParentalUI
     info:
       path: SunnyWalker/Info.plist
       properties:

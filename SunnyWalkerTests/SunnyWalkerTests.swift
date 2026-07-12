@@ -329,56 +329,6 @@ final class AppDelegateNotificationTests: XCTestCase {
     }
 }
 
-final class GateQuestionTests: XCTestCase {
-
-    func testRandomReturnsQuestion() {
-        let q = GateQuestion.random()
-        XCTAssertFalse(q.prompt.isEmpty)
-        XCTAssertFalse(q.options.isEmpty)
-        XCTAssertFalse(q.correct.isEmpty)
-    }
-
-    func testCorrectAnswerIsAlwaysInOptions() {
-        for _ in 0..<20 {
-            let q = GateQuestion.random()
-            XCTAssertTrue(q.options.contains(q.correct),
-                          "correct '\(q.correct)' not found in options \(q.options)")
-        }
-    }
-
-    func testOptionsCountIsThree() {
-        for _ in 0..<10 {
-            let q = GateQuestion.random()
-            XCTAssertEqual(q.options.count, 3,
-                           "Expected 3 options, got \(q.options.count) for '\(q.prompt)'")
-        }
-    }
-
-    func testAllOptionsAreUnique() {
-        for _ in 0..<10 {
-            let q = GateQuestion.random()
-            XCTAssertEqual(Set(q.options).count, q.options.count,
-                           "Duplicate options in \(q.options)")
-        }
-    }
-
-    func testRandomPoolContainsOnlyAdultMultiplicationQuestions() {
-        // Kids-category parental gates must not use questions a child can easily answer.
-        for _ in 0..<20 {
-            let q = GateQuestion.random()
-            XCTAssertTrue(q.prompt.contains("×"), "Expected multiplication question, got '\(q.prompt)'")
-            XCTAssertGreaterThanOrEqual(Int(q.correct) ?? 0, 100, "Expected a three-digit answer")
-        }
-    }
-
-    func testMultiplicationAnswersAreCorrect() {
-        // Verify hardcoded answers are arithmetically correct
-        XCTAssertEqual(127 * 4, 508)
-        XCTAssertEqual(236 * 3, 708)
-        XCTAssertEqual(154 * 5, 770)
-    }
-}
-
 /// Validates spec §8 risk mitigation: 3 consecutive speech failures → show tap-to-dismiss button.
 @MainActor
 final class VoiceFallbackTests: XCTestCase {
