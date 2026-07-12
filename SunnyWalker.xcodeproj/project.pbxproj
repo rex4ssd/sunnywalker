@@ -43,6 +43,7 @@
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
 		6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = FE6227AC7C66AB194D6512AB /* AppLocalization */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
+		75FC3604956E8291303CEEB6 /* KidsFamilyShelf in Frameworks */ = {isa = PBXBuildFile; productRef = CF7F0965307AE054317C494B /* KidsFamilyShelf */; };
 		786B629EF4275830D91689C6 /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E49492007B21D867DE139A /* AlarmIOView.swift */; };
 		7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */; };
 		8048B0AF117F5962D38548BA /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */; };
@@ -159,6 +160,7 @@
 				5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */,
 				6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */,
 				59277C55BE1CC3596E94B882 /* KidsParentalUI in Frameworks */,
+				75FC3604956E8291303CEEB6 /* KidsFamilyShelf in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -387,6 +389,7 @@
 				AF524B3678D76C29F3F856BC /* AppVersionKit */,
 				FE6227AC7C66AB194D6512AB /* AppLocalization */,
 				D25CE2ECC557C0882D150501 /* KidsParentalUI */,
+				CF7F0965307AE054317C494B /* KidsFamilyShelf */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -780,6 +783,10 @@
 		AF524B3678D76C29F3F856BC /* AppVersionKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppVersionKit;
+		};
+		CF7F0965307AE054317C494B /* KidsFamilyShelf */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KidsFamilyShelf;
 		};
 		D25CE2ECC557C0882D150501 /* KidsParentalUI */ = {
 			isa = XCSwiftPackageProductDependency;

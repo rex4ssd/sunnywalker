@@ -1,6 +1,8 @@
 // SunnyWalker — HomeView.swift  |  Day 20  |  DEBUG overlay removed; bed-side mode
 
+import AppLocalization // qualified AppLocalization.L(zh,en) for the shared-shelf row label
 import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
+import KidsFamilyShelf // family cross-promo shelf in Settings (parent-gated)
 import KidsParentalUI  // shared ParentalGate (family-wide 3-digit × 1-digit multiplication gate)
 import SwiftUI
 import SwiftData
@@ -44,6 +46,10 @@ struct HomeView: View {
 
     // App settings (drives background-listening start/stop)
     @ObservedObject private var settings = AppSettings.shared
+
+    // Shared-library unlock session (KidsFamilyShelf's inner gate) — mirrored from the
+    // AppSettings unlock window whenever the gate is passed. See SunnyWalkerApp.
+    @Environment(ParentalUnlockSession.self) private var parentalSession
 
 
     // Settings — gated behind parental gate at the button level
@@ -637,6 +643,7 @@ struct HomeView: View {
                     // isn't re-challenged for every Settings / New Alarm within that window. They can
                     // end it early with "立即上鎖" in Settings.
                     settings.beginParentalUnlockWindow()
+                    parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
                     gateDidSucceed = true
                     showingParentalGate = false
                 }
@@ -656,6 +663,7 @@ struct HomeView: View {
                 onUnlock: {
                     // Same as the New Alarm gate: passing it starts the temporary-unlock window.
                     settings.beginParentalUnlockWindow()
+                    parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
                     gateSettingsOK = true
                     showingParentalForSettings = false
                 }
@@ -783,6 +791,7 @@ private struct ClockHeaderView: View {
 #Preview {
     HomeView()
         .modelContainer(for: Alarm.self, inMemory: true)
+        .environment(ParentalUnlockSession())
 }
 
 // MARK: - SettingsView
@@ -793,6 +802,10 @@ struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var bedSide = BedSideManager.shared
     @ObservedObject private var store = StoreService.shared
+
+    // Shared-library unlock session for FamilyShelfView's inner gate; mirrored from the
+    // AppSettings unlock window (gate success / 立即解鎖 / 立即上鎖).
+    @Environment(ParentalUnlockSession.self) private var parentalSession
 
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
     @State private var showingVoiceLib  = false
@@ -897,6 +910,7 @@ struct SettingsView: View {
                     HStack {
                         Button {
                             settings.beginParentalUnlockWindow()
+                            parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
                             unlockNow = Date()
                         } label: {
                             Label("temporary_unlock_start", systemImage: "lock.open")
@@ -915,6 +929,7 @@ struct SettingsView: View {
                         HStack {
                             Button(role: .destructive) {
                                 settings.endParentalUnlockWindow()
+                                parentalSession.lockNow()
                                 unlockNow = Date()
                             } label: {
                                 Label("temporary_unlock_lock_now", systemImage: "lock.fill")
@@ -958,6 +973,24 @@ struct SettingsView: View {
                     Button { showingIO = true } label: {
                         Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
                             .foregroundStyle(SunnyColors.leafFresh)
+                    }
+                    // Family cross-promo shelf (shared KidsFamilyShelf). Parent-gated by placement:
+                    // Settings itself sits behind the parental gate; the shelf re-gates App Store
+                    // taps via `gateSession` (skipped inside an active unlock window).
+                    NavigationLink {
+                        FamilyShelfView(
+                            currentApp: .sunnywalker,
+                            accent: SunnyColors.lanternOrange,
+                            background: SunnyColors.cloudWhite,
+                            gateSession: parentalSession
+                        )
+                    } label: {
+                        Label {
+                            Text(verbatim: AppLocalization.L("更多 rexcode 小學堂", "More from rexcode"))
+                        } icon: {
+                            Image(systemName: "square.grid.2x2")
+                                .foregroundStyle(SunnyColors.skyBlue)
+                        }
                     }
                 }
 
@@ -1032,4 +1065,5 @@ struct SettingsView: View {
 
 #Preview("Settings") {
     SettingsView()
+        .environment(ParentalUnlockSession())
 }

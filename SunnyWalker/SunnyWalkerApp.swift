@@ -2,6 +2,7 @@
 
 import AppVersionKit
 import BackgroundTasks
+import KidsParentalUI
 import SwiftUI
 import SwiftData
 import UserNotifications
@@ -203,9 +204,15 @@ struct SunnyWalkerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var localization = LocalizationManager.shared
 
+    // Shared-library unlock session, needed by KidsFamilyShelf's inner gate. Kept in sync with the
+    // app's own AppSettings unlock window (gate success / 立即解鎖 / 立即上鎖) so the parent isn't
+    // re-challenged on the shelf inside an already-unlocked window. In-memory by design.
+    @State private var parentalSession = ParentalUnlockSession()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(parentalSession)
                 // Drives live language switching: Text(LocalizedStringKey) re-localizes
                 // from Localizable.xcstrings whenever the chosen language changes.
                 .environment(\.locale, localization.locale)
