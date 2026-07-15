@@ -14,6 +14,11 @@ struct WakeHistoryView: View {
     @State private var exportDocument = MarkdownDocument(text: "")
     @State private var showingClearAllConfirm = false
 
+    // 統一學習快照（kids.snapshot.v1，共用件 KidsSnapshotMarkdown）— 與上面的自家 .md 匯出並存。
+    @State private var showingSnapshotExporter = false
+    @State private var snapshotDocument = MarkdownDocument(text: "")
+    @State private var snapshotFilename = ""
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -52,6 +57,19 @@ struct WakeHistoryView: View {
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
                         .tint(SunnyColors.sunnyGray)
+
+                        // 家族統一學習快照（本畫面已在家長閘之後；主動匯出，不自動上傳）。
+                        Button {
+                            let export = SnapshotBuilder.renderExport(records: Array(records))
+                            snapshotDocument = MarkdownDocument(text: export.markdown)
+                            snapshotFilename = export.fileName
+                            showingSnapshotExporter = true
+                        } label: {
+                            Label("匯出學習報告", systemImage: "sparkles")
+                        }
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(SunnyColors.sunnyGray)
+                        .tint(SunnyColors.sunnyGray)
                     }
                 }
             }
@@ -61,6 +79,13 @@ struct WakeHistoryView: View {
                 document: exportDocument,
                 contentType: WakeHistoryMarkdown.markdownType,
                 defaultFilename: WakeHistoryMarkdown.defaultFilename()
+            ) { _ in }
+            // 統一學習快照：檔名走共用件 suggestedFileName（sunnywalker_snapshot_yyyyMMdd）。
+            .fileExporter(
+                isPresented: $showingSnapshotExporter,
+                document: snapshotDocument,
+                contentType: WakeHistoryMarkdown.markdownType,
+                defaultFilename: snapshotFilename
             ) { _ in }
             .confirmationDialog("確定清除全部起床紀錄？", isPresented: $showingClearAllConfirm, titleVisibility: .visible) {
                 Button("全部清除", role: .destructive) { clearAll() }

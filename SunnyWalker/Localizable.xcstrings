@@ -2109,6 +2109,22 @@
         }
       }
     },
+    "匯出學習報告" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Learning Report"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出學習報告"
+          }
+        }
+      }
+    },
     "午睡起床" : {
       "extractionState" : "stale",
       "localizations" : {

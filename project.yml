@@ -55,6 +55,9 @@ targets:
         product: KidsParentalUI
       - package: CommonLibIOS
         product: KidsFamilyShelf
+      # 統一學習快照（kids.snapshot.v1）：KidsLearningSnapshot / KidsSnapshotMarkdown / AnonymousProfileID
+      - package: CommonLibIOS
+        product: KidsDataCore
     info:
       path: SunnyWalker/Info.plist
       properties:
@@ -107,6 +110,9 @@ targets:
       - path: SunnyWalkerTests
     dependencies:
       - target: SunnyWalker
+      # SnapshotBuilderTests 直接 import KidsDataCore（驗證 render→extract 回讀）。
+      - package: CommonLibIOS
+        product: KidsDataCore
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
