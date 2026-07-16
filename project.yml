@@ -58,6 +58,9 @@ targets:
       # 統一學習快照（kids.snapshot.v1）：KidsLearningSnapshot / KidsSnapshotMarkdown / AnonymousProfileID
       - package: CommonLibIOS
         product: KidsDataCore
+      # 家長錄音正本：VoiceRecordController（AVAudioEngine + voice processing、分段防 crash）
+      - package: CommonLibIOS
+        product: AudioCoreKit
     info:
       path: SunnyWalker/Info.plist
       properties:
@@ -113,6 +116,9 @@ targets:
       # SnapshotBuilderTests 直接 import KidsDataCore（驗證 render→extract 回讀）。
       - package: CommonLibIOS
         product: KidsDataCore
+      # AudioRecorderTests：換裝 AudioCoreKit VoiceRecordController 後的包裝層測試。
+      - package: CommonLibIOS
+        product: AudioCoreKit
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

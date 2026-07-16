@@ -1,53 +1,127 @@
-// SunnyWalker — AudioRecorder.swift  |  Day 5  |  AVAudioRecorder wrapper (spec §4 stage 2)
+// SunnyWalker — AudioRecorder.swift  |  Day 5  |  recording via shared AudioCoreKit (spec §4 stage 2)
 
 import AVFoundation
 import Speech
 import Foundation
 import UIKit
+import Combine
+import AudioCoreKit
 
+/// 家長錄音薄包裝 — 引擎換裝共用庫 AudioCoreKit `VoiceRecordController`
+/// （AVAudioEngine + Apple voice processing、30s 分段防 crash、中斷/路由自動恢復、
+///  AVAudioSession 統一走 AudioSessionCoordinator）。
+///
+/// 對外保留原 AVAudioRecorder 版的行為契約：
+///   • 檔案落點/命名不變：`Documents/Recordings/<name>.m4a` — VoiceClip（SwiftData）
+///     與 AlarmSoundExporter 都依賴此路徑，既有用戶錄音檔完全不受影響。
+///     共用件自產 baseName（Voice-Memos 風格），所以 finalize 縫合後改名成 <name>.m4a。
+///   • FeatureLimits 長度上限不變：免費 3 分鐘 / Pro 無限。共用件沒有
+///     record(forDuration:) 硬上限參數，改為觀察 `elapsed` 到點自動 stop（備援；
+///     UI 層計時器照舊負責收尾流程 — 存檔名、匯出 CAF）。
 @MainActor
 final class AudioRecorder: ObservableObject {
-    private var recorder: AVAudioRecorder?
-    @Published var isRecording = false
-    @Published var currentURL: URL?
+    @Published private(set) var isRecording = false
+    @Published private(set) var currentURL: URL?
+    /// 即時音量（0…1，共用件 tap RMS）— 錄音畫面的音量回饋。
+    @Published private(set) var level: Float = 0
 
     /// 每段自定錄音的長度上限（秒）。免費版 3 分鐘、Pro 無限——統一從 FeatureLimits 取。
-    /// 用 record(forDuration:) 當硬上限：即使 App 被切背景、UI 計時器沒跑到，檔案長度也一定被截斷。
-    /// RecordingView 另有一個同步 UI 計時器負責收尾（存檔名、匯出）。Pro（.infinity）時不設上限。
     static var maxRecordingSeconds: TimeInterval { FeatureLimits.maxAlarmRecordingSeconds }
 
-    func start(named name: String) throws {
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
-        try session.setActive(true)
-
-        let url = FileManager.default
+    /// 錄音落點 — 沿用 AVAudioRecorder 時代的目錄，不得改（既有用戶檔案都在這）。
+    nonisolated static var recordingsDirectory: URL {
+        FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings/\(name).m4a")
-        try? FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true)
-
-        let settings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ]
-        recorder = try AVAudioRecorder(url: url, settings: settings)
-        let cap = Self.maxRecordingSeconds
-        if cap.isFinite {
-            recorder?.record(forDuration: cap)   // 免費版硬上限：到時自動停
-        } else {
-            recorder?.record()                   // Pro：不設長度上限
-        }
-        currentURL = url
-        isRecording = true
+            .appendingPathComponent("Recordings", isDirectory: true)
     }
 
-    func stop() {
-        recorder?.stop()
-        isRecording = false
+    /// 純函式：已錄秒數是否達上限（Pro 的 .infinity 永遠 false）。拆出來可測。
+    nonisolated static func shouldAutoStop(elapsed: TimeInterval, cap: TimeInterval) -> Bool {
+        cap.isFinite && elapsed >= cap
+    }
+
+    private let controller: VoiceRecordController
+    private var cancellables = Set<AnyCancellable>()
+    /// start(named:) 傳入的目標檔名；finalize 後把共用件縫合檔改名成 <name>.m4a。
+    private var pendingName: String?
+    /// 進行中的 stop→finalize→改名流程。手動停止與 elapsed 上限備援撞在一起時
+    /// 共用同一個 task — 不會 double-finalize。
+    private var stopTask: Task<URL?, Never>?
+
+    init(directory: URL = AudioRecorder.recordingsDirectory) {
+        controller = VoiceRecordController(directory: directory, profile: .voiceMemo)
+        bindController()
+    }
+
+    private func bindController() {
+        controller.$isRecording
+            .sink { [weak self] in self?.isRecording = $0 }
+            .store(in: &cancellables)
+        controller.$level
+            .sink { [weak self] in self?.level = $0 }
+            .store(in: &cancellables)
+        // FeatureLimits 硬上限備援：即使 UI 計時器沒跑到（切背景等），錄音也一定停。
+        controller.$elapsed
+            .sink { [weak self] elapsed in
+                guard let self,
+                      Self.shouldAutoStop(elapsed: elapsed, cap: Self.maxRecordingSeconds),
+                      self.controller.isRecording, self.stopTask == nil else { return }
+                self.stopTask = self.makeStopTask()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// 開始錄音，最終檔為 `Recordings/<name>.m4a`。失敗丟型別化 AudioCoreKit.RecordError。
+    func start(named name: String) async throws {
+        // 錄音中重入 no-op：不得中途換掉 pendingName（rename 目標）。UI 按鈕狀態通常擋住這條路。
+        guard !controller.isRecording else { return }
+        stopTask = nil
+        pendingName = name
+        try await controller.start()
+        // start 可能被 await 期間落地的 stop() 靜默取消（共用件 startGeneration：不丟錯、也沒開錄）。
+        // 此時保持 inert — 不設 currentURL，否則 hasRecording 會誤判「已有錄音」。
+        guard controller.isRecording else { return }
+        // 與 AVAudioRecorder 版一致：start 當下 currentURL 即指向目標檔（hasRecording 判斷用）。
+        currentURL = controller.directory.appendingPathComponent("\(name).m4a")
+    }
+
+    /// 停止並完成錄音檔：stop → finalize（縫合分段）→ 改名成 <name>.m4a。
+    /// 回傳最終檔 URL；idle 時為 no-op 回 nil。冪等 — 與上限備援重複呼叫回同一結果。
+    @discardableResult
+    func stop() async -> URL? {
+        if let task = stopTask { return await task.value }
+        guard controller.isRecording else {
+            // start() 可能還懸在 await（權限窗/session 啟用中）— 共用件的
+            // startGeneration 機制：此刻落地的 stop 獲勝，那筆 start 會自行中止。
+            controller.stop()
+            return nil
+        }
+        let task = makeStopTask()
+        stopTask = task
+        return await task.value
+    }
+
+    private func makeStopTask() -> Task<URL?, Never> {
+        let name = pendingName
+        let controller = self.controller
+        return Task { @MainActor [weak self] in
+            controller.stop()
+            guard let stitched = await controller.finalize() else { return nil }
+            guard let name else { return stitched }
+            let dest = controller.directory.appendingPathComponent("\(name).m4a")
+            if stitched != dest {
+                // 覆蓋同名舊檔 = 原 AVAudioRecorder(url:) 的重錄行為。
+                try? FileManager.default.removeItem(at: dest)
+                do {
+                    try FileManager.default.moveItem(at: stitched, to: dest)
+                } catch {
+                    self?.currentURL = stitched
+                    return stitched
+                }
+            }
+            self?.currentURL = dest
+            return dest
+        }
     }
 }
 

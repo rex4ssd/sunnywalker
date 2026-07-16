@@ -537,6 +537,9 @@ struct VoiceClipRecorderSheet: View {
                                 : SunnyColors.lanternOrange.opacity(0.12)
                         )
                         .frame(width: 92, height: 92)
+                        // 共用件的即時音量（tap RMS）→ 現成錄音圓鈕隨聲音微縮放。
+                        .scaleEffect(phase == .recording ? 1 + CGFloat(min(recorder.level, 1)) * 0.12 : 1)
+                        .animation(.linear(duration: 0.1), value: recorder.level)
                         .shadow(
                             color: SunnyColors.lanternOrange.opacity(phase == .recording ? 0.4 : 0.1),
                             radius: 12, y: 6
@@ -672,9 +675,9 @@ struct VoiceClipRecorderSheet: View {
         player.stop()
         speechTask?.cancel(); speechTask = nil
         isTranscribing = false
-        if !recordedBase.isEmpty {
-            try? FileManager.default.removeItem(at: recordingURL(base: recordedBase))
-        }
+        // 剛按完「停止」馬上按「重新錄音」時，stop→finalize→改名可能還沒落地 —
+        // helper 會等它完成再刪，否則刪到還不存在的檔、縫合完成後孤兒檔又冒回來。
+        stopAndDiscardTake(base: recordedBase)
         recordedBase = ""
         recordedDuration = 0
         clipName = ""
@@ -686,14 +689,19 @@ struct VoiceClipRecorderSheet: View {
     private func startRecording() {
         errorMessage = nil
         let base = UUID().uuidString
-        do {
-            try recorder.start(named: base)  // saves to Documents/Recordings/<base>.m4a
-            recordedBase = base
-            phase = .recording
-            countdown = maxSeconds
-            beginCountdown()
-        } catch {
-            errorMessage = L("recording_launch_failed %@", error.localizedDescription)
+        Task {
+            do {
+                try await recorder.start(named: base)  // saves to Documents/Recordings/<base>.m4a
+                // start 可能被 await 期間的 stop 靜默取消（✕ 取消關頁）— 沒真的開錄就不進
+                // .recording，也不啟動倒數（否則倒數到 0 會自動存下一筆沒有檔案的幽靈 clip）。
+                guard recorder.isRecording else { return }
+                recordedBase = base
+                phase = .recording
+                countdown = maxSeconds
+                beginCountdown()
+            } catch {
+                errorMessage = L("recording_launch_failed %@", error.localizedDescription)
+            }
         }
     }
 
@@ -702,20 +710,23 @@ struct VoiceClipRecorderSheet: View {
     ///   the 「儲存」button — the recording is saved with the default name and can be renamed later.
     private func stopRecording(autoSaved: Bool = false) {
         countdownTimer?.invalidate(); countdownTimer = nil
-        recorder.stop()
         phase = .done
+        Task {
+            // 共用件 stop 後要 finalize（縫合分段）＋改名，<base>.m4a 才落地 —
+            // 時長量測與自動存檔都等它完成。
+            let url = await recorder.stop() ?? recordingURL(base: recordedBase)
 
-        // Measure actual duration from the written file
-        let url = recordingURL(base: recordedBase)
-        if let af = try? AVAudioFile(forReading: url) {
-            let sr = af.processingFormat.sampleRate
-            recordedDuration = sr > 0 ? Double(af.length) / sr : 0
+            // Measure actual duration from the written file
+            if let audioFile = try? AVAudioFile(forReading: url) {
+                let sampleRate = audioFile.processingFormat.sampleRate
+                recordedDuration = sampleRate > 0 ? Double(audioFile.length) / sampleRate : 0
+            }
+
+            // Set default name; user can tap ✨ to auto-name from voice content.
+            if clipName.trimmingCharacters(in: .whitespaces).isEmpty { clipName = L("我的錄音") }
+
+            if autoSaved { saveClip() }   // cap reached → save by itself, never drop the take
         }
-
-        // Set default name; user can tap ✨ to auto-name from voice content.
-        if clipName.trimmingCharacters(in: .whitespaces).isEmpty { clipName = L("我的錄音") }
-
-        if autoSaved { saveClip() }   // cap reached → save by itself, never drop the take
     }
 
     /// Transcribe `url` using SFSpeechURLRecognitionRequest (on-device, no network).
@@ -807,13 +818,9 @@ struct VoiceClipRecorderSheet: View {
 
     private func cancelAndDismiss() {
         countdownTimer?.invalidate(); countdownTimer = nil
-        recorder.stop()
         player.stop()
         speechTask?.cancel(); speechTask = nil
-        // Clean up any partially-written file
-        if !recordedBase.isEmpty {
-            try? FileManager.default.removeItem(at: recordingURL(base: recordedBase))
-        }
+        stopAndDiscardTake(base: recordedBase)
         dismiss()
     }
 
@@ -821,6 +828,20 @@ struct VoiceClipRecorderSheet: View {
         FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Recordings/\(base).m4a")
+    }
+}
+
+private extension VoiceClipRecorderSheet {
+    /// 停止錄音並丟棄這次的 take 檔（✕ 取消、重新錄音共用）。
+    /// stop 無條件呼叫：即使 base 還沒設（start 仍懸在 await），也要讓那筆 start 落敗。
+    /// 刪檔要等共用件 stop→finalize→改名落地之後（recorder.stop() 冪等，回進行中同一筆）——
+    /// 否則刪了個還不存在的檔、縫合完成後又冒回來。
+    func stopAndDiscardTake(base: String) {
+        Task {
+            _ = await recorder.stop()
+            guard !base.isEmpty else { return }
+            try? FileManager.default.removeItem(at: recordingURL(base: base))
+        }
     }
 }
 
