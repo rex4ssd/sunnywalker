@@ -41,7 +41,7 @@ final class StoreService: ObservableObject {
     // inherit the class's @MainActor isolation and Swift 6 rejects the cross-context reference.
 
     /// Must match the Product ID created in App Store Connect and the StoreKit config file, byte-for-byte.
-    nonisolated static let proProductID = "app.rexcode.sunnywalker.pro.lifetime"
+    nonisolated static let proProductID = "app.rexcode.sunnywalker.pro.lifetime2"
 
     // MARK: UserDefaults keys
     /// Effective Pro flag read by `FeatureLimits.isPro`. Written ONLY here.
