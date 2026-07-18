@@ -1,6 +1,7 @@
 // SunnyWalker — SunnyColors.swift  |  Day 1  |  watercolor palette
 
 import SwiftUI
+import KidsParentalUI  // KidsTheme — shared color contract for ParentalGate / FamilyShelfView
 
 enum SunnyColors {
     // Sky: sunny morning sky
@@ -27,4 +28,8 @@ enum SunnyColors {
 
     // Sunny mascot warm gray
     static let sunnyGray    = Color(red: 0.42, green: 0.42, blue: 0.45)  // #6B6B73
+
+    /// 共用家長 UI（ParentalGate / FamilyShelfView）的配色。淺色底 → scheme: .light，
+    /// 讓語意色跟底色明暗對齊（見 common_lib_ios KidsTheme）。全 app 統一走 theme: 而非散裝 accent/background。
+    static let kidsTheme = KidsTheme(accent: lanternOrange, background: cloudWhite, scheme: .light)
 }

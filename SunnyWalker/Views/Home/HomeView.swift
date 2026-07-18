@@ -636,8 +636,7 @@ struct HomeView: View {
             // the parent answers correctly, then we close the sheet ourselves (the shared gate
             // doesn't self-dismiss like the old app-local ParentalGateView did).
             ParentalGate(
-                accent: SunnyColors.lanternOrange,
-                background: SunnyColors.cloudWhite,
+                theme: SunnyColors.kidsTheme,
                 onCancel: { showingParentalGate = false },
                 onUnlock: {
                     // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
@@ -658,8 +657,7 @@ struct HomeView: View {
             if gateSettingsOK { gateSettingsOK = false; showingSettings = true }
         }) {
             ParentalGate(
-                accent: SunnyColors.lanternOrange,
-                background: SunnyColors.cloudWhite,
+                theme: SunnyColors.kidsTheme,
                 onCancel: { showingParentalForSettings = false },
                 onUnlock: {
                     // Same as the New Alarm gate: passing it starts the temporary-unlock window.
@@ -991,8 +989,7 @@ struct SettingsView: View {
                     NavigationLink {
                         FamilyShelfView(
                             currentApp: .sunnywalker,
-                            accent: SunnyColors.lanternOrange,
-                            background: SunnyColors.cloudWhite,
+                            theme: SunnyColors.kidsTheme,
                             gateSession: parentalSession
                         )
                     } label: {
