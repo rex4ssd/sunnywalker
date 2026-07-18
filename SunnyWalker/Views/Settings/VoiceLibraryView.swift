@@ -24,6 +24,22 @@ enum VoiceClipLimits {
     static let maxAutoNameCharsLatin = 16  // English
 }
 
+/// 「辨識錄音內容」的辨識語言。只支援中／英兩種（無其它）；預設跟隨 app/系統語言，
+/// 家長可在錄音頁手動切換再辨識（例如系統是英文、但錄的是中文名字）。
+enum SpeechNameLang: Hashable {
+    case zh, en
+
+    /// 依 app 語言（跟隨系統）給預設：英文介面 → 英，其餘 → 中。
+    static var systemDefault: SpeechNameLang { SunnyLocalization.code == "en" ? .en : .zh }
+
+    var localeID: String { self == .en ? "en-US" : "zh-TW" }
+    var shortLabel: String { self == .en ? "EN" : "中" }
+    /// 自動命名保留字數上限（中文每字含義多，上限較低）。
+    var maxAutoNameChars: Int {
+        self == .en ? VoiceClipLimits.maxAutoNameCharsLatin : VoiceClipLimits.maxAutoNameCharsCJK
+    }
+}
+
 // MARK: - VoiceLibraryView
 
 struct VoiceLibraryView: View {
@@ -430,6 +446,8 @@ struct VoiceClipRecorderSheet: View {
     @State private var errorMessage: String?
     @State private var isTranscribing = false
     @State private var speechTask: SFSpeechRecognitionTask?
+    /// 辨識語言（中／英）。開頁時跟隨系統語言，家長可手動切換再辨識。
+    @State private var recogLang = SpeechNameLang.systemDefault
 
     enum RecorderPhase { case ready, recording, done }
 
@@ -593,28 +611,52 @@ struct VoiceClipRecorderSheet: View {
                             .foregroundStyle(SunnyColors.sunnyGray)
                     }
                 } else {
-                    Button {
-                        let url = recordingURL(base: recordedBase)
-                        let current = clipName.trimmingCharacters(in: .whitespaces)
-                        let fallback = current.isEmpty ? L("我的錄音") : current
-                        transcribeForName(url: url, fallback: fallback)
-                    } label: {
-                        // "辨識錄音內容" / en "Name from voice" — both localized in the
-                        // String Catalog so the English UI never shows Chinese (App Review).
-                        Label("辨識錄音內容", systemImage: "sparkles")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(SunnyColors.leafFresh)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(SunnyColors.leafFresh.opacity(0.1))
-                            .clipShape(Capsule())
+                    HStack(spacing: 10) {
+                        langToggle
+                        Button {
+                            let url = recordingURL(base: recordedBase)
+                            let current = clipName.trimmingCharacters(in: .whitespaces)
+                            let fallback = current.isEmpty ? L("我的錄音") : current
+                            transcribeForName(url: url, fallback: fallback)
+                        } label: {
+                            // "辨識錄音內容" / en "Name from voice" — both localized in the
+                            // String Catalog so the English UI never shows Chinese (App Review).
+                            Label("辨識錄音內容", systemImage: "sparkles")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(SunnyColors.leafFresh)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(SunnyColors.leafFresh.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(recordedBase.isEmpty)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(recordedBase.isEmpty)
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: isTranscribing)
         }
+    }
+
+    /// 中／英辨識語言切換（只兩種）。開頁預設跟隨系統語言，家長可手動切再按辨識。
+    private var langToggle: some View {
+        HStack(spacing: 0) {
+            ForEach([SpeechNameLang.zh, .en], id: \.self) { lang in
+                Button { recogLang = lang } label: {
+                    Text(lang.shortLabel)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(recogLang == lang ? .white : SunnyColors.leafFresh)
+                        .frame(width: 36, height: 30)
+                        .background(recogLang == lang ? SunnyColors.leafFresh : Color.clear)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .background(SunnyColors.leafFresh.opacity(0.1))
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(SunnyColors.leafFresh.opacity(0.35), lineWidth: 1))
+        .accessibilityLabel(Text("辨識語言"))
+        .accessibilityValue(Text(recogLang.shortLabel))
     }
 
     private var actionRow: some View {
@@ -733,9 +775,10 @@ struct VoiceClipRecorderSheet: View {
     /// Sets `clipName` to the first 7 characters of the result, or keeps `fallback`.
     private func transcribeForName(url: URL, fallback: String) {
         guard FileManager.default.fileExists(atPath: url.path) else { return }
-        let localeId = SunnyLocalization.code == "en" ? "en-US" : "zh-TW"
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: localeId)),
+        // 家長選的辨識語言（中／英），非跟隨系統——系統英文也能手動辨識中文名字。
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: recogLang.localeID)),
               recognizer.isAvailable else { return }
+        let maxChars = recogLang.maxAutoNameChars   // 在主執行緒先取，避免辨識回呼在背景讀 @State
 
         isTranscribing = true
         speechTask?.cancel()
@@ -771,10 +814,7 @@ struct VoiceClipRecorderSheet: View {
                 return
             }
             let text = result.bestTranscription.formattedString
-            // Cap the auto-name length per language: Chinese 8 chars, English 16 letters.
-            let maxChars = SunnyLocalization.code == "en"
-                ? VoiceClipLimits.maxAutoNameCharsLatin
-                : VoiceClipLimits.maxAutoNameCharsCJK
+            // Cap the auto-name length by the chosen recognition language (中 8 / EN 16).
             let name = String(
                 text.trimmingCharacters(in: .whitespaces).prefix(maxChars)
             ).trimmingCharacters(in: .whitespaces)
