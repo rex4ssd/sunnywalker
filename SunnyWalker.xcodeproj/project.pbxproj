@@ -51,6 +51,7 @@
 		7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */; };
 		8048B0AF117F5962D38548BA /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */; };
 		830FD8EDE129F8AC869B0664 /* mascot_greet_02.aiff in Resources */ = {isa = PBXBuildFile; fileRef = AC5327BB0CA5B082F8AB8670 /* mascot_greet_02.aiff */; };
+		8397D19198E8A3F92275EE76 /* TipJarKit in Frameworks */ = {isa = PBXBuildFile; productRef = 2A86C0ED5B13AB1A6C06F2A1 /* TipJarKit */; };
 		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
 		925FFCB37FFD18A7341AF059 /* AudioCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE12CFC8E5BB6D6342B9D972 /* AudioCoreKit */; };
 		938216E6565ABD29589DE1B7 /* mascot_greet_04.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 427040A89B54DA26678D1F99 /* mascot_greet_04.aiff */; };
@@ -171,6 +172,7 @@
 				75FC3604956E8291303CEEB6 /* KidsFamilyShelf in Frameworks */,
 				55A3231BB89D78B06B663843 /* KidsDataCore in Frameworks */,
 				73105D39F6D50A61B03F3F7F /* AudioCoreKit in Frameworks */,
+				8397D19198E8A3F92275EE76 /* TipJarKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -416,6 +418,7 @@
 				CF7F0965307AE054317C494B /* KidsFamilyShelf */,
 				6B538A4CBAC009090B123EA9 /* KidsDataCore */,
 				3F84410988D33E7AA530A2AE /* AudioCoreKit */,
+				2A86C0ED5B13AB1A6C06F2A1 /* TipJarKit */,
 			);
 			productName = SunnyWalker;
 			productReference = 0972897111DE3E819D823136 /* SunnyWalker.app */;
@@ -808,6 +811,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2A86C0ED5B13AB1A6C06F2A1 /* TipJarKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TipJarKit;
+		};
 		3F84410988D33E7AA530A2AE /* AudioCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AudioCoreKit;

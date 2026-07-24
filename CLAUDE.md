@@ -5,6 +5,13 @@
 
 ---
 
+## 變現政策（2026-07-18）
+
+- 本 app 為兒童類，走**免費＋自由讚助（TipJarKit）**：三檔 Consumable 打賞，不解鎖任何功能。
+- **Pro／付費牆／訂閱規劃一律暫停**；未經 Rex 明示不得新增任何付費功能。
+- **已出貨的 SunnyWalker Pro（StoreService，含 grandfather）維持不動**；TipJar 是額外的自由讚助，兩者並存、互不相干。🔴 `StoreService.swift` 一行不准動。
+- **TipJarSection 只能放家長閘（ParentalGate）後的家長頁**，絕不可出現在兒童流程；放置上與 Pro 購買 UI 保持距離避免混淆。
+
 ## Vein — 學習 & 自我檢查（每次開工先做）
 
 本專案的決策 / 踩雷 lore 存在 **Vein 中央 store**，tag = `project:sunnywalker`，外加跨專案的 `python` / `swift` / `multi-agent` / `coding-style`。

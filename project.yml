@@ -61,6 +61,9 @@ targets:
       # 家長錄音正本：VoiceRecordController（AVAudioEngine + voice processing、分段防 crash）
       - package: CommonLibIOS
         product: AudioCoreKit
+      # 自由讚助（2026-07-18 變現政策）：與已出貨 Pro 並存的額外打賞；TipJarSection 只放家長閘後
+      - package: CommonLibIOS
+        product: TipJarKit
     info:
       path: SunnyWalker/Info.plist
       properties:

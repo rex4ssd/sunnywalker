@@ -5,6 +5,7 @@ import AppVersionKit   // unified version card (Version / Build / First launch) 
 import KidsFamilyShelf // family cross-promo shelf in Settings (parent-gated)
 import KidsParentalUI  // shared ParentalGate (family-wide multiplication gate) + KidsReviewPrompt
 import StoreKit        // @Environment(\.requestReview) — Apple's rate-limited review request
+import TipJarKit       // 自由讚助（2026-07-18 變現政策）：與已出貨 Pro 並存的額外打賞；只放家長閘後
 import SwiftUI
 import SwiftData
 import UIKit
@@ -824,6 +825,10 @@ struct SettingsView: View {
     @State private var unlockNow = Date()
     private let unlockTick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
+    // 自由讚助（TipJarKit）：與已出貨 Pro（StoreService）並存的額外打賞，互不相干——
+    // TipJarStore 只 finish `<prefix>.tip.*` 交易，不碰 Pro；查無 ASC 商品時整段自動隱藏。
+    @StateObject private var tipJar = TipJarStore(productIDPrefix: "app.rexcode.sunnywalker")
+
     var body: some View {
         NavigationStack {
             List {
@@ -952,6 +957,10 @@ struct SettingsView: View {
                     }
                 }
 
+                // 自由讚助（家長閘後限定）：三檔 Consumable 打賞，不解鎖任何功能。
+                // 刻意放在家長工具區之前、與最下方的 Pro 購買區隔開，避免與 Pro 混淆。
+                TipJarSection(store: tipJar)
+
                 // Parental tools — moved to the very bottom (家長工具放最下面)
                 Section(
                     header: Text("parental_section"),
@@ -1063,6 +1072,8 @@ struct SettingsView: View {
             unlockNow = now
             settings.clearExpiredParentalUnlockIfNeeded(referenceDate: now)
         }
+        // 進頁刷新打賞商品（ASC 後補核准的檔位在這裡長出來；查無商品時 Section 整段隱藏）。
+        .task { await tipJar.load() }
         .sheet(isPresented: $showingVoiceLib)  { VoiceLibraryView() }
         .sheet(isPresented: $showingHistory)   { WakeHistoryView() }
         .sheet(isPresented: $showingIO)        { AlarmIOView() }
