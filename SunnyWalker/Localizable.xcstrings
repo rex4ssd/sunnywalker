@@ -1,38 +1,6 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
-    "關閉鬧鐘" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn off alarm"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "關閉鬧鐘"
-          }
-        }
-      }
-    },
-    "開啟鬧鐘" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn on alarm"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟鬧鐘"
-          }
-        }
-      }
-    },
     "、" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -197,9 +165,6 @@
       }
     },
     "🎵" : {
-
-    },
-    "🔐" : {
 
     },
     "12 小時制" : {
@@ -2110,6 +2075,7 @@
       }
     },
     "匯出學習報告" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3643,6 +3609,7 @@
       }
     },
     "請回答以下問題才能繼續" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3659,6 +3626,7 @@
       }
     },
     "請大人來幫忙" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4556,6 +4524,23 @@
         }
       }
     },
+    "開啟鬧鐘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on alarm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟鬧鐘"
+          }
+        }
+      }
+    },
     "關閉" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4586,6 +4571,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "關閉床邊模式"
+          }
+        }
+      }
+    },
+    "關閉鬧鐘" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off alarm"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉鬧鐘"
           }
         }
       }

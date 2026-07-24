@@ -87,7 +87,9 @@ SunnyWalker **不使用 iCloud**。家長錄音與所有資料存放在裝置本
 
 | 產品 | Product ID | 類型 |
 |---|---|---|
-| SunnyWalker Pro（終身） | `app.rexcode.sunnywalker.pro.lifetime` | Non-Consumable |
+| SunnyWalker Pro（終身） | `app.rexcode.sunnywalker.pro.lifetime2` | Non-Consumable |
+
+> ⚠️ 原 `pro.lifetime` 在 ASC 誤建成 Consumable，已刪除；**刪除的 Product ID 被 Apple 永久鎖定不可重用**，故改用 `pro.lifetime2`（2026-07-17，build 16 起）。
 | SunnyWalker Pro（年訂閱） | `app.rexcode.sunnywalker.pro.yearly` | Auto-Renewable |
 | SunnyWalker Pro（月訂閱） | `app.rexcode.sunnywalker.pro.monthly` | Auto-Renewable |
 
