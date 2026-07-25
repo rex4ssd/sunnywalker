@@ -42,13 +42,13 @@
 #### 繁體中文（zh-Hant）
 
 ```
-SunnyWalker Pro 來了，還能用你自己的音檔當鈴聲 ✨
+SunnyWalker Pro 來了，還能用你自己的音檔當鈴聲
 
 ‧ 新增：可以從「檔案」匯入手機裡的音檔（mp3／wav 等）當叫醒鈴聲
 ‧ 修正：在「溫和提醒」模式選用內建鈴聲時，現在會正確響起鈴聲（先前只會響一聲系統提示音）
 ‧ SunnyWalker Pro：一次購買、永久解鎖——鬧鐘數量與自定鈴聲數量無上限，單則鈴聲最長拉到 30 秒
 ‧ 支援家庭共享，一人購買、全家共用；購買入口放在「設定」的家長驗證之後，孩子不會誤觸
-‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro ☀️
+‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro
 
 基本的叫醒功能永遠免費。完全離線、零廣告、不收集任何資料。
 ```
@@ -56,21 +56,21 @@ SunnyWalker Pro 來了，還能用你自己的音檔當鈴聲 ✨
 #### English (en)
 
 ```
-Meet SunnyWalker Pro — and set your own audio as a ringtone ✨
+Meet SunnyWalker Pro — and set your own audio as a ringtone
 
 • New: import an audio file from Files (mp3, wav, and more) to use as a wake-up sound
 • Fixed: built-in ringtones now play correctly in Gentle Reminder mode (previously you'd only hear a single system alert tone)
 • SunnyWalker Pro: one-time purchase, unlocked forever — unlimited alarms, unlimited custom ringtones, and longer ringtones (up to 30s)
 • Family Sharing supported; the upgrade lives in Settings behind a parental gate so kids can't tap to buy
-• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free ☀️
+• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free
 
 The core wake-up features stay free forever. Fully offline, zero ads, no data collected.
 ```
 
 ### 宣傳文字 / Promotional Text（≤170 字元，可隨時改不需重審）
 
-- 繁中（約 84 字）：`SunnyWalker Pro 來了！一次購買、永久解鎖無上限鬧鐘與鈴聲，還能匯入自己的音檔當叫醒聲。老用戶更新直接免費升 Pro ☀️ 完全離線、零廣告、不收集資料。`
-- EN（約 163 字）：`SunnyWalker Pro is here: unlock unlimited alarms & ringtones, and import your own audio as a wake-up sound. Already using SunnyWalker? Updating unlocks Pro free ☀️`
+- 繁中（約 84 字）：`SunnyWalker Pro 來了！一次購買、永久解鎖無上限鬧鐘與鈴聲，還能匯入自己的音檔當叫醒聲。老用戶更新直接免費升 Pro 完全離線、零廣告、不收集資料。`
+- EN（約 163 字）：`SunnyWalker Pro is here: unlock unlimited alarms & ringtones, and import your own audio as a wake-up sound. Already using SunnyWalker? Updating unlocks Pro free`
 
 ### 送審前最終確認（本次更新）
 
@@ -148,12 +148,12 @@ git commit                          # 保留 merge commit 訊息
 #### 繁體中文（zh-Hant）
 
 ```
-SunnyWalker Pro 來了 ✨
+SunnyWalker Pro 來了
 
 ‧ 一次購買、永久解鎖：鬧鐘數量、自定鈴聲數量與長度、爸媽錄音長度，全部無上限
 ‧ 支援家庭共享，一人購買、全家共用
 ‧ 購買入口放在「設定」的家長驗證之後，孩子不會誤觸
-‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro、全功能無上限 ☀️
+‧ 感謝老朋友：已經在用 SunnyWalker 的你，更新後直接免費獲得 Pro、全功能無上限
 
 基本的叫醒功能永遠免費；Pro 是給需要更多鬧鐘與更長錄音的家庭。
 完全離線、零廣告、不收集任何資料。
@@ -162,12 +162,12 @@ SunnyWalker Pro 來了 ✨
 #### English (en)
 
 ```
-Meet SunnyWalker Pro ✨
+Meet SunnyWalker Pro
 
 • One-time purchase, unlocked forever: unlimited alarms, unlimited voice clips, longer clips, and longer parent recordings — no caps
 • Family Sharing supported — buy once, share with the whole family
 • The upgrade lives in Settings behind a parental gate, so kids can't tap to buy
-• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free ☀️
+• Thank you to our early friends: if you already use SunnyWalker, this update unlocks Pro for you for free
 
 The core wake-up features stay free forever; Pro is for families who want more.
 Fully offline, zero ads, no data collected.
@@ -216,7 +216,7 @@ Fully offline, zero ads, no data collected.
 ‧ 自訂鈴聲試聽更好操作：點一下播放／暫停、長按停止
 ‧ 其他小優化，使用更順手
 
-謝謝你陪 SunnyWalker 一起長大 ☀️
+謝謝你陪 SunnyWalker 一起長大
 ```
 
 #### English (en)
@@ -229,7 +229,7 @@ A warmer, more reliable wake-up nudge:
 • Easier voice-clip preview: tap to play/pause, long-press to stop
 • Other small refinements for a smoother experience
 
-Thanks for growing up with SunnyWalker ☀️
+Thanks for growing up with SunnyWalker
 ```
 
 ### 送審前最終確認（本次更新）
@@ -288,7 +288,7 @@ Thanks for growing up with SunnyWalker ☀️
 ‧ 「辨識錄音內容」會自動幫錄音取名字
 ‧ 修正部分介面文字，整體更順手
 
-謝謝你陪 SunnyWalker 一起長大 ☀️
+謝謝你陪 SunnyWalker 一起長大
 ```
 
 #### English (en)
@@ -301,7 +301,7 @@ This update makes recording your voice simpler and smoother:
 • "Name from voice" automatically names your recording for you
 • Polished interface text for a cleaner, smoother experience
 
-Thanks for growing up with SunnyWalker ☀️
+Thanks for growing up with SunnyWalker
 ```
 
 ### 送審前最終確認（本次更新）

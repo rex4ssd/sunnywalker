@@ -12,6 +12,11 @@
 - **已出貨的 SunnyWalker Pro（StoreService，含 grandfather）維持不動**；TipJar 是額外的自由讚助，兩者並存、互不相干。🔴 `StoreService.swift` 一行不准動。
 - **TipJarSection 只能放家長閘（ParentalGate）後的家長頁**，絕不可出現在兒童流程；放置上與 Pro 購買 UI 保持距離避免混淆。
 
+## App Store 文案鐵則（2026-07-25）
+- **ASC metadata 一律不放 emoji／特殊圖示**：App 名稱、Subtitle、Promotional Text、Description、What's New、Keywords、Review Notes。Apple 不支援，屬退件風險。
+- 判斷法：`docs/for_Apple_store/*`、`release_note/*` 裡 ```fence``` 內與行內反引號的內容＝要貼進 ASC 的值 → 不能有 emoji；fence 外的內部筆記與 ✅⬜🔴⚠️ 狀態標記不受限。
+- **app 內部 UI 的 emoji 不受此限**（書架卡片圖示、TipJar 咖啡杯等照舊）。
+
 ## Vein — 學習 & 自我檢查（每次開工先做）
 
 本專案的決策 / 踩雷 lore 存在 **Vein 中央 store**，tag = `project:sunnywalker`，外加跨專案的 `python` / `swift` / `multi-agent` / `coding-style`。
