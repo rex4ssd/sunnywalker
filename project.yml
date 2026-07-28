@@ -16,7 +16,7 @@ settings:
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
     MARKETING_VERSION: "1.3.20260615"   # 1.3 = SunnyWalker Pro（NT$50 終身 IAP）。同日多次打包：build 11(放棄)/12(已上傳)→ 本版 13 加「匯入音檔當鈴聲」
-    CURRENT_PROJECT_VERSION: 16   # bump on every upload (App Store rejects duplicate build numbers). 15 已上傳（grandfather 修正）；IAP 誤建 Consumable 換新品換 ID → 本次 16
+    CURRENT_PROJECT_VERSION: 17   # bump on every upload (App Store rejects duplicate build numbers). 16 已上傳被退（IAP 未送審）；本次 17 內容與 16 完全相同、僅換 build 號（不帶 TipJarKit）
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md
 
