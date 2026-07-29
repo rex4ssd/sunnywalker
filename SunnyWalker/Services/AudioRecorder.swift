@@ -462,9 +462,11 @@ enum AlarmSoundExporter {
     /// Export a bundled CAF (e.g. "sunny_wake.caf") → a SHORT `Library/Sounds/*.caf` safe for
     /// `UNNotificationSound`. Mirrors the recording path: trim to `bundledSafeSeconds`, then let
     /// `AlarmScheduler.scheduleGentleRepeatBurst` stack it to ~30s. The bundle assets never change at
-    /// runtime, so the short export is content-stable → cached (reused if it already exists).
+    /// runtime, so the newest existing export is reused; pass `regenerate: true`（升級自癒）to force a
+    /// fresh epoch filename — 系統 sound server 以「檔名」快取聲音，且這份快取撐得過 app 更新
+    /// （container 換 UUID 路徑後，舊檔名仍映射到舊路徑 → 鎖屏退成預設「咚」聲），換名才繞得過。
     /// - Returns: the short CAF filename in Library/Sounds, or nil on failure.
-    static func exportBundledShortCAF(bundledName: String) -> String? {
+    static func exportBundledShortCAF(bundledName: String, regenerate: Bool = false) -> String? {
         let fm = FileManager.default
         guard let src = Bundle.main.url(forResource: bundledName, withExtension: nil) else {
             print("🎚️ Exporter: bundled sound \(bundledName) NOT in bundle — abort")
@@ -474,15 +476,18 @@ enum AlarmSoundExporter {
             .appendingPathComponent("Sounds", isDirectory: true)
         try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
 
-        // Name encodes the bundle base + safe-length so a future bundledSafeSeconds change re-exports
-        // (old length stays cached but unused). e.g. bundled_sunny_wake_45.caf
+        // Name encodes bundle base + safe-length（改 bundledSafeSeconds 會自動重匯）+ export epoch。
+        // e.g. bundled_sunny_wake_45_1753772400.caf（2026-07 以前的舊檔名無 epoch，不會被當 cache）。
         let base = (bundledName as NSString).deletingPathExtension
-        let shortName = "bundled_\(base)_\(Int(bundledSafeSeconds * 10)).caf"
-        let shortURL = soundsDir.appendingPathComponent(shortName)
-        if fm.fileExists(atPath: shortURL.path) {
-            print("🎚️ Exporter: bundled short cache hit → \(shortName)")
-            return shortName
+        let prefix = "bundled_\(base)_\(Int(bundledSafeSeconds * 10))_"
+        if !regenerate,
+           let cached = ((try? fm.contentsOfDirectory(atPath: soundsDir.path)) ?? [])
+               .filter({ $0.hasPrefix(prefix) }).sorted().last {
+            print("🎚️ Exporter: bundled short cache hit → \(cached)")
+            return cached
         }
+        let shortName = "\(prefix)\(Int(Date().timeIntervalSince1970)).caf"
+        let shortURL = soundsDir.appendingPathComponent(shortName)
 
         do {
             let inFile = try AVAudioFile(forReading: src)
@@ -515,6 +520,14 @@ enum AlarmSoundExporter {
         } catch {
             print("🎚️ Exporter: bundled short export FAILED — \(error.localizedDescription)")
             return nil
+        }
+        // Prune older exports of this bundled sound（含無 epoch 的舊格式檔名）so Library/Sounds
+        // doesn't accumulate — same policy as the recording exporter above.
+        if let existing = try? fm.contentsOfDirectory(at: soundsDir, includingPropertiesForKeys: nil) {
+            for f in existing
+            where f.lastPathComponent.hasPrefix("bundled_\(base)_") && f.lastPathComponent != shortName {
+                try? fm.removeItem(at: f)
+            }
         }
         return shortName
     }

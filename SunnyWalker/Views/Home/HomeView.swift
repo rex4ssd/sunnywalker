@@ -151,6 +151,10 @@ struct HomeView: View {
         // Triggering on alarms.count catches the initial load (0 → N) and any add/delete.
         .task(id: alarms.count) {
             guard !alarms.isEmpty else { return }
+            // App 更新自癒：build 變了 → 全部聲音檔換新檔名重匯出，否則系統端的 stale 路徑/快取
+            // 會讓自訂鈴聲靜默退成預設「咚」聲（見 AlarmSoundUpgradeHealer）。要放在下面的
+            // 重排迴圈【之前】，schedule()/syncAlarm 才會拿到新檔名。
+            AlarmSoundUpgradeHealer.healIfNeeded(alarms: alarms)
             if AlarmKitService.shared.isAuthorized {
                 // We launched in the FOREGROUND → in-app ring mode: cancel AlarmKit so its system
                 // alarm UI can't appear (it would background the app and kill voice-stop). AlarmKit
