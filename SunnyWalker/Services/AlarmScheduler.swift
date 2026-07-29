@@ -399,3 +399,85 @@ final class AlarmScheduler {
     }
     #endif
 }
+
+// MARK: - 升級後聲音自癒（App 更新 → 自訂鈴聲變系統「咚」聲）
+
+/// App 更新（TestFlight / App Store 換 build）會把 .app bundle 與 app container 搬到新的 UUID
+/// 路徑。更新【前】排進系統的東西——AlarmKit daemon 條目、pending UNNotification、以及
+/// sound server 的「檔名→路徑」快取——仍握著舊路徑的參照；自訂音解析失敗時 iOS 一律【靜默】
+/// 退成預設「咚」聲（鬧鐘照響、只是聲音不對，使用者回報的正是這個）。
+///
+/// 修法＝偵測 build 變更後，把每顆鬧鐘的聲音檔用【新檔名】重匯出（沿用錄音 CAF 的 epoch
+/// 檔名機制——同名重寫繞不過快取，換名才行），再交給既有流程重排：
+///   • 通知模式：HomeView.task 啟動時 schedule() 以新檔名重排（add() 同 id 直接取代）。
+///   • AlarmKit 模式：離開前景時 enterBackgroundAlarmMode → syncAlarm 以新 soundFileName 重註冊。
+/// ⚠️ 更新後、第一次開 app 之前就響的那一顆救不了（系統端已握舊參照）——開一次 app 即痊癒。
+@MainActor
+enum AlarmSoundUpgradeHealer {
+    private static let lastHealedBuildKey = "alarmSoundHealBuild"
+
+    static func healIfNeeded(alarms: [Alarm]) {
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        let last = UserDefaults.standard.string(forKey: lastHealedBuildKey)
+        guard last != build else { return }
+        print("🩹 SoundHealer: build \(last ?? "首次") → \(build) — 重匯出 \(alarms.count) 顆鬧鐘的聲音（繞過更新後的 stale 路徑/快取）")
+        for alarm in alarms { heal(alarm) }
+        UserDefaults.standard.set(build, forKey: lastHealedBuildKey)
+    }
+
+    /// 先修舊版資料的欄位組合（否則 schedule() 的分支判斷會直接落 .default），再換新檔名重匯。
+    private static func heal(_ alarm: Alarm) {
+        let fm = FileManager.default
+        let recordingsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Recordings", isDirectory: true)
+        func recordingExists(_ name: String) -> Bool {
+            fm.fileExists(atPath: recordingsDir.appendingPathComponent("\(name).m4a").path)
+        }
+
+        if alarm.recordingName.isEmpty, alarm.soundFileName.hasPrefix("alarm_"),
+           let base = recordingBase(fromCAFName: alarm.soundFileName) {
+            // 舊版資料：soundFileName 指向錄音 CAF 但 recordingName 沒跟上 → wantsCustom 不成立
+            // → 永遠 .default。從 CAF 檔名反推錄音名補回來。
+            if recordingExists(base) {
+                alarm.recordingName = base
+                print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) recovered recordingName=\(base) from \(alarm.soundFileName)")
+            } else {
+                alarm.soundFileName = "sunny_wake.caf"   // 源頭錄音已不在 → 回內建預設（有聲，不是「咚」）
+                print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) source m4a gone — reset to sunny_wake.caf")
+            }
+        } else if !alarm.recordingName.isEmpty, !recordingExists(alarm.recordingName) {
+            // 錄音已被刪（VoiceLibrary 刪 clip 不回寫 alarm）→ 清掉、回內建預設。
+            alarm.recordingName = ""
+            if !alarm.soundFileName.isEmpty,
+               Bundle.main.url(forResource: alarm.soundFileName, withExtension: nil) == nil {
+                alarm.soundFileName = "sunny_wake.caf"
+            }
+            print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) recording deleted — fell back to bundled default")
+        } else if !alarm.recordingName.isEmpty, alarm.soundFileName != "sunny_wake.caf",
+                  Bundle.main.url(forResource: alarm.soundFileName, withExtension: nil) != nil {
+            // 舊版選了內建鈴聲但沒清 recordingName（現在的 editor 會清）→ wantsCustom 誤判去
+            // Library/Sounds 找內建檔 → .default。以較晚的選擇（內建鈴聲）為準。
+            alarm.recordingName = ""
+            print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) bundled selection with stale recordingName — cleared")
+        }
+
+        // 換新檔名重匯出，讓 sound server / AlarmKit 不可能命中更新前的 stale 參照。
+        if !alarm.recordingName.isEmpty {
+            if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.recordingName) {
+                alarm.soundFileName = caf
+            }
+        } else if Bundle.main.url(forResource: alarm.soundFileName, withExtension: nil) != nil {
+            _ = AlarmSoundExporter.exportBundledShortCAF(bundledName: alarm.soundFileName, regenerate: true)
+        }
+    }
+
+    /// `alarm_<base>_<epoch>.caf` → `<base>`（base 可含底線；epoch 是最後一段純數字）。
+    private static func recordingBase(fromCAFName name: String) -> String? {
+        var stem = (name as NSString).deletingPathExtension
+        guard stem.hasPrefix("alarm_") else { return nil }
+        stem.removeFirst("alarm_".count)
+        guard let cut = stem.lastIndex(of: "_"), Int(stem[stem.index(after: cut)...]) != nil else { return nil }
+        let base = String(stem[..<cut])
+        return base.isEmpty ? nil : base
+    }
+}
