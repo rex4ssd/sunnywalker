@@ -29,3 +29,9 @@ Cowork session 已掛 `vein-lore-plugin` MCP，直接呼叫工具，不用打 CL
 > cd /Users/lion/Documents/vein && python3 shell/import_project_lore.py \
 >   --project sunnywalker --type pitfall --heading "##" --file ~/Documents/SunnyWalker/docs/<file>.md
 > ```
+
+## Release note 慣例（全家族 2026-08-09 起）
+
+- 每個送審版本一份 `release_note/vMAJOR.MINOR.YYYYMMDD.md`，**舊版本檔永不改寫**（檔案樹＝送審史）。
+- ASC 逐欄文案另立一檔；fence 內＝要貼的值，**一律無 emoji**；新版建立時舊文案檔標「已被取代」。
+- 規範與範本：`../common_lib_ios/docs/release_note_standard.md`
