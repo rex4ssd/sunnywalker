@@ -101,6 +101,7 @@ final class AppSettings: ObservableObject {
             self.use24HourClock = probe.dateFormat.contains("H")
         }
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
+        self.burstGapSeconds = UserDefaults.standard.object(forKey: "burstGapSeconds") as? Int ?? 2
         self.alarmRingDurationMinutes = UserDefaults.standard.object(forKey: "alarmRingDurationMinutes") as? Int ?? 5
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
         let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
@@ -160,6 +161,13 @@ final class AppSettings: ObservableObject {
     /// Range 0–5; stored so parent can tune it in Settings.
     @Published var recordingGapSeconds: Int {
         didSet { UserDefaults.standard.set(recordingGapSeconds, forKey: "recordingGapSeconds") }
+    }
+
+    /// 通知「切段響滿 30 秒」的段間靜音間隔（秒）。1 或 2；預設 2（＝原本沿用
+    /// recordingGapSeconds 時的出廠值）。獨立於 recordingGapSeconds——那顆同時控制
+    /// in-app 循環播放的間隔，多裝置實測通知沒聲音時要能單獨調切段間距、不動響鈴節奏。
+    @Published var burstGapSeconds: Int {
+        didSet { UserDefaults.standard.set(burstGapSeconds, forKey: "burstGapSeconds") }
     }
 
     // MARK: - Alarm ring duration

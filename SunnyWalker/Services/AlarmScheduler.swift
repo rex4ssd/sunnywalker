@@ -336,8 +336,10 @@ final class AlarmScheduler {
         voiceSeconds: Double,
         center: UNUserNotificationCenter
     ) async {
-        // 兩顆通知 fire 時間的間距（秒）＝一段語音長度 + 使用者設定的靜音間隔（recordingGapSeconds，預設 2）。
-        let gap = max(0, AppSettings.shared.recordingGapSeconds)
+        // 兩顆通知 fire 時間的間距（秒）＝一段語音長度 + 切段間隔（burstGapSeconds，1 或 2，預設 2）。
+        // 2026-08-14 起與 recordingGapSeconds 脫鉤：那顆同時控制 in-app 循環播放；多裝置實測
+        // 通知沒聲音時要能單獨調切段間距（1s vs 2s 對照）而不改響鈴節奏。
+        let gap = max(0, AppSettings.shared.burstGapSeconds)
         let period = max(2, Int(ceil(voiceSeconds)) + gap)
         let targetSpan = 30   // 目標總響鈴長度（秒）
 
@@ -359,6 +361,9 @@ final class AlarmScheduler {
             return
         }
         let slots = Array(offsets.prefix(min(budget, Self.maxRepeatSlots)))
+        if slots.count < offsets.count {
+            print("🔔 AlarmScheduler: gentle-repeat burst TRUNCATED — planned \(offsets.count) slots, room for \(slots.count) (pending=\(pendingNow), maxRepeatSlots=\(Self.maxRepeatSlots))")
+        }
 
         let cal = Calendar.current
         var added = 0
@@ -373,7 +378,14 @@ final class AlarmScheduler {
                 print("🔔 AlarmScheduler: gentle-repeat slot \(i + 1) add failed — \(error.localizedDescription)")
             }
         }
-        print("🔔 AlarmScheduler: gentle-repeat burst → \(added) extra slot(s), every \(period)s over ~\(targetSpan)s (voice=\(String(format: "%.1f", voiceSeconds))s gap=\(gap)s pendingWas=\(pendingNow))")
+        // 🔬 多裝置「有時沒聲音」實測用完整計畫 log：baseline 在 fireDate+0s，其餘每顆的
+        // offset 一起印，對照裝置端「實際響了幾聲」（WakeRecord 響鈴診斷）就能定位是
+        // 排程端少排、還是 iOS 收掉/靜音。sound log 在上方 CUSTOM/BUNDLED banner 行。
+        let hhmmss = { (d: Date) -> String in
+            let c = cal.dateComponents([.hour, .minute, .second], from: d)
+            return String(format: "%02d:%02d:%02d", c.hour ?? 0, c.minute ?? 0, c.second ?? 0)
+        }
+        print("🔬 BurstPlan[\(alarm.id.uuidString.prefix(8))]: baseline@\(hhmmss(fireDate)) +\(slots.map(String.init).joined(separator: "s,+"))s | period=\(period)s (voice=\(String(format: "%.1f", voiceSeconds))s + burstGap=\(gap)s) added=\(added)/\(slots.count) pendingWas=\(pendingNow) sound=\(alarm.soundFileName)")
     }
 
     // MARK: - 報時連報 N 次

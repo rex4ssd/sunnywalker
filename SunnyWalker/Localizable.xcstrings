@@ -2677,6 +2677,38 @@
         }
       }
     },
+    "切段之間的靜音間隔（所有切段鬧鐘共用）。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Silence between segments (shared by all segmented alarms)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段之間的靜音間隔（所有切段鬧鐘共用）。"
+          }
+        }
+      }
+    },
+    "切段間隔" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segment interval"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段間隔"
+          }
+        }
+      }
+    },
     "切段響滿 30 秒" : {
       "extractionState" : "stale",
       "localizations" : {

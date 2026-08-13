@@ -626,6 +626,25 @@ struct AlarmEditorView: View {
                               systemImage: "exclamationmark.triangle.fill")
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
+
+                        // 切段間隔（全域 AppSettings.burstGapSeconds）：多裝置實測「有時沒聲音」時
+                        // 用 1 秒 / 2 秒對照。與錄音循環間隔（recordingGapSeconds）互相獨立。
+                        HStack {
+                            Text("切段間隔")
+                                .font(SunnyFonts.caption())
+                                .foregroundStyle(SunnyColors.nightIndigo)
+                            Spacer()
+                            Picker("切段間隔", selection: $settings.burstGapSeconds) {
+                                // 秒數用 String(...) 插值 → 查表 "%@ 秒"；插 Int 會變 "%lld 秒" 沒翻譯。
+                                Text("\(String(1)) 秒").tag(1)
+                                Text("\(String(2)) 秒").tag(2)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(maxWidth: 140)
+                        }
+                        Text(LocalizedStringKey("切段之間的靜音間隔（所有切段鬧鐘共用）。"))
+                            .font(SunnyFonts.caption(12))
+                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
                     }
                 }
             }
