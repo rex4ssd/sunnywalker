@@ -2677,6 +2677,22 @@
         }
       }
     },
+    "段與段之間的間隔可在「設定」調整（1 或 2 秒）。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The gap between segments can be changed in Settings (1 or 2 seconds)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "段與段之間的間隔可在「設定」調整（1 或 2 秒）。"
+          }
+        }
+      }
+    },
     "切段之間的靜音間隔（所有切段鬧鐘共用）。" : {
       "localizations" : {
         "en" : {

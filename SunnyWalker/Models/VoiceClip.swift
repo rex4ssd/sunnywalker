@@ -38,7 +38,20 @@ final class VoiceClip {
 
     var formattedDuration: String {
         guard duration > 0 else { return "--:--" }
-        let s = Int(duration)
-        return String(format: "%d:%02d", s / 60, s % 60)
+        return duration.minSecString
+    }
+}
+
+// MARK: - 時長格式（全 app 唯一一份）
+
+extension TimeInterval {
+    /// 秒數 → `分:秒`（例 87 → "1:27"）。純數字格式，免進字串目錄。
+    ///
+    /// ⚠️ 全 app 只留這一份：先前錄音頁/語音庫/裁剪各自帶一份，且捨入方式不同
+    /// （floor vs round）——同一段 4.7s 錄音在語音庫顯示 0:04、錄音頁顯示 0:05。
+    /// 一律四捨五入（負值夾到 0）。
+    var minSecString: String {
+        let total = Int(Swift.max(0, self).rounded())
+        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }

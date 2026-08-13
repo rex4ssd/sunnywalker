@@ -1347,11 +1347,7 @@ private enum VoiceClipAudioEditorError: LocalizedError {
     }
 }
 
-private func formatSeconds(_ seconds: Double) -> String {
-    let clamped = max(0, seconds)
-    let total = Int(clamped.rounded())
-    return String(format: "%d:%02d", total / 60, total % 60)
-}
+private func formatSeconds(_ seconds: Double) -> String { seconds.minSecString }
 
 // MARK: - Previews
 

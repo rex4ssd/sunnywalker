@@ -627,22 +627,10 @@ struct AlarmEditorView: View {
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
 
-                        // 切段間隔（全域 AppSettings.burstGapSeconds）：多裝置實測「有時沒聲音」時
-                        // 用 1 秒 / 2 秒對照。與錄音循環間隔（recordingGapSeconds）互相獨立。
-                        HStack {
-                            Text("切段間隔")
-                                .font(SunnyFonts.caption())
-                                .foregroundStyle(SunnyColors.nightIndigo)
-                            Spacer()
-                            Picker("切段間隔", selection: $settings.burstGapSeconds) {
-                                // 秒數用 String(...) 插值 → 查表 "%@ 秒"；插 Int 會變 "%lld 秒" 沒翻譯。
-                                Text("\(String(1)) 秒").tag(1)
-                                Text("\(String(2)) 秒").tag(2)
-                            }
-                            .pickerStyle(.segmented)
-                            .frame(maxWidth: 140)
-                        }
-                        Text(LocalizedStringKey("切段之間的靜音間隔（所有切段鬧鐘共用）。"))
+                        // 段間隔（1/2 秒）是全域設定，住在 設定 >「切段間隔」——不放這裡，
+                        // 因為本編輯器的欄位都是暫存、按「儲存」才生效，全域設定立即寫入會
+                        // 讓「按取消卻改到了東西」。這行只指路。
+                        Text(LocalizedStringKey("段與段之間的間隔可在「設定」調整（1 或 2 秒）。"))
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
                     }

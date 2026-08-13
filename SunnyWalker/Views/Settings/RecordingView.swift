@@ -99,12 +99,6 @@ struct RecordingView: View {
 
     // MARK: - Duration helpers
 
-    /// 秒數 → `分:秒`（例 87 → "1:27"）。純數字格式，免進字串目錄。
-    static func minSec(_ seconds: TimeInterval) -> String {
-        let s = Int(seconds.rounded())
-        return String(format: "%d:%02d", s / 60, s % 60)
-    }
-
     /// 量 `Recordings/<name>.m4a` 的實際長度（與 VoiceLibraryView 同一套 length/sampleRate 量法）。
     static func measureSeconds(recordingNamed name: String) -> Double? {
         let url = AudioRecorder.recordingsDirectory.appendingPathComponent("\(name).m4a")
@@ -131,8 +125,8 @@ struct RecordingView: View {
                     .animation(.linear(duration: 0.1), value: audioRecorder.level)
                 // 精準已錄時長 分:秒（純數字免翻譯）；有上限（免費 3 分鐘）時併顯示上限。
                 Text(AudioRecorder.maxRecordingSeconds.isFinite
-                     ? "\(Self.minSec(audioRecorder.elapsed)) / \(Self.minSec(AudioRecorder.maxRecordingSeconds))"
-                     : Self.minSec(audioRecorder.elapsed))
+                     ? "\(audioRecorder.elapsed.minSecString) / \(AudioRecorder.maxRecordingSeconds.minSecString)"
+                     : audioRecorder.elapsed.minSecString)
                     .font(SunnyFonts.title(30).monospacedDigit())
                     .foregroundStyle(SunnyColors.nightIndigo)
             } else if hasRecording {
@@ -141,7 +135,7 @@ struct RecordingView: View {
                     .foregroundStyle(SunnyColors.forestDeep)
                 if let secs = recordedSeconds, secs > 0 {
                     // 錄完的實際檔案長度（量測 m4a，不是 UI 計時器）——分:秒。
-                    Label(Self.minSec(secs), systemImage: "clock")
+                    Label(secs.minSecString, systemImage: "clock")
                         .font(SunnyFonts.title(20).monospacedDigit())
                         .foregroundStyle(SunnyColors.nightIndigo.opacity(0.9))
                 }

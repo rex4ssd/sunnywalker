@@ -1157,6 +1157,23 @@ struct SettingsView: View {
                     }
                 }
 
+                // 切段間隔——只影響「溫和提醒＋切段」鬧鐘的兩顆通知間距，與上面的
+                // 循環播放間隔各自獨立（那顆同時控制 app 內響鈴節奏）。1 或 2 秒：
+                // 多裝置實測「有時沒聲音」時用來對照。
+                Section(
+                    header: Text("切段間隔"),
+                    footer: Text("切段之間的靜音間隔（所有切段鬧鐘共用）。")
+                ) {
+                    Picker(selection: $settings.burstGapSeconds) {
+                        // 秒數用 String(...) 插值 → 查表 "%@ 秒"；插 Int 會變沒翻譯的 "%lld 秒"。
+                        Text("\(String(1)) 秒").tag(1)
+                        Text("\(String(2)) 秒").tag(2)
+                    } label: {
+                        Label("切段間隔", systemImage: "waveform.badge.plus")
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 // Alarm ring duration
                 Section(
                     header: Text("響鈴時長"),
