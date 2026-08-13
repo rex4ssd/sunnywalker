@@ -12,30 +12,39 @@
 //
 // "system" = follow the device language (the default).
 
+import AppLocalization
+import Combine
 import SwiftUI
 import Foundation
 
-// MARK: - Supported languages
+// MARK: - Supported languages (shared engine, app-flavoured surface)
 
-enum AppLanguage: String, CaseIterable, Identifiable {
-    case system
-    case english = "en"
-    case traditionalChinese = "zh-Hant"
+// The language enum now IS the shared library's LanguagePreference (system / en / zh-Hant —
+// identical raw values to the old app-local AppLanguage, so stored choices carry over
+// unchanged). Kept under the AppLanguage name so views/tests stay untouched.
+typealias AppLanguage = LanguagePreference
 
-    var id: String { rawValue }
+extension LanguagePreference {
+    /// Old app-local case names, preserved for call sites/tests (`.english` / `.traditionalChinese`).
+    static let english = LanguagePreference.en
+    static let traditionalChinese = LanguagePreference.zhHant
 
-    /// Key into Localizable.xcstrings for the human-readable language name.
+    /// Key into Localizable.xcstrings for the human-readable language name (app-specific keys).
     var displayKey: LocalizedStringKey {
         switch self {
-        case .system:             return "lang_system"
-        case .english:            return "lang_english"
-        case .traditionalChinese: return "lang_chinese"
+        case .system: return "lang_system"
+        case .en:     return "lang_english"
+        case .zhHant: return "lang_chinese"
         }
     }
 }
 
 // MARK: - Observable manager (drives the SwiftUI environment locale)
 
+// Thin ObservableObject facade over the shared AppLocalization.LanguageStore
+// (see common_lib_ios/docs/sunnywalker_phase1_swap.md — behaviour-equivalent swap):
+// same UserDefaults key ("appLanguageCode"), same stored raw values, and `.system`
+// still resolves to `.autoupdatingCurrent` for the SwiftUI environment.
 @MainActor
 final class LocalizationManager: ObservableObject {
     static let shared = LocalizationManager()
@@ -44,23 +53,30 @@ final class LocalizationManager: ObservableObject {
     // String constant can't race.
     nonisolated static let storageKey = "appLanguageCode"
 
-    @Published var language: AppLanguage {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.storageKey) }
-    }
+    /// Shared single source of truth; keeps the legacy key (values are LanguagePreference-compatible).
+    let store: LanguageStore
+
+    // No @Published property — `language` derives from the store, so publish manually in the setter.
+    let objectWillChange = ObservableObjectPublisher()
 
     private init() {
-        let raw = UserDefaults.standard.string(forKey: Self.storageKey) ?? ""
-        language = AppLanguage(rawValue: raw) ?? .system
+        store = LanguageStore(key: Self.storageKey)
+        // Point the library-global Lang.store at the same instance so shared components
+        // (KidsParentalUI / KidsFamilyShelf `L(zh,en)` strings) follow the app's language choice.
+        Lang.store = store
     }
 
-    /// Locale injected into the SwiftUI environment so `Text` re-localizes live on change.
-    var locale: Locale {
-        switch language {
-        case .system:             return Locale.autoupdatingCurrent
-        case .english:            return Locale(identifier: "en")
-        case .traditionalChinese: return Locale(identifier: "zh-Hant")
+    /// Same external interface as before (AppLanguage == LanguagePreference).
+    var language: AppLanguage {
+        get { store.preference }
+        set {
+            objectWillChange.send()
+            store.preference = newValue
         }
     }
+
+    /// Locale injected into the SwiftUI environment (system → autoupdatingCurrent, as before).
+    var locale: Locale { store.environmentLocale }
 }
 
 // MARK: - Non-SwiftUI lookup (thread-safe; reads UserDefaults + bundle)

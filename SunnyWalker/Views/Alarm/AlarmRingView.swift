@@ -130,7 +130,7 @@ struct AlarmRingView: View {
 
                     let isButtonMode = alarm?.effectiveTaskType == .button
                     SunnyButton(
-                        isButtonMode ? "我起床了！" : "按這裡起床 🌟",
+                        isButtonMode ? "我起床了！" : "按這裡起床 🌟",  // i18n-ignore: SunnyButton 單一 LocalizedStringKey overload，三元正確查表
                         color: isButtonMode ? SunnyColors.lanternOrange : SunnyColors.leafFresh
                     ) {
                         handleWakeUp(dismissMethod: isButtonMode ? "button" : "fallback")

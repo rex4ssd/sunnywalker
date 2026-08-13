@@ -177,9 +177,6 @@
     "🎵" : {
 
     },
-    "🔐" : {
-
-    },
     "12 小時制" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2088,7 +2085,20 @@
       }
     },
     "z" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z"
+          }
+        }
+      }
     },
     "一" : {
       "extractionState" : "stale",
@@ -2891,8 +2901,23 @@
         }
       }
     },
+    "匯出學習報告" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export Learning Report"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯出學習報告"
+          }
+        }
+      }
+    },
     "匯出紀錄" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4492,6 +4517,7 @@
       }
     },
     "請回答以下問題才能繼續" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4508,6 +4534,7 @@
       }
     },
     "請大人來幫忙" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

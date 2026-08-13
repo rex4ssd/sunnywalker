@@ -251,10 +251,49 @@ final class AudioRecorderTests: XCTestCase {
         XCTAssertNil(recorder.currentURL)
     }
 
-    func testStopWhenIdleKeepsIsRecordingFalse() {
+    func testInitialLevelIsZero() {
         let recorder = AudioRecorder()
-        recorder.stop()
+        XCTAssertEqual(recorder.level, 0)
+    }
+
+    func testStopWhenIdleIsNoopReturnsNil() async {
+        let recorder = AudioRecorder()
+        let url = await recorder.stop()
+        XCTAssertNil(url)
         XCTAssertFalse(recorder.isRecording)
+        XCTAssertNil(recorder.currentURL)
+    }
+
+    /// 換裝 AudioCoreKit 後的相容鐵則：落點目錄一字不差 — VoiceClip 與
+    /// AlarmSoundExporter 都讀 Documents/Recordings/，既有用戶檔案不得搬。
+    func testRecordingsDirectoryUnchanged() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        XCTAssertEqual(
+            AudioRecorder.recordingsDirectory.standardizedFileURL.path,
+            docs.appendingPathComponent("Recordings", isDirectory: true).standardizedFileURL.path
+        )
+    }
+
+    // 原 record(forDuration:) 硬上限換成 elapsed 觀察 → 這裡鎖住判斷函式的行為。
+    func testShouldAutoStopHonorsFiniteCap() {
+        XCTAssertFalse(AudioRecorder.shouldAutoStop(elapsed: 179.9, cap: 180))
+        XCTAssertTrue(AudioRecorder.shouldAutoStop(elapsed: 180, cap: 180))
+        XCTAssertTrue(AudioRecorder.shouldAutoStop(elapsed: 200, cap: 180))
+    }
+
+    func testShouldAutoStopNeverFiresForInfiniteCap() {
+        XCTAssertFalse(AudioRecorder.shouldAutoStop(elapsed: 0, cap: .infinity))
+        XCTAssertFalse(AudioRecorder.shouldAutoStop(elapsed: 7200, cap: .infinity))
+    }
+
+    /// 上限值仍統一從 FeatureLimits 取（免費 3 分鐘 / Pro 無限）。
+    func testMaxRecordingSecondsFollowsFeatureLimits() {
+        let wasPro = FeatureLimits.isPro
+        defer { FeatureLimits.isPro = wasPro }
+        FeatureLimits.isPro = false
+        XCTAssertEqual(AudioRecorder.maxRecordingSeconds, 180)
+        FeatureLimits.isPro = true
+        XCTAssertFalse(AudioRecorder.maxRecordingSeconds.isFinite)
     }
 }
 
@@ -326,56 +365,6 @@ final class AppDelegateNotificationTests: XCTestCase {
         delegate.handleAlarmPayload(["alarmID": "first-uuid"])
         delegate.handleAlarmPayload(["alarmID": "second-uuid"])
         XCTAssertEqual(delegate.pendingAlarmID, "second-uuid")
-    }
-}
-
-final class GateQuestionTests: XCTestCase {
-
-    func testRandomReturnsQuestion() {
-        let q = GateQuestion.random()
-        XCTAssertFalse(q.prompt.isEmpty)
-        XCTAssertFalse(q.options.isEmpty)
-        XCTAssertFalse(q.correct.isEmpty)
-    }
-
-    func testCorrectAnswerIsAlwaysInOptions() {
-        for _ in 0..<20 {
-            let q = GateQuestion.random()
-            XCTAssertTrue(q.options.contains(q.correct),
-                          "correct '\(q.correct)' not found in options \(q.options)")
-        }
-    }
-
-    func testOptionsCountIsThree() {
-        for _ in 0..<10 {
-            let q = GateQuestion.random()
-            XCTAssertEqual(q.options.count, 3,
-                           "Expected 3 options, got \(q.options.count) for '\(q.prompt)'")
-        }
-    }
-
-    func testAllOptionsAreUnique() {
-        for _ in 0..<10 {
-            let q = GateQuestion.random()
-            XCTAssertEqual(Set(q.options).count, q.options.count,
-                           "Duplicate options in \(q.options)")
-        }
-    }
-
-    func testRandomPoolContainsOnlyAdultMultiplicationQuestions() {
-        // Kids-category parental gates must not use questions a child can easily answer.
-        for _ in 0..<20 {
-            let q = GateQuestion.random()
-            XCTAssertTrue(q.prompt.contains("×"), "Expected multiplication question, got '\(q.prompt)'")
-            XCTAssertGreaterThanOrEqual(Int(q.correct) ?? 0, 100, "Expected a three-digit answer")
-        }
-    }
-
-    func testMultiplicationAnswersAreCorrect() {
-        // Verify hardcoded answers are arithmetically correct
-        XCTAssertEqual(127 * 4, 508)
-        XCTAssertEqual(236 * 3, 708)
-        XCTAssertEqual(154 * 5, 770)
     }
 }
 

@@ -1,6 +1,8 @@
 // SunnyWalker — SunnyWalkerApp.swift  |  Day 16  |  AlarmKit auth on launch
 
+import AppVersionKit
 import BackgroundTasks
+import KidsParentalUI
 import SwiftUI
 import SwiftData
 import UserNotifications
@@ -27,6 +29,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Apple's signed AppTransaction inside StoreService.start() (called from SunnyWalkerApp's
         // .task). It's account-bound, so it no longer depends on launch-ordering or on-device state —
         // nothing to do here at didFinishLaunching.
+
+        // Record the build number the very first time the app is ever launched (idempotent — only
+        // writes on the first run). Powers the "首次啟動 First launch" row in Settings' version card.
+        AppVersion.registerFirstLaunch()
 
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
@@ -198,9 +204,15 @@ struct SunnyWalkerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var localization = LocalizationManager.shared
 
+    // Shared-library unlock session, needed by KidsFamilyShelf's inner gate. Kept in sync with the
+    // app's own AppSettings unlock window (gate success / 立即解鎖 / 立即上鎖) so the parent isn't
+    // re-challenged on the shelf inside an already-unlocked window. In-memory by design.
+    @State private var parentalSession = ParentalUnlockSession()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(parentalSession)
                 // Drives live language switching: Text(LocalizedStringKey) re-localizes
                 // from Localizable.xcstrings whenever the chosen language changes.
                 .environment(\.locale, localization.locale)

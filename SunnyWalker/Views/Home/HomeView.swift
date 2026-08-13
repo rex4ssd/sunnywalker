@@ -1,5 +1,10 @@
 // SunnyWalker — HomeView.swift  |  Day 20  |  DEBUG overlay removed; bed-side mode
 
+import AppLocalization // qualified AppLocalization.L(zh,en) for the shared-shelf row label
+import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
+import KidsFamilyShelf // family cross-promo shelf in Settings (parent-gated)
+import KidsParentalUI  // shared ParentalGate (family-wide multiplication gate) + KidsReviewPrompt
+import StoreKit        // @Environment(\.requestReview) — Apple's rate-limited review request
 import SwiftUI
 import SwiftData
 import UIKit
@@ -46,6 +51,10 @@ struct HomeView: View {
 
     // App settings (drives background-listening start/stop)
     @ObservedObject private var settings = AppSettings.shared
+
+    // Shared-library unlock session (KidsFamilyShelf's inner gate) — mirrored from the
+    // AppSettings unlock window whenever the gate is passed. See SunnyWalkerApp.
+    @Environment(ParentalUnlockSession.self) private var parentalSession
 
 
     // Settings — gated behind parental gate at the button level
@@ -775,13 +784,23 @@ struct HomeView: View {
                 showingAddAlarm = true
             }
         }) {
-            ParentalGateView(onSuccess: {
-                // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
-                // isn't re-challenged for every Settings / New Alarm within that window. They can end
-                // it early with "立即上鎖" in Settings.
-                settings.beginParentalUnlockWindow()
-                gateDidSucceed = true
-            })
+            // Shared family-wide gate (KidsParentalUI). Callback style: onUnlock fires the moment
+            // the parent answers correctly, then we close the sheet ourselves (the shared gate
+            // doesn't self-dismiss like the old app-local ParentalGateView did).
+            ParentalGate(
+                accent: SunnyColors.lanternOrange,
+                background: SunnyColors.cloudWhite,
+                onCancel: { showingParentalGate = false },
+                onUnlock: {
+                    // Passing the gate opens the temporary-unlock window (default 5 min) so the parent
+                    // isn't re-challenged for every Settings / New Alarm within that window. They can
+                    // end it early with "立即上鎖" in Settings.
+                    settings.beginParentalUnlockWindow()
+                    parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
+                    gateDidSucceed = true
+                    showingParentalGate = false
+                }
+            ) { Color.clear }
         }
         .sheet(isPresented: $showingAddAlarm) {
             AlarmEditorView()
@@ -790,11 +809,18 @@ struct HomeView: View {
         .sheet(isPresented: $showingParentalForSettings, onDismiss: {
             if gateSettingsOK { gateSettingsOK = false; showingSettings = true }
         }) {
-            ParentalGateView(onSuccess: {
-                // Same as the New Alarm gate: passing it starts the temporary-unlock window.
-                settings.beginParentalUnlockWindow()
-                gateSettingsOK = true
-            })
+            ParentalGate(
+                accent: SunnyColors.lanternOrange,
+                background: SunnyColors.cloudWhite,
+                onCancel: { showingParentalForSettings = false },
+                onUnlock: {
+                    // Same as the New Alarm gate: passing it starts the temporary-unlock window.
+                    settings.beginParentalUnlockWindow()
+                    parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
+                    gateSettingsOK = true
+                    showingParentalForSettings = false
+                }
+            ) { Color.clear }
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
@@ -807,10 +833,18 @@ struct HomeView: View {
             }
             pendingGroupToggle = nil
         }) {
-            ParentalGateView(onSuccess: {
-                settings.beginParentalUnlockWindow()
-                groupGateOK = true
-            })
+            // 同上兩個 gate：換共用 ParentalGate（自製 ParentalGateView 已隨 KidsParentalUI 換裝刪除）。
+            ParentalGate(
+                accent: SunnyColors.lanternOrange,
+                background: SunnyColors.cloudWhite,
+                onCancel: { showingParentalForGroup = false },
+                onUnlock: {
+                    settings.beginParentalUnlockWindow()
+                    parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
+                    groupGateOK = true
+                    showingParentalForGroup = false
+                }
+            ) { Color.clear }
         }
         // Alarm cap reached → tell the parent to delete one first.
         .alert("鬧鐘數量已達上限", isPresented: $showingMaxAlarmsAlert) {
@@ -1035,6 +1069,7 @@ private struct ClockHeaderView: View {
 #Preview {
     HomeView()
         .modelContainer(for: Alarm.self, inMemory: true)
+        .environment(ParentalUnlockSession())
 }
 
 // MARK: - SettingsView
@@ -1045,6 +1080,20 @@ struct SettingsView: View {
     @ObservedObject private var settings = AppSettings.shared
     @ObservedObject private var bedSide = BedSideManager.shared
     @ObservedObject private var store = StoreService.shared
+
+    // Shared-library unlock session for FamilyShelfView's inner gate; mirrored from the
+    // AppSettings unlock window (gate success / 立即解鎖 / 立即上鎖).
+    @Environment(ParentalUnlockSession.self) private var parentalSession
+
+    // Review prompt (shared KidsReviewPrompt). Made for Kids 鐵則: only ever triggered HERE,
+    // on the parent page behind the parental gate — never in the child/general flow.
+    @Environment(\.requestReview) private var requestReview
+    @Query private var wakeRecords: [WakeRecord]
+    /// "The app has genuinely worked for a while" signal: successful wake-ups the child dismissed
+    /// (voice / button / fallback). "timeout" rows are unanswered auto-stops — excluded.
+    private var successfulWakeCount: Int {
+        wakeRecords.filter { $0.dismissMethod != "timeout" }.count
+    }
 
     // Direct sheet targets (no sub-gates — Settings itself is gated at the button)
     @State private var showingVoiceLib  = false
@@ -1317,6 +1366,7 @@ struct SettingsView: View {
                     HStack {
                         Button {
                             settings.beginParentalUnlockWindow()
+                            parentalSession.unlock(minutes: settings.parentalUnlockDurationMinutes)
                             unlockNow = Date()
                         } label: {
                             Label("temporary_unlock_start", systemImage: "lock.open")
@@ -1335,6 +1385,7 @@ struct SettingsView: View {
                         HStack {
                             Button(role: .destructive) {
                                 settings.endParentalUnlockWindow()
+                                parentalSession.lockNow()
                                 unlockNow = Date()
                             } label: {
                                 Label("temporary_unlock_lock_now", systemImage: "lock.fill")
@@ -1383,6 +1434,24 @@ struct SettingsView: View {
                         Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
                             .foregroundStyle(SunnyColors.leafFresh)
                     }
+                    // Family cross-promo shelf (shared KidsFamilyShelf). Parent-gated by placement:
+                    // Settings itself sits behind the parental gate; the shelf re-gates App Store
+                    // taps via `gateSession` (skipped inside an active unlock window).
+                    NavigationLink {
+                        FamilyShelfView(
+                            currentApp: .sunnywalker,
+                            accent: SunnyColors.lanternOrange,
+                            background: SunnyColors.cloudWhite,
+                            gateSession: parentalSession
+                        )
+                    } label: {
+                        Label {
+                            Text(verbatim: AppLocalization.L("更多 rexcode 小學堂", "More from rexcode"))
+                        } icon: {
+                            Image(systemName: "square.grid.2x2")
+                                .foregroundStyle(SunnyColors.skyBlue)
+                        }
+                    }
                 }
 
                 // SunnyWalker Pro — the very last section. Deliberately quiet: no banner, no promo,
@@ -1419,6 +1488,17 @@ struct SettingsView: View {
                             .foregroundStyle(SunnyColors.skyBlue)
                     }
                 }
+                // App version — the very last section. Shared AppVersionKit component (Foundation +
+                // SwiftUI only); "First launch" is the build recorded on first ever launch. Bilingual
+                // labels so non-Chinese devices (family default-English rule) still read it.
+                VersionInfoSection(
+                    labels: VersionInfoCardLabels(
+                        version: "版本 Version",
+                        build: "建置 Build",
+                        firstLaunch: "首次啟動 First launch"
+                    ),
+                    header: "關於 About"
+                )
             }
             .navigationTitle(Text("settings_label"))
             .navigationBarTitleDisplayMode(.inline)
@@ -1432,6 +1512,14 @@ struct SettingsView: View {
         .onAppear {
             settings.clearExpiredParentalUnlockIfNeeded()
             unlockNow = Date()
+            // 評分請求（共用 KidsReviewPrompt）：家長頁 onAppear、孩子已有 ≥3 次成功起床紀錄
+            // 才記正向時刻。per-version 只真正請求一次，Apple 再自行限流（365 天最多 3 次）。
+            // Made for Kids 鐵則：只能在 parental gate 之後的家長頁觸發，絕不進兒童流程。
+            if successfulWakeCount >= 3 {
+                KidsReviewPrompt.recordPositiveMoment(kind: "parentPageAfterWakes", threshold: 1) {
+                    requestReview()
+                }
+            }
         }
         .onReceive(unlockTick) { now in
             unlockNow = now
@@ -1457,4 +1545,5 @@ struct SettingsView: View {
 
 #Preview("Settings") {
     SettingsView()
+        .environment(ParentalUnlockSession())
 }
