@@ -24,6 +24,8 @@ final class AudioRecorder: ObservableObject {
     @Published private(set) var currentURL: URL?
     /// 即時音量（0…1，共用件 tap RMS）— 錄音畫面的音量回饋。
     @Published private(set) var level: Float = 0
+    /// 已錄秒數（共用件每 0.2s 更新；stop 後保留最終值）— 錄音畫面的精準時長顯示（分:秒）。
+    @Published private(set) var elapsed: TimeInterval = 0
 
     /// 每段自定錄音的長度上限（秒）。免費版 3 分鐘、Pro 無限——統一從 FeatureLimits 取。
     static var maxRecordingSeconds: TimeInterval { FeatureLimits.maxAlarmRecordingSeconds }
@@ -60,11 +62,13 @@ final class AudioRecorder: ObservableObject {
         controller.$level
             .sink { [weak self] in self?.level = $0 }
             .store(in: &cancellables)
-        // FeatureLimits 硬上限備援：即使 UI 計時器沒跑到（切背景等），錄音也一定停。
+        // 轉發已錄秒數給 UI（分:秒 顯示）＋ FeatureLimits 硬上限備援：
+        // 即使 UI 計時器沒跑到（切背景等），錄音也一定停。
         controller.$elapsed
             .sink { [weak self] elapsed in
-                guard let self,
-                      Self.shouldAutoStop(elapsed: elapsed, cap: Self.maxRecordingSeconds),
+                guard let self else { return }
+                self.elapsed = elapsed
+                guard Self.shouldAutoStop(elapsed: elapsed, cap: Self.maxRecordingSeconds),
                       self.controller.isRecording, self.stopTask == nil else { return }
                 self.stopTask = self.makeStopTask()
             }

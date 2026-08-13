@@ -2,6 +2,7 @@
 
 import SwiftUI
 import SwiftData
+import AVFAudio  // 量最終錄音檔長度（AVAudioFile length / sampleRate）
 
 struct RecordingView: View {
     @Bindable var alarm: Alarm
@@ -15,6 +16,8 @@ struct RecordingView: View {
     @State private var draftDisplayName: String
     // 3 分鐘到自動收尾（與 AudioRecorder 的硬上限同步）。手動按停止會先 cancel 它。
     @State private var autoStopWork: DispatchWorkItem?
+    // 最終錄音長度（秒）——stop 後量實際檔案（AVAudioFile），或進頁時量既有錄音檔。
+    @State private var recordedSeconds: Double?
 
     init(
         alarm: Alarm,
@@ -85,7 +88,29 @@ struct RecordingView: View {
                 autoStopWork?.cancel(); autoStopWork = nil
                 Task { await audioRecorder.stop() }
             }
+            // 進頁時若已有錄音（重錄情境），量既有檔案長度讓「錄音完成」也看得到 分:秒。
+            .onAppear {
+                if recordedSeconds == nil, !alarm.recordingName.isEmpty {
+                    recordedSeconds = Self.measureSeconds(recordingNamed: alarm.recordingName)
+                }
+            }
         }
+    }
+
+    // MARK: - Duration helpers
+
+    /// 秒數 → `分:秒`（例 87 → "1:27"）。純數字格式，免進字串目錄。
+    static func minSec(_ seconds: TimeInterval) -> String {
+        let s = Int(seconds.rounded())
+        return String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    /// 量 `Recordings/<name>.m4a` 的實際長度（與 VoiceLibraryView 同一套 length/sampleRate 量法）。
+    static func measureSeconds(recordingNamed name: String) -> Double? {
+        let url = AudioRecorder.recordingsDirectory.appendingPathComponent("\(name).m4a")
+        guard let file = try? AVAudioFile(forReading: url) else { return nil }
+        let sr = file.processingFormat.sampleRate
+        return sr > 0 ? Double(file.length) / sr : nil
     }
 
     // MARK: - Subviews
@@ -104,10 +129,22 @@ struct RecordingView: View {
                     .foregroundStyle(SunnyColors.lanternOrange)
                     .opacity(0.55 + 0.45 * Double(min(audioRecorder.level * 2, 1)))
                     .animation(.linear(duration: 0.1), value: audioRecorder.level)
+                // 精準已錄時長 分:秒（純數字免翻譯）；有上限（免費 3 分鐘）時併顯示上限。
+                Text(AudioRecorder.maxRecordingSeconds.isFinite
+                     ? "\(Self.minSec(audioRecorder.elapsed)) / \(Self.minSec(AudioRecorder.maxRecordingSeconds))"
+                     : Self.minSec(audioRecorder.elapsed))
+                    .font(SunnyFonts.title(30).monospacedDigit())
+                    .foregroundStyle(SunnyColors.nightIndigo)
             } else if hasRecording {
                 Text("錄音完成 ✅")
                     .font(SunnyFonts.title(24))
                     .foregroundStyle(SunnyColors.forestDeep)
+                if let secs = recordedSeconds, secs > 0 {
+                    // 錄完的實際檔案長度（量測 m4a，不是 UI 計時器）——分:秒。
+                    Label(Self.minSec(secs), systemImage: "clock")
+                        .font(SunnyFonts.title(20).monospacedDigit())
+                        .foregroundStyle(SunnyColors.nightIndigo.opacity(0.9))
+                }
             } else {
                 Text(prompt)
                     .font(SunnyFonts.title(22))
@@ -203,6 +240,8 @@ struct RecordingView: View {
             // 共用件 stop 後要 finalize（縫合分段）＋改名，Recordings/<name>.m4a 才存在 —
             // CAF 匯出必須等它完成。
             _ = await audioRecorder.stop()
+            // 量實際檔案長度（不是 UI 計時器值）——顯示在「錄音完成」下方。
+            recordedSeconds = Self.measureSeconds(recordingNamed: recordingStorageName)
             alarm.recordingName = recordingStorageName
             alarm.recordingDisplayName = displayNameForStorage
             // Export a lock-screen-playable CAF and point the alarm's sound at it, so AlarmKit
