@@ -15,7 +15,7 @@ settings:
     # build = monotonically-increasing integer (CFBundleVersion). The date segment is the
     # archive date; bump it (and the build int) on every re-upload — App Store rejects
     # duplicate build numbers. ⚠️ Update 20260610 to the actual archive date before Archive.
-    MARKETING_VERSION: "1.4.20260622"   # 1.4 = 多人鬧鐘（分組）+ 每組吉祥物 + 自訂向日葵花心照片。1.3 train（build 17, Pro）已上架
+    MARKETING_VERSION: "1.4.20260814"   # 1.4 = 多人鬧鐘（分組）+ 報時 + 待辦語音提醒 + 免費上限 10。1.3 train（build 17, Pro）已上架
     CURRENT_PROJECT_VERSION: 18   # bump on every upload (App Store rejects duplicate build numbers). 15-17 被 1.3 hotfix 佔用 → 1.4 從 18 起
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: NHY8MKW8NH   # RUEI YI WU — see docs/for_Apple_store/IDENTIFIERS.md

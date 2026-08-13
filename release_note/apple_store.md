@@ -1,3 +1,9 @@
+> ⛔ **已停用（2026-08-14 起）。** 本檔是舊的「單檔覆寫」做法，保留為歷史紀錄、不再更新。
+> 新慣例＝一版一檔：`release_note/vMAJOR.MINOR.YYYYMMDD.md`，ASC 逐欄文案另立
+> `docs/for_Apple_store/appstoreconnect_content_YYMMDD.md`。規範見
+> `../../common_lib_ios/docs/release_note_standard.md`。
+> **現行版本：`release_note/v1.4.20260814.md`。**
+
 # SunnyWalker — App Store Release Note
 
 ## 下一版（草稿，版本號待定）— 報時鬧鐘 + 待辦語音提醒 + 免費上限促銷 開發中

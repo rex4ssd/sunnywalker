@@ -1,3 +1,7 @@
+> ⛔ **已被取代，勿再貼。** 現行文案在 `appstoreconnect_content_260814.md`（1.4.20260814 build 18）。
+> 本檔保留為 1.1 當時的快照：Subtitle 已於 2026-06-18 因 Guideline 4.1 改掉、
+> Description 未含後續新功能。誤貼過時內容＝Guideline 2.3 風險。
+
 # App Store Connect 內容 — 1.1.20260612 (build 8)
 
 > 對應版本：**1.1.20260612 (8)**（新功能「溫和提醒模式」→ MINOR bump）
