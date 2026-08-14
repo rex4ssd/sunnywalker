@@ -16,6 +16,7 @@
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
 		1781F4C4A95C1B3E804AC87E /* PaperTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */; };
 		1871D0205CB66D4D6DA89165 /* TodoBadgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B9F0F0DC245E5787F1E6B5 /* TodoBadgesView.swift */; };
+		1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */; };
 		1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05356F2D5C177271D275559D /* BedSideManager.swift */; };
 		2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */; };
 		29BD4F65DED2C01951CEDFF1 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */; };
@@ -170,6 +171,7 @@
 		E082FE6D44313D96DE49E326 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
 		E0D014C1458197C25E160373 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoHistoryView.swift; sourceTree = "<group>"; };
+		F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIOTests.swift; sourceTree = "<group>"; };
 		F8B2F46A3941FEE3E76A4346 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -242,6 +244,7 @@
 		5426B93631556471059DA32A /* SunnyWalkerTests */ = {
 			isa = PBXGroup;
 			children = (
+				F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */,
 				8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */,
 				C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */,
 			);
@@ -572,6 +575,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */,
 				94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */,
 				38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */,
 			);

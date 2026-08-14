@@ -1,6 +1,7 @@
 // SunnyWalker — MarkdownAlarmIO.swift  |  鬧鐘設定的 Markdown 匯入 / 匯出
 
 import Foundation
+import KidsDataCore
 
 /// 一行 Markdown 解析後的結果（尚未寫入 SwiftData）。
 struct ParsedAlarm {
@@ -13,7 +14,7 @@ struct ParsedAlarm {
 
 /// 鬧鐘的 Markdown 互轉。
 ///
-/// 每行格式： `repeat, HH:MM, label`
+/// 每行格式： `repeat, HH:MM, label`（label 可含逗號——KidsLineTable 兩端往中間收）
 /// 例如：
 /// ```
 /// daily, 08:00, go to school
@@ -46,8 +47,8 @@ enum MarkdownAlarmIO {
 
     private static func line(for alarm: Alarm) -> String {
         let rep = repeatToken(alarm.weekdays)
-        let label = alarm.label.replacingOccurrences(of: ",", with: " ")
-        var s = "\(rep), \(alarm.timeString), \(label)".trimmingCharacters(in: .whitespaces)
+        // label 可含逗號（KidsLineTable 頭 2 欄結構、中段自由文字）——不再改寫成空白。
+        var s = "\(rep), \(alarm.timeString), \(alarm.label)".trimmingCharacters(in: .whitespaces)
         if !alarm.isEnabled { s += " (off)" }
         return s
     }
@@ -77,15 +78,14 @@ enum MarkdownAlarmIO {
             line = String(line.dropLast(5)).trimmingCharacters(in: .whitespaces)
         }
 
-        let parts = line.split(separator: ",", maxSplits: 2,
-                               omittingEmptySubsequences: false)
-                        .map { $0.trimmingCharacters(in: .whitespaces) }
-        guard parts.count >= 2,
-              let weekdays = parseRepeat(parts[0]),
-              let (h, m) = parseTime(parts[1]) else { return nil }
+        // 欄位切割走家族共用 KidsLineTable（lodeling「兩端往中間收」引擎）。
+        // 頭 2 欄＝repeat/時間，中段＝label。（含逗號的 label 舊 parser 靠 maxSplits
+        // 也吃得下；真正的修正在匯出端——不再把逗號改寫成空白，round-trip 從此無損。）
+        guard let row = KidsLineTable.parse(line: line, headCount: 2),
+              let weekdays = parseRepeat(row.head[0]),
+              let (h, m) = parseTime(row.head[1]) else { return nil }
 
-        let label = parts.count >= 3 ? parts[2] : ""
-        return ParsedAlarm(hour: h, minute: m, label: label,
+        return ParsedAlarm(hour: h, minute: m, label: row.middle,
                            weekdays: weekdays, isEnabled: enabled)
     }
 
