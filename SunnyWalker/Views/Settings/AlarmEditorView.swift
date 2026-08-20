@@ -51,6 +51,76 @@ struct AlarmEditorView: View {
     @State private var showDaysHint = false
     @State private var daysLongPressed = false
 
+    // MARK: - 未儲存變更防護
+    /// 進頁當下的欄位快照。與現值比對＝`hasUnsavedChanges`，用來擋掉「改了時間卻按到取消」。
+    private let baseline: EditorSnapshot
+    /// 按下取消且確實有改動 → 跳確認框（預設儲存）。
+    @State private var showingUnsavedPrompt = false
+
+    /// 編輯器所有「會被儲存」的欄位的值快照（純值型別，方便整組比較）。
+    struct EditorSnapshot: Equatable {
+        var hour: Int
+        var minute: Int
+        var label: String
+        var weekdays: Set<Int>
+        var taskType: AlarmTaskType
+        var customPhrase: String
+        var notificationMode: Bool
+        var segmentedBurst: Bool
+        var groupIndex: Int
+        var chimeCount: Int
+        var todoIcon: TodoIcon
+        var todoDuration: Int
+        // 鈴聲相關：選鈴聲/錄音的 sheet 是直接寫進 tempAlarm 的，也要納入比對。
+        var recordingName: String
+        var recordingDisplayName: String
+        var soundFileName: String
+    }
+
+    /// 現在畫面上的值（跟 baseline 同構）。
+    private var currentSnapshot: EditorSnapshot {
+        let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
+        return EditorSnapshot(
+            hour: comps.hour ?? 0,
+            minute: comps.minute ?? 0,
+            label: label,
+            weekdays: selectedWeekdays,
+            taskType: selectedTaskType,
+            customPhrase: customPhrase,
+            notificationMode: useNotificationMode,
+            segmentedBurst: segmentedBurst,
+            groupIndex: selectedGroupIndex,
+            chimeCount: chimeCount,
+            todoIcon: todoIcon,
+            todoDuration: todoDuration,
+            recordingName: tempAlarm.recordingName,
+            recordingDisplayName: tempAlarm.recordingDisplayName ?? "",
+            soundFileName: tempAlarm.soundFileName
+        )
+    }
+
+    private var hasUnsavedChanges: Bool { currentSnapshot != baseline }
+
+    /// 取消鍵：有改動就先問，沒改動直接關（不打擾）。
+    private func requestDismiss() {
+        if hasUnsavedChanges {
+            showingUnsavedPrompt = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// 放棄變更：編輯模式要把「已經直接寫進鬧鐘」的鈴聲欄位還原
+    /// （選鈴聲／錄音的 sheet 是就地寫 tempAlarm，而編輯模式的 tempAlarm 就是那顆真鬧鐘）。
+    private func discardAndDismiss() {
+        if isEditing {
+            tempAlarm.recordingName = baseline.recordingName
+            tempAlarm.recordingDisplayName = baseline.recordingDisplayName.isEmpty ? nil : baseline.recordingDisplayName
+            tempAlarm.soundFileName = baseline.soundFileName
+        }
+        dismiss()
+    }
+
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
     ]
@@ -74,13 +144,54 @@ struct AlarmEditorView: View {
             _chimeCount = State(initialValue: a.effectiveChimeCount)
             _todoIcon = State(initialValue: a.effectiveTodoIcon)
             _todoDuration = State(initialValue: a.effectiveTodoDurationMinutes)
+            // 未儲存變更防護的比對基準：必須跟上面每個 State 的初值一致，
+            // 否則一進頁就會被誤判成「已改動」，每次取消都跳確認框。
+            baseline = EditorSnapshot(
+                hour: a.hour,
+                minute: a.minute,
+                label: a.label,
+                weekdays: Set(a.weekdays),
+                taskType: a.recordingName.isEmpty ? .button : a.effectiveTaskType,
+                customPhrase: a.customDismissPhrase ?? "",
+                notificationMode: a.effectiveBackgroundMode == .notification,
+                segmentedBurst: a.effectiveSegmentedBurst,
+                groupIndex: a.effectiveGroupIndex,
+                chimeCount: a.effectiveChimeCount,
+                todoIcon: a.effectiveTodoIcon,
+                todoDuration: a.effectiveTodoDurationMinutes,
+                recordingName: a.recordingName,
+                recordingDisplayName: a.recordingDisplayName ?? "",
+                soundFileName: a.soundFileName
+            )
         } else {
             // Create mode
-            _tempAlarm = State(initialValue: Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button))
-            _selectedTime     = State(initialValue: Date())
+            let fresh = Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button)
+            let now = Date()
+            _tempAlarm = State(initialValue: fresh)
+            _selectedTime     = State(initialValue: now)
             _label            = State(initialValue: "起床囉")
             _selectedWeekdays = State(initialValue: [2, 3, 4, 5, 6])
             _selectedTaskType = State(initialValue: .button)
+            // 同上：其餘欄位沿用 @State 的宣告預設值（notificationMode false / burst false /
+            // group 0 / chime 1 / balloon / 10 分），這裡照抄一份當基準。
+            let nowParts = Calendar.current.dateComponents([.hour, .minute], from: now)
+            baseline = EditorSnapshot(
+                hour: nowParts.hour ?? 0,
+                minute: nowParts.minute ?? 0,
+                label: "起床囉",
+                weekdays: [2, 3, 4, 5, 6],
+                taskType: .button,
+                customPhrase: "",
+                notificationMode: false,
+                segmentedBurst: false,
+                groupIndex: 0,
+                chimeCount: 1,
+                todoIcon: .balloon,
+                todoDuration: 10,
+                recordingName: fresh.recordingName,
+                recordingDisplayName: fresh.recordingDisplayName ?? "",
+                soundFileName: fresh.soundFileName
+            )
         }
     }
 
@@ -130,7 +241,7 @@ struct AlarmEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button("取消") { requestDismiss() }
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
                 }
@@ -142,6 +253,23 @@ struct AlarmEditorView: View {
                         .foregroundStyle(SunnyColors.lanternOrange)
                         .disabled(isSaving)
                 }
+            }
+            // 有未儲存的變更時，擋掉「往下滑關閉」——那條路沒有攔截點，滑掉就沒了。
+            // 使用者仍可按「取消」，那會走下面的確認框。
+            .interactiveDismissDisabled(hasUnsavedChanges)
+            // 取消 + 有改動 → 先問。預設（第一個、非破壞性）＝儲存，避免手滑丟掉剛設好的資料。
+            .confirmationDialog(
+                "尚未儲存的變更",
+                isPresented: $showingUnsavedPrompt,
+                titleVisibility: .visible
+            ) {
+                Button(isEditing ? String(localized: "儲存修改") : String(localized: "儲存鬧鐘")) {
+                    saveAlarm()
+                }
+                Button("放棄變更", role: .destructive) { discardAndDismiss() }
+                Button("繼續編輯", role: .cancel) {}
+            } message: {
+                Text("這顆鬧鐘有還沒儲存的變更。")
             }
         }
     }

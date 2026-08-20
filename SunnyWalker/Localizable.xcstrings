@@ -1,6 +1,134 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "試聽這顆鬧鐘的錄音" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview this alarm's recording"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試聽這顆鬧鐘的錄音"
+          }
+        }
+      }
+    },
+    "試聽這顆鬧鐘的鈴聲" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview this alarm's sound"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試聽這顆鬧鐘的鈴聲"
+          }
+        }
+      }
+    },
+    "點兩下編輯鬧鐘，長按試聽" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double tap to edit the alarm, press and hold to preview"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點兩下編輯鬧鐘，長按試聽"
+          }
+        }
+      }
+    },
+    "試聽聲音" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview sound"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "試聽聲音"
+          }
+        }
+      }
+    },
+    "尚未儲存的變更" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsaved changes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未儲存的變更"
+          }
+        }
+      }
+    },
+    "放棄變更" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard changes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "放棄變更"
+          }
+        }
+      }
+    },
+    "繼續編輯" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep editing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續編輯"
+          }
+        }
+      }
+    },
+    "這顆鬧鐘有還沒儲存的變更。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This alarm has changes that haven't been saved yet."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這顆鬧鐘有還沒儲存的變更。"
+          }
+        }
+      }
+    },
     "、" : {
       "extractionState" : "stale",
       "localizations" : {

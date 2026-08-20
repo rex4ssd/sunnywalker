@@ -391,35 +391,17 @@ struct AlarmRingView: View {
     /// truth shared by the external AudioPlayer (warm-up / background / fallback) AND the speech
     /// engine (which plays the same file as the AEC reference while listening), so both always
     /// ring with the identical sound.
-    /// Priority: parent recording → custom CAF in Library/Sounds → bundled CAF → default tone.
+    ///
+    /// 檔案優先序本身住在 `Alarm.ringtoneURL`（全 app 唯一一份，首頁長按試聽也用它）——
+    /// 這裡只補上「這顆鬧鐘沒帶進來」時的保底音，以及 loop 間隔。
     private func resolveAlarmAudio() -> (url: URL, gap: Int)? {
         let gap = AppSettings.shared.recordingGapSeconds
-
-        let recordingName = alarm?.recordingName ?? ""
-        if !recordingName.isEmpty {
-            let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let url = docs.appendingPathComponent("Recordings/\(recordingName).m4a")
-            if FileManager.default.fileExists(atPath: url.path) { return (url, gap) }
-            print("🎬 AlarmRingView.resolveAlarmAudio: recording \(recordingName).m4a MISSING — falling back")
-        }
-
-        // Exported custom alarm sounds live in Library/Sounds (AlarmSoundExporter writes them there
-        // for the notification path) — NOT the bundle. Check Library/Sounds first, then the bundle.
-        let soundName = alarm?.soundFileName ?? ""
-        if !soundName.isEmpty {
-            let soundsDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Sounds", isDirectory: true)
-            let cafURL = soundsDir.appendingPathComponent(soundName)
-            if FileManager.default.fileExists(atPath: cafURL.path) { return (cafURL, gap) }
-            if let bundleURL = Bundle.main.url(forResource: soundName, withExtension: nil) { return (bundleURL, gap) }
-            print("🎬 AlarmRingView.resolveAlarmAudio: \(soundName) not in Library/Sounds or bundle — using default tone")
-        }
-
-        // Guaranteed fallback: the bundled default alarm tone. NEVER leave the wake screen silent.
+        if let url = alarm?.ringtoneURL { return (url, gap) }
+        // alarm == nil（路由還沒接上就開始響）→ 仍要有聲音，不能靜默。
         if let defaultURL = Bundle.main.url(forResource: "sunny_wake.caf", withExtension: nil) {
             return (defaultURL, gap)
         }
-        print("🎬 AlarmRingView.resolveAlarmAudio: ⚠️ default sunny_wake.caf missing from bundle — no audio")
+        print("🎬 AlarmRingView.resolveAlarmAudio: ⚠️ no alarm and default sunny_wake.caf missing — no audio")
         return nil
     }
 

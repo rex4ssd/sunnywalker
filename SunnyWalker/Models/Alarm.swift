@@ -228,3 +228,50 @@ final class Alarm {
         }
     }
 }
+
+// MARK: - 鈴聲檔解析（全 app 唯一一份）
+
+extension Alarm {
+    /// 這顆鬧鐘實際會播的音檔，nil = 連內建預設音都不在 bundle 裡（不該發生）。
+    ///
+    /// 優先序：家長錄音 → `Library/Sounds` 的匯出檔（自訂 CAF／報時 chime）→ bundle 內建鈴聲
+    /// → 內建預設音 `sunny_wake.caf`。三種鬧鐘都涵蓋：一般錄音走第一段、報時走第二段
+    /// （`chime_*.caf` 只存在於 Library/Sounds）、內建鈴聲走第三段。
+    ///
+    /// ⚠️ 這段邏輯先前在響鈴畫面／編輯器試聽／錄音頁各有一份；分歧過就會出現
+    /// 「試聽聽到 A、真的響時是 B」。要改優先序**只改這裡**。
+    var ringtoneURL: URL? {
+        let fm = FileManager.default
+
+        if !recordingName.isEmpty {
+            let url = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Recordings/\(recordingName).m4a")
+            if fm.fileExists(atPath: url.path) { return url }
+            print("🔊 Alarm.ringtoneURL: recording \(recordingName).m4a MISSING — falling back")
+        }
+
+        // 匯出的自訂音／報時音在 Library/Sounds（AlarmSoundExporter / ChimeSoundComposer 寫在那），
+        // 不在 bundle —— 先查 Library/Sounds，再查 bundle。
+        if !soundFileName.isEmpty {
+            let cafURL = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Sounds", isDirectory: true)
+                .appendingPathComponent(soundFileName)
+            if fm.fileExists(atPath: cafURL.path) { return cafURL }
+            if let bundleURL = Bundle.main.url(forResource: soundFileName, withExtension: nil) { return bundleURL }
+            print("🔊 Alarm.ringtoneURL: \(soundFileName) not in Library/Sounds or bundle — using default tone")
+        }
+
+        // 保底：內建預設音。響鈴畫面絕不能靜音。
+        if let defaultURL = Bundle.main.url(forResource: "sunny_wake.caf", withExtension: nil) {
+            return defaultURL
+        }
+        print("🔊 Alarm.ringtoneURL: ⚠️ default sunny_wake.caf missing from bundle — no audio")
+        return nil
+    }
+
+    /// 首頁長按試聽用：這顆鬧鐘有沒有「家長自己準備的聲音」（錄音或匯出的自訂音／報時音）。
+    /// 只有內建鈴聲的鬧鐘也能長按試聽，所以這個旗標目前只用來決定 VoiceOver 提示措辭。
+    var hasCustomVoice: Bool {
+        !recordingName.isEmpty || soundFileName.hasPrefix("alarm_") || soundFileName.hasPrefix(Self.chimeFilePrefix)
+    }
+}
