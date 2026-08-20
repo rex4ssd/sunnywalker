@@ -216,8 +216,10 @@ struct AlarmEditorView: View {
                             todoCard
                         } else {
                             ringtoneCard
-                            dismissMethodCard
                             backgroundModeCard
+                            // 口令關閉（Enable phrase dismiss）放最後：實際很少用，
+                            // 不該卡在「鈴聲」與「背景響鈴方式」這兩個常改的欄位中間。
+                            dismissMethodCard
                         }
                     }
                     .padding(24)
