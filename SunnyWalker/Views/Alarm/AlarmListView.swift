@@ -183,8 +183,7 @@ private struct AlarmCard: View {
         WatercolorCard {
             HStack(alignment: .center, spacing: 0) {
                 // 左側圖示自成一個熱區：點＝編輯（與卡片其他地方一致），長按＝試聽這顆鬧鐘的聲音。
-                // 它刻意【不】包在下面那顆編輯 Button 裡——Button 會把長按吃掉；
-                // 卡片的 contextMenu 也改掛在編輯 Button 上，免得長按圖示同時彈出選單。
+                // 它刻意【不】包在下面那顆編輯 Button 裡——Button 會把長按整個吃掉。
                 DaytimeAlarmIcon(
                     scene: DaytimeScene.current(hour: alarm.hour),
                     isPlaying: isPreviewing
@@ -194,9 +193,8 @@ private struct AlarmCard: View {
                 .padding(.vertical, 10)
                 .contentShape(Rectangle())
                 .onTapGesture { showingEditor = true }
-                // highPriority：List 會把 cell 內的 contextMenu 提升成「整列長按」，
-                // 普通的 onLongPressGesture 會被它吃掉（實機驗證過：長按圖示只會彈選單）。
-                // 高優先權手勢先辨識成功，長按圖示才會是「試聽」而不是彈選單。
+                // highPriority：確保這個長按贏過 List cell 自己的手勢處理。
+                // （這張卡片刻意沒有 contextMenu——原因見下方編輯按鈕處的註解。）
                 .highPriorityGesture(
                     LongPressGesture(minimumDuration: 0.4)
                         .onEnded { _ in
@@ -209,7 +207,13 @@ private struct AlarmCard: View {
                                          ? LocalizedStringKey("試聽這顆鬧鐘的錄音")
                                          : LocalizedStringKey("試聽這顆鬧鐘的鈴聲")))
                 .accessibilityHint(Text(LocalizedStringKey("點兩下編輯鬧鐘，長按試聽")))
-                .accessibilityAddTraits(isPreviewing ? [.isButton, .startsMediaSession] : .isButton)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityValue(isPreviewing ? Text(LocalizedStringKey("播放中")) : Text(""))
+                // VoiceOver 打不出「長按」——它的雙擊會被當成一般點按（＝開編輯頁），
+                // 所以試聽一定要另外掛成自訂動作，否則旁白使用者根本用不到這個功能。
+                .accessibilityAction(named: Text(LocalizedStringKey("試聽聲音"))) {
+                    preview.toggle(alarm)
+                }
 
                 Button {
                     showingEditor = true

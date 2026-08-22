@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "播放中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "播放中"
+          }
+        }
+      }
+    },
     "試聽這顆鬧鐘的錄音" : {
       "localizations" : {
         "en" : {

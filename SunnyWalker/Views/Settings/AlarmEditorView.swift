@@ -58,7 +58,7 @@ struct AlarmEditorView: View {
     @State private var showingUnsavedPrompt = false
 
     /// 編輯器所有「會被儲存」的欄位的值快照（純值型別，方便整組比較）。
-    struct EditorSnapshot: Equatable {
+    private struct EditorSnapshot: Equatable {
         var hour: Int
         var minute: Int
         var label: String
@@ -85,7 +85,10 @@ struct AlarmEditorView: View {
             minute: comps.minute ?? 0,
             label: label,
             weekdays: selectedWeekdays,
-            taskType: selectedTaskType,
+            // 存「實際會寫進鬧鐘的值」而不是 selectedTaskType 本身：口令開關的 setter 會無條件
+            // 改 selectedTaskType，但沒有錄音時 saveAlarm 還是寫 .button。比 raw state 會在
+            // 「沒錄音卻撥了開關」時誤判成有改動、白跳確認框。
+            taskType: isVoiceDismissEnabled ? .voice : .button,
             customPhrase: customPhrase,
             notificationMode: useNotificationMode,
             segmentedBurst: segmentedBurst,
