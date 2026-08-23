@@ -450,7 +450,7 @@ SunnyWake does not collect, store, or transmit any personal data.
 All recordings and voice recognition happen on your device.
 No internet connection is required to use this app.
 No third-party SDKs, no analytics, no ads.
-Contact: keep.going@m2k.com.tw
+Contact: rex.code@m2k.com.tw
 ```
 
 ### 6.4 審查重點（容易被退件的地雷）
