@@ -102,6 +102,7 @@ final class AppSettings: ObservableObject {
         }
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
         self.burstGapSeconds = UserDefaults.standard.object(forKey: "burstGapSeconds") as? Int ?? 2
+        self.burstSpanSeconds = UserDefaults.standard.object(forKey: "burstSpanSeconds") as? Int ?? AppSettings.burstSpanOptions.last!
         self.alarmRingDurationMinutes = UserDefaults.standard.object(forKey: "alarmRingDurationMinutes") as? Int ?? 5
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
         let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
@@ -163,11 +164,29 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(recordingGapSeconds, forKey: "recordingGapSeconds") }
     }
 
-    /// 通知「切段響滿 30 秒」的段間靜音間隔（秒）。1 或 2；預設 2（＝原本沿用
+    /// 通知「切段響滿 N 秒」的段間靜音間隔（秒）。1 或 2；預設 2（＝原本沿用
     /// recordingGapSeconds 時的出廠值）。獨立於 recordingGapSeconds——那顆同時控制
     /// in-app 循環播放的間隔，多裝置實測通知沒聲音時要能單獨調切段間距、不動響鈴節奏。
     @Published var burstGapSeconds: Int {
         didSet { UserDefaults.standard.set(burstGapSeconds, forKey: "burstGapSeconds") }
+    }
+
+    /// 切段可選的總響鈴長度（秒）。上限 30：切段是靠「同一分鐘內秒級錯開的多顆通知」堆出來的，
+    /// 秒位必須 < 60（見 AlarmScheduler.scheduleGentleRepeatBurst），再長就得跨分鐘、
+    /// 且會吃掉更多 64 顆 pending 通知的額度。
+    static let burstSpanOptions = [10, 20, 30]
+
+    /// 「切段響滿 N 秒」的 N。預設 30（＝原本寫死的值）。想響短一點（例如只提醒 10 秒、
+    /// 不吵到還在睡的手足）就調小。只影響開啟切段的溫和提醒鬧鐘。
+    @Published var burstSpanSeconds: Int {
+        didSet { UserDefaults.standard.set(burstSpanSeconds, forKey: "burstSpanSeconds") }
+    }
+
+    /// 夾回合法選項，防止舊資料/手動改 UserDefaults 塞進奇怪的值。
+    var effectiveBurstSpanSeconds: Int {
+        AppSettings.burstSpanOptions.contains(burstSpanSeconds)
+            ? burstSpanSeconds
+            : AppSettings.burstSpanOptions.last!
     }
 
     // MARK: - Alarm ring duration

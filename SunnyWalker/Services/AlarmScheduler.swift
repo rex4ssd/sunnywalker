@@ -341,7 +341,8 @@ final class AlarmScheduler {
         // 通知沒聲音時要能單獨調切段間距（1s vs 2s 對照）而不改響鈴節奏。
         let gap = max(0, AppSettings.shared.burstGapSeconds)
         let period = max(2, Int(ceil(voiceSeconds)) + gap)
-        let targetSpan = 30   // 目標總響鈴長度（秒）
+        // 目標總響鈴長度（秒）——家長可在設定選 10/20/30，預設 30（原本寫死的值）。
+        let targetSpan = AppSettings.shared.effectiveBurstSpanSeconds
 
         // slot 0 = baseline 那顆（已在 fireDate 第 0 秒排好），這裡只補 slot 1…N。
         // 秒位須 < 60（留在同一分鐘內，避免跨分鐘 DateComponents 複雜化），且不超過 targetSpan。

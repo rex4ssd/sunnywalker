@@ -742,11 +742,14 @@ struct AlarmEditorView: View {
                     Divider()
                     Toggle(isOn: $segmentedBurst) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Label("切段響滿 30 秒",
+                            // 秒數跟著設定走（10/20/30），不再寫死 30——否則家長把持續時間調成
+                            // 10 秒後，這裡還寫「響滿 30 秒」就是騙人的。
+                            Label(L("切段響滿 %@ 秒", String(settings.effectiveBurstSpanSeconds)),
                                   systemImage: segmentedBurst ? "waveform.badge.plus" : "waveform")
                                 .font(SunnyFonts.caption())
                                 .foregroundStyle(SunnyColors.nightIndigo)
-                            Text(LocalizedStringKey("把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。"))
+                            Text(L("把語音切成多段、用堆疊通知重複響到約 %@ 秒；關閉時只響一下（較短）。",
+                                   String(settings.effectiveBurstSpanSeconds)))
                                 .font(SunnyFonts.caption(13))
                                 .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                         }
@@ -755,7 +758,8 @@ struct AlarmEditorView: View {
 
                     // 警告只在切段「開啟」時出現——關閉時是單通知、可靠響一下，沒什麼好警告的。
                     if segmentedBurst {
-                        Label(LocalizedStringKey("切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。"),
+                        Label(L("切段可能被 iPhone 在幾秒內關掉，不保證響滿 %@ 秒。",
+                                String(settings.effectiveBurstSpanSeconds)),
                               systemImage: "exclamationmark.triangle.fill")
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
@@ -763,7 +767,7 @@ struct AlarmEditorView: View {
                         // 段間隔（1/2 秒）是全域設定，住在 設定 >「切段間隔」——不放這裡，
                         // 因為本編輯器的欄位都是暫存、按「儲存」才生效，全域設定立即寫入會
                         // 讓「按取消卻改到了東西」。這行只指路。
-                        Text(LocalizedStringKey("段與段之間的間隔可在「設定」調整（1 或 2 秒）。"))
+                        Text(LocalizedStringKey("持續時間與段間隔可在「設定」調整。"))
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
                     }

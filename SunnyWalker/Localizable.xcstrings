@@ -1,6 +1,118 @@
 {
   "sourceLanguage" : "zh-Hant",
   "strings" : {
+    "切段響鈴" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segmented ringing"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段響鈴"
+          }
+        }
+      }
+    },
+    "只影響開啟「切段」的溫和提醒鬧鐘；所有切段鬧鐘共用。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies only to Gentle Reminder alarms with segments turned on; shared by all of them."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只影響開啟「切段」的溫和提醒鬧鐘；所有切段鬧鐘共用。"
+          }
+        }
+      }
+    },
+    "持續時間" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持續時間"
+          }
+        }
+      }
+    },
+    "切段響滿 %@ 秒" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ring ~%@s in segments"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段響滿 %@ 秒"
+          }
+        }
+      }
+    },
+    "把語音切成多段、用堆疊通知重複響到約 %@ 秒；關閉時只響一下（較短）。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Splits the audio into segments and repeats them for about %@s; when off it rings just once (shorter)."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "把語音切成多段、用堆疊通知重複響到約 %@ 秒；關閉時只響一下（較短）。"
+          }
+        }
+      }
+    },
+    "切段可能被 iPhone 在幾秒內關掉，不保證響滿 %@ 秒。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone may shut the segments off within seconds — a full %@s isn't guaranteed."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切段可能被 iPhone 在幾秒內關掉，不保證響滿 %@ 秒。"
+          }
+        }
+      }
+    },
+    "持續時間與段間隔可在「設定」調整。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duration and segment interval can be changed in Settings."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持續時間與段間隔可在「設定」調整。"
+          }
+        }
+      }
+    },
     "播放中" : {
       "localizations" : {
         "en" : {
@@ -2804,55 +2916,6 @@
         }
       }
     },
-    "切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iPhone may shut the segments off within seconds — a full 30s isn't guaranteed."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切段可能被 iPhone 在幾秒內關掉，不保證響滿 30 秒。"
-          }
-        }
-      }
-    },
-    "段與段之間的間隔可在「設定」調整（1 或 2 秒）。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The gap between segments can be changed in Settings (1 or 2 seconds)."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "段與段之間的間隔可在「設定」調整（1 或 2 秒）。"
-          }
-        }
-      }
-    },
-    "切段之間的靜音間隔（所有切段鬧鐘共用）。" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Silence between segments (shared by all segmented alarms)."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切段之間的靜音間隔（所有切段鬧鐘共用）。"
-          }
-        }
-      }
-    },
     "切段間隔" : {
       "localizations" : {
         "en" : {
@@ -2865,23 +2928,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "切段間隔"
-          }
-        }
-      }
-    },
-    "切段響滿 30 秒" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ring ~30s in segments"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切段響滿 30 秒"
           }
         }
       }
@@ -3812,23 +3858,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "找不到要裁剪的錄音檔。"
-          }
-        }
-      }
-    },
-    "把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Splits the voice into segments and stacks notifications to ring for about 30s; when off it rings just once (shorter)."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "把語音切成多段、用堆疊通知重複響到約 30 秒；關閉時只響一下（較短）。"
           }
         }
       }
