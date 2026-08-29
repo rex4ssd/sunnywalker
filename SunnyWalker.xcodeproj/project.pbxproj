@@ -32,13 +32,13 @@
 		49C995D6C7D90525E06555B6 /* KidsDataCore in Frameworks */ = {isa = PBXBuildFile; productRef = EDB7154BD3E06C0AE3A4387D /* KidsDataCore */; };
 		505C59164E21638ED2A87584 /* AlarmEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A684F8B532ECD63CBA54503 /* AlarmEditorView.swift */; };
 		52FC735515496B3E7138A958 /* RingtonePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A9A3B1D0C7F32B69EB73774 /* RingtonePickerSheet.swift */; };
-		55A3231BB89D78B06B663843 /* KidsDataCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6B538A4CBAC009090B123EA9 /* KidsDataCore */; };
+		55A3231BB89D78B06B663843 /* KidsFamilyShelf in Frameworks */ = {isa = PBXBuildFile; productRef = CF7F0965307AE054317C494B /* KidsFamilyShelf */; };
 		56776B2E0DCCAF04D93E92C5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3D1F158233E1E9163C959DD3 /* PrivacyInfo.xcprivacy */; };
 		56B96DD65F567429D696624B /* WakeRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F6D67B3B5D9C27FB3D0E4A5 /* WakeRecord.swift */; };
 		57240F19036ABC19D8492C85 /* mascot_greet_03.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 4ECB4C11C43AEB5AB6279680 /* mascot_greet_03.aiff */; };
 		579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16CA58BFAB96B2A25BD430C /* SunnyAvatar.swift */; };
 		5830BE4BFD4AEBEFCEF5B637 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E0D014C1458197C25E160373 /* InfoPlist.xcstrings */; };
-		59277C55BE1CC3596E94B882 /* KidsParentalUI in Frameworks */ = {isa = PBXBuildFile; productRef = D25CE2ECC557C0882D150501 /* KidsParentalUI */; };
+		59277C55BE1CC3596E94B882 /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = FE6227AC7C66AB194D6512AB /* AppLocalization */; };
 		59BE7E26DBBFA422BBE2D304 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8A39961C2B11BD747210DF5F /* Assets.xcassets */; };
 		5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */ = {isa = PBXBuildFile; productRef = AF524B3678D76C29F3F856BC /* AppVersionKit */; };
 		5C4C3DB9EA691517872E8B4D /* AudioImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB6B6C5F930ED17846B3B79 /* AudioImporter.swift */; };
@@ -47,14 +47,15 @@
 		6D475AD077361995E172BA9D /* AcknowledgementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EAAC2635158C5EDC87A347 /* AcknowledgementsView.swift */; };
 		6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D002EC033E8CCE3A071A9FA /* StopAlarmIntent.swift */; };
 		6E6BB8973553E8955C2406C9 /* AlarmScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888960B949E00E9AC9FAA4DD /* AlarmScheduler.swift */; };
-		6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = FE6227AC7C66AB194D6512AB /* AppLocalization */; };
-		73105D39F6D50A61B03F3F7F /* AudioCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3F84410988D33E7AA530A2AE /* AudioCoreKit */; };
+		6F2AD21731D74CABC0B3A05C /* KidsSettingsFooter in Frameworks */ = {isa = PBXBuildFile; productRef = 73567203E9FC743151EF6395 /* KidsSettingsFooter */; };
+		73105D39F6D50A61B03F3F7F /* KidsDataCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6B538A4CBAC009090B123EA9 /* KidsDataCore */; };
 		7338FA1271440248492463D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0AF6F8D65E69FBCF0C1E5CE /* ContentView.swift */; };
-		75FC3604956E8291303CEEB6 /* KidsFamilyShelf in Frameworks */ = {isa = PBXBuildFile; productRef = CF7F0965307AE054317C494B /* KidsFamilyShelf */; };
+		75FC3604956E8291303CEEB6 /* KidsParentalUI in Frameworks */ = {isa = PBXBuildFile; productRef = D25CE2ECC557C0882D150501 /* KidsParentalUI */; };
 		786B629EF4275830D91689C6 /* AlarmIOView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E49492007B21D867DE139A /* AlarmIOView.swift */; };
 		7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */; };
 		8048B0AF117F5962D38548BA /* WakePhrase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */; };
 		830FD8EDE129F8AC869B0664 /* mascot_greet_02.aiff in Resources */ = {isa = PBXBuildFile; fileRef = AC5327BB0CA5B082F8AB8670 /* mascot_greet_02.aiff */; };
+		8397D19198E8A3F92275EE76 /* AudioCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3F84410988D33E7AA530A2AE /* AudioCoreKit */; };
 		8672D8B3917813013073515A /* AlarmListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14909DF5F592C0045CF04728 /* AlarmListView.swift */; };
 		8E14817276527AB6F341E185 /* TodoPlayRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8115D639C5C1CDC1E1B91038 /* TodoPlayRecord.swift */; };
 		925FFCB37FFD18A7341AF059 /* AudioCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = AE12CFC8E5BB6D6342B9D972 /* AudioCoreKit */; };
@@ -182,11 +183,12 @@
 			files = (
 				7D2C100FD81695B60A76C7E7 /* ConfettiSwiftUI in Frameworks */,
 				5AF0AA47EDC401573AEA4146 /* AppVersionKit in Frameworks */,
-				6F2AD21731D74CABC0B3A05C /* AppLocalization in Frameworks */,
-				59277C55BE1CC3596E94B882 /* KidsParentalUI in Frameworks */,
-				75FC3604956E8291303CEEB6 /* KidsFamilyShelf in Frameworks */,
-				55A3231BB89D78B06B663843 /* KidsDataCore in Frameworks */,
-				73105D39F6D50A61B03F3F7F /* AudioCoreKit in Frameworks */,
+				6F2AD21731D74CABC0B3A05C /* KidsSettingsFooter in Frameworks */,
+				59277C55BE1CC3596E94B882 /* AppLocalization in Frameworks */,
+				75FC3604956E8291303CEEB6 /* KidsParentalUI in Frameworks */,
+				55A3231BB89D78B06B663843 /* KidsFamilyShelf in Frameworks */,
+				73105D39F6D50A61B03F3F7F /* KidsDataCore in Frameworks */,
+				8397D19198E8A3F92275EE76 /* AudioCoreKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,6 +437,7 @@
 			packageProductDependencies = (
 				E6353080ADA8D5E5A1A2D737 /* ConfettiSwiftUI */,
 				AF524B3678D76C29F3F856BC /* AppVersionKit */,
+				73567203E9FC743151EF6395 /* KidsSettingsFooter */,
 				FE6227AC7C66AB194D6512AB /* AppLocalization */,
 				D25CE2ECC557C0882D150501 /* KidsParentalUI */,
 				CF7F0965307AE054317C494B /* KidsFamilyShelf */,
@@ -847,6 +850,10 @@
 		6B538A4CBAC009090B123EA9 /* KidsDataCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = KidsDataCore;
+		};
+		73567203E9FC743151EF6395 /* KidsSettingsFooter */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KidsSettingsFooter;
 		};
 		AE12CFC8E5BB6D6342B9D972 /* AudioCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;

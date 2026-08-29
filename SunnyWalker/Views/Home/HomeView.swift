@@ -4,6 +4,7 @@ import AppLocalization // qualified AppLocalization.L(zh,en) for the shared-shel
 import AppVersionKit   // unified version card (Version / Build / First launch) in SettingsView
 import KidsFamilyShelf // family cross-promo shelf in Settings (parent-gated)
 import KidsParentalUI  // shared ParentalGate (family-wide multiplication gate) + KidsReviewPrompt
+import KidsSettingsFooter // KidsParentFooter — 家長頁收尾三段（全家族一致）
 import StoreKit        // @Environment(\.requestReview) — Apple's rate-limited review request
 import SwiftUI
 import SwiftData
@@ -1459,24 +1460,6 @@ struct SettingsView: View {
                         Label("匯入 / 匯出", systemImage: "square.and.arrow.up.on.square")
                             .foregroundStyle(SunnyColors.leafFresh)
                     }
-                    // Family cross-promo shelf (shared KidsFamilyShelf). Parent-gated by placement:
-                    // Settings itself sits behind the parental gate; the shelf re-gates App Store
-                    // taps via `gateSession` (skipped inside an active unlock window).
-                    NavigationLink {
-                        FamilyShelfView(
-                            currentApp: .sunnywalker,
-                            accent: SunnyColors.lanternOrange,
-                            background: SunnyColors.cloudWhite,
-                            gateSession: parentalSession
-                        )
-                    } label: {
-                        Label {
-                            Text(verbatim: AppLocalization.L("更多 rexcode 小學堂", "More from rexcode"))
-                        } icon: {
-                            Image(systemName: "square.grid.2x2")
-                                .foregroundStyle(SunnyColors.skyBlue)
-                        }
-                    }
                 }
 
                 // SunnyWalker Pro — the very last section. Deliberately quiet: no banner, no promo,
@@ -1513,16 +1496,17 @@ struct SettingsView: View {
                             .foregroundStyle(SunnyColors.skyBlue)
                     }
                 }
-                // App version — the very last section. Shared AppVersionKit component (Foundation +
-                // SwiftUI only); "First launch" is the build recorded on first ever launch. Bilingual
-                // labels so non-Chinese devices (family default-English rule) still read it.
-                VersionInfoSection(
-                    labels: VersionInfoCardLabels(
-                        version: "版本 Version",
-                        build: "建置 Build",
-                        firstLaunch: "首次啟動 First launch"
-                    ),
-                    header: "關於 About"
+                // 收尾三段（買咖啡 → 更多 rexcode → 版本）＝全家族共用件（KidsSettingsFooter）。
+                // 打賞傳 nil：SunnyWalker 走的是 Pro 買斷，不是自由讚助。
+                // 貨架以前夾在清單中段，現在跟版本一起收在最後面——跟其他 14 個 app 一致。
+                // 整頁在家長閘後；貨架另有一道閘擋 App Store 連結（解鎖窗內免問）。
+                KidsParentFooter(
+                    tipProductIDPrefix: nil,
+                    currentApp: .sunnywalker,
+                    theme: KidsTheme(accent: SunnyColors.lanternOrange,
+                                     background: SunnyColors.cloudWhite,
+                                     scheme: .light),
+                    gateSession: parentalSession
                 )
             }
             .navigationTitle(Text("settings_label"))

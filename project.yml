@@ -50,6 +50,8 @@ targets:
       - package: CommonLibIOS
         product: AppVersionKit
       - package: CommonLibIOS
+        product: KidsSettingsFooter   # 家長頁收尾三段：請喝咖啡 → 更多 rexcode → 版本
+      - package: CommonLibIOS
         product: AppLocalization
       - package: CommonLibIOS
         product: KidsParentalUI
