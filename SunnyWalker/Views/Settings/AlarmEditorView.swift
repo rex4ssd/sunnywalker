@@ -44,6 +44,8 @@ struct AlarmEditorView: View {
     private let todoDurationOptions = [10, 30, 60, 0]
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
+    /// 「用時間當標籤」：打勾＝標籤自動跟著上面的時間（改時間就跟著變）；取消勾選才能自行輸入。
+    @State private var labelFollowsTime = false
     // Label tap/long-press
     @State private var showLabelHint = false
     @State private var labelLongPressed = false
@@ -124,6 +126,13 @@ struct AlarmEditorView: View {
         dismiss()
     }
 
+    /// 目前時間輪的值格式化成標籤字串（跟著 12/24h 偏好）。
+    private var timeAsLabel: String {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
+        return Alarm.timeString(hour: c.hour ?? 0, minute: c.minute ?? 0,
+                                use24h: settings.use24HourClock)
+    }
+
     private let weekdayLabels: [(Int, String)] = [
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
     ]
@@ -147,6 +156,10 @@ struct AlarmEditorView: View {
             _chimeCount = State(initialValue: a.effectiveChimeCount)
             _todoIcon = State(initialValue: a.effectiveTodoIcon)
             _todoDuration = State(initialValue: a.effectiveTodoDurationMinutes)
+            // 標籤剛好等於自己的時間字串（12h 或 24h 任一格式）→ 視為上次勾了「用時間當標籤」。
+            _labelFollowsTime = State(initialValue:
+                a.label == Alarm.timeString(hour: a.hour, minute: a.minute, use24h: true)
+                || a.label == Alarm.timeString(hour: a.hour, minute: a.minute, use24h: false))
             // 未儲存變更防護的比對基準：必須跟上面每個 State 的初值一致，
             // 否則一進頁就會被誤判成「已改動」，每次取消都跳確認框。
             baseline = EditorSnapshot(
@@ -227,6 +240,9 @@ struct AlarmEditorView: View {
                     }
                     .padding(24)
                 }
+            }
+            .onChange(of: selectedTime) { _, _ in
+                if labelFollowsTime { label = timeAsLabel }
             }
             .onChange(of: tempAlarm.recordingName) { _, newValue in
                 if newValue.isEmpty, selectedTaskType == .voice {
@@ -332,13 +348,34 @@ struct AlarmEditorView: View {
                         })
                     TextField("例如：上學囉！", text: $label)
                         .font(SunnyFonts.body())
-                        .foregroundStyle(SunnyColors.nightIndigo)
+                        .foregroundStyle(SunnyColors.nightIndigo.opacity(labelFollowsTime ? 0.55 : 1))
                         .multilineTextAlignment(.trailing)
                         .tint(SunnyColors.leafFresh)
                         .colorScheme(.light)
+                        .disabled(labelFollowsTime)   // 勾選中標籤由時間接管，擋掉手動輸入
                 }
                 .padding(.horizontal, 20)
                 .frame(height: 56)
+
+                // 用時間當標籤：勾選＝標籤永遠是上面時間輪的值（改時間就跟著變）。
+                Divider().padding(.leading, 20)
+                Button {
+                    labelFollowsTime.toggle()
+                    if labelFollowsTime { label = timeAsLabel }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: labelFollowsTime ? "checkmark.square.fill" : "square")
+                            .foregroundStyle(labelFollowsTime ? SunnyColors.leafFresh : SunnyColors.sunnyGray)
+                        Text("用時間當標籤")
+                            .font(SunnyFonts.caption(14))
+                            .foregroundStyle(SunnyColors.sunnyGray)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
 
                 if showLabelHint {
                     Text(LocalizedStringKey("alarm_label_hint"))

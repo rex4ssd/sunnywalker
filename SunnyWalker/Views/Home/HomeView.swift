@@ -646,7 +646,8 @@ struct HomeView: View {
                     AlarmListView(
                         alarms: alarms.filter { $0.effectiveGroupIndex == g },
                         header: iphoneHeader(group: g, showBanner: true),
-                        dimmed: !settings.isGroupActive(g)
+                        dimmed: !settings.isGroupActive(g),
+                        groupByWeekday: settings.homeGroupByWeekday
                     )
                     .tag(g)
                 }
@@ -659,7 +660,8 @@ struct HomeView: View {
             // Enabled-but-single-group still shows group A's mascot, just without the swipe banner.
             AlarmListView(
                 alarms: alarms.filter { $0.effectiveGroupIndex == 0 },
-                header: iphoneHeader(group: settings.groupEnabled ? 0 : nil, showBanner: false)
+                header: iphoneHeader(group: settings.groupEnabled ? 0 : nil, showBanner: false),
+                groupByWeekday: settings.homeGroupByWeekday
             )
         }
     }
@@ -685,14 +687,16 @@ struct HomeView: View {
                             .padding(.bottom, 6)
                             .frame(maxWidth: .infinity)
                         ),
-                        dimmed: !settings.isGroupActive(g)
+                        dimmed: !settings.isGroupActive(g),
+                        groupByWeekday: settings.homeGroupByWeekday
                     )
                     .tag(g)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         } else {
-            AlarmListView(alarms: alarms.filter { $0.effectiveGroupIndex == 0 })
+            AlarmListView(alarms: alarms.filter { $0.effectiveGroupIndex == 0 },
+                          groupByWeekday: settings.homeGroupByWeekday)
         }
     }
 
@@ -1156,6 +1160,25 @@ struct SettingsView: View {
                                 .monospacedDigit()
                         }
                     }
+                }
+
+                // 首頁清單版型：依星期分組（同一顆鬧鐘出現在每個響鈴日底下）。
+                Section(
+                    header: Text("首頁清單"),
+                    footer: Text("開啟後，首頁鬧鐘依星期一到星期日分組；同一顆鬧鐘會出現在它的每個響鈴日底下。")
+                ) {
+                    Toggle(isOn: $settings.homeGroupByWeekday) {
+                        Label("依星期分組", systemImage: "calendar")
+                    }
+                    .tint(SunnyColors.leafFresh)
+                }
+
+                // 錄音自動命名長度（語音辨識/匯入檔名的截斷上限）。
+                Section(footer: Text("開啟後自動命名最長中文 16 字、英文 32 字母；關閉為 8／16。")) {
+                    Toggle(isOn: $settings.longAutoNames) {
+                        Label("錄音自動命名加長", systemImage: "character.cursor.ibeam")
+                    }
+                    .tint(SunnyColors.leafFresh)
                 }
 
                 // 切段響鈴——只影響「溫和提醒＋切段」的鬧鐘：響多久（總長）＋每段之間隔多久。

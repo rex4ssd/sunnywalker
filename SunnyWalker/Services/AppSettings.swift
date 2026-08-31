@@ -103,6 +103,8 @@ final class AppSettings: ObservableObject {
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
         self.burstGapSeconds = UserDefaults.standard.object(forKey: "burstGapSeconds") as? Int ?? 2
         self.burstSpanSeconds = UserDefaults.standard.object(forKey: "burstSpanSeconds") as? Int ?? AppSettings.burstSpanOptions.last!
+        self.homeGroupByWeekday = UserDefaults.standard.object(forKey: "homeGroupByWeekday") as? Bool ?? false
+        self.longAutoNames = UserDefaults.standard.object(forKey: "longAutoNames") as? Bool ?? true
         self.alarmRingDurationMinutes = UserDefaults.standard.object(forKey: "alarmRingDurationMinutes") as? Int ?? 5
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
         let raw = UserDefaults.standard.string(forKey: "mascotTheme") ?? MascotTheme.sunny.rawValue
@@ -187,6 +189,23 @@ final class AppSettings: ObservableObject {
         AppSettings.burstSpanOptions.contains(burstSpanSeconds)
             ? burstSpanSeconds
             : AppSettings.burstSpanOptions.last!
+    }
+
+    // MARK: - Home list layout
+
+    /// 首頁鬧鐘清單依星期分組（週一…週日各一節，同一顆鬧鐘出現在它的每個響鈴日底下）。
+    /// 預設 off＝原本的單一清單（依時間排序）。
+    @Published var homeGroupByWeekday: Bool {
+        didSet { UserDefaults.standard.set(homeGroupByWeekday, forKey: "homeGroupByWeekday") }
+    }
+
+    // MARK: - Auto-name length
+
+    /// 錄音/匯入的自動命名加長：中文 8→16 字、英文 16→32 字母。預設開（Rex 2026-08-29 要求加倍）。
+    /// 消費端在非 MainActor（AudioImporter），實際讀值走 VoiceClipLimits.maxAutoNameChars
+    /// 直讀 UserDefaults——這裡的 @Published 只負責 UI 綁定與寫入。
+    @Published var longAutoNames: Bool {
+        didSet { UserDefaults.standard.set(longAutoNames, forKey: "longAutoNames") }
     }
 
     // MARK: - Alarm ring duration

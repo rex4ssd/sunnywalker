@@ -91,9 +91,7 @@ enum AudioImporter {
             return sr > 0 ? Double(af.length) / sr : end
         }()
         let rawName = url.deletingPathExtension().lastPathComponent
-        let maxChars = SunnyLocalization.code == "en"
-            ? VoiceClipLimits.maxAutoNameCharsLatin
-            : VoiceClipLimits.maxAutoNameCharsCJK
+        let maxChars = VoiceClipLimits.maxAutoNameChars
         let suggested = String(rawName.trimmingCharacters(in: .whitespaces).prefix(maxChars))
             .trimmingCharacters(in: .whitespaces)
 

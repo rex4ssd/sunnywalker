@@ -76,6 +76,9 @@ struct AlarmListView: View {
     var header: AnyView? = nil
     /// 多人鬧鐘：該群組被首頁橫幅關閉時為 true → 把鬧鐘卡片變灰、不可點（header 不受影響，仍可點橫幅開回）。
     var dimmed: Bool = false
+    /// 依星期分組（設定頁「依星期分組」）：週一…週日各一節，同一顆鬧鐘出現在它的每個
+    /// 響鈴日底下；一次性鬧鐘（沒勾任何星期）收在最後的「單次鬧鐘」節。off＝原本單一清單。
+    var groupByWeekday: Bool = false
     @Environment(\.modelContext) private var modelContext
     /// 長按左側圖示試聽——整份清單共用一個播放器（見 AlarmPreviewPlayer）。
     @StateObject private var previewPlayer = AlarmPreviewPlayer()
@@ -101,15 +104,19 @@ struct AlarmListView: View {
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets())
                 }
-                ForEach(alarms) { alarm in
-                    AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) }, preview: previewPlayer)
-                        .grayscale(dimmed ? 1 : 0)
-                        .opacity(dimmed ? 0.5 : 1)
-                        .allowsHitTesting(!dimmed)   // 關閉的群組：卡片不可點/不可滑（要先點橫幅開回）
-                        .animation(.easeInOut(duration: 0.2), value: dimmed)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                if groupByWeekday {
+                    ForEach(weekdaySections, id: \.title) { section in
+                        Section {
+                            ForEach(section.alarms) { alarm in alarmRow(alarm) }
+                        } header: {
+                            Text(LocalizedStringKey(section.title))
+                                .font(SunnyFonts.caption(15))
+                                .foregroundStyle(SunnyColors.cloudWhite.opacity(0.92))
+                                .listRowInsets(EdgeInsets(top: 10, leading: 28, bottom: 2, trailing: 20))
+                        }
+                    }
+                } else {
+                    ForEach(alarms) { alarm in alarmRow(alarm) }
                 }
             }
             .listStyle(.plain)
@@ -123,6 +130,41 @@ struct AlarmListView: View {
             // 切群組／離開首頁時別讓試聽在背景繼續響。
             .onDisappear { previewPlayer.stop() }
         }
+    }
+
+    /// 一列鬧鐘卡（單一清單與星期分組共用同一組 row modifiers）。
+    private func alarmRow(_ alarm: Alarm) -> some View {
+        AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) }, preview: previewPlayer)
+            .grayscale(dimmed ? 1 : 0)
+            .opacity(dimmed ? 0.5 : 1)
+            .allowsHitTesting(!dimmed)   // 關閉的群組：卡片不可點/不可滑（要先點橫幅開回）
+            .animation(.easeInOut(duration: 0.2), value: dimmed)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+    }
+
+    // MARK: - 依星期分組
+
+    private struct WeekdaySection {
+        let title: String        // Localizable key（星期一…／單次鬧鐘）
+        let alarms: [Alarm]
+    }
+
+    /// 週一…週日（台灣習慣週一開頭）＋「單次鬧鐘」殿後；沒有鬧鐘的節直接不出現。
+    /// alarms 已由 @Query 依 (hour, minute) 排序，各節內順序自然正確。
+    private var weekdaySections: [WeekdaySection] {
+        let titles = [1: "星期日", 2: "星期一", 3: "星期二", 4: "星期三",
+                      5: "星期四", 6: "星期五", 7: "星期六"]
+        var sections: [WeekdaySection] = [2, 3, 4, 5, 6, 7, 1].compactMap { day in
+            let dayAlarms = alarms.filter { $0.weekdays.contains(day) }
+            return dayAlarms.isEmpty ? nil : WeekdaySection(title: titles[day]!, alarms: dayAlarms)
+        }
+        let oneShots = alarms.filter { $0.weekdays.isEmpty }
+        if !oneShots.isEmpty {
+            sections.append(WeekdaySection(title: "單次鬧鐘", alarms: oneShots))
+        }
+        return sections
     }
 
     // MARK: - Delete

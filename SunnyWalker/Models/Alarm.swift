@@ -211,6 +211,11 @@ final class Alarm {
 
     /// Display string that respects the user's 12h/24h preference.
     func formattedTime(use24h: Bool) -> String {
+        Self.timeString(hour: hour, minute: minute, use24h: use24h)
+    }
+
+    /// 同上的靜態版——編輯器「用時間當標籤」也要格式化還沒存進鬧鐘的時間，共用這一份。
+    static func timeString(hour: Int, minute: Int, use24h: Bool) -> String {
         if use24h {
             return String(format: "%02d:%02d", hour, minute)
         } else {

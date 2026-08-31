@@ -20,8 +20,17 @@ enum VoiceClipLimits {
 
     /// Max characters kept from a speech-recognised auto-name, per script.
     /// CJK characters carry more meaning each, so the cap is lower than for Latin.
+    /// 基準值（家長設定「自動命名加長」關閉時）：中文 8 字／英文 16 字母；開啟＝加倍。
     static let maxAutoNameCharsCJK = 8     // 中文
     static let maxAutoNameCharsLatin = 16  // English
+
+    /// 目前語言的自動命名上限，含家長設定的加長（預設開）。直接讀 UserDefaults——
+    /// AudioImporter 在非 MainActor context 也要用，不能經過 @MainActor 的 AppSettings。
+    static var maxAutoNameChars: Int {
+        let doubled = UserDefaults.standard.object(forKey: "longAutoNames") as? Bool ?? true
+        let base = SunnyLocalization.code == "en" ? maxAutoNameCharsLatin : maxAutoNameCharsCJK
+        return doubled ? base * 2 : base
+    }
 }
 
 // MARK: - VoiceLibraryView
@@ -114,6 +123,9 @@ struct VoiceLibraryView: View {
         .sheet(isPresented: $showingRecorder) {
             VoiceClipRecorderSheet { clip in
                 modelContext.insert(clip)
+                // 從編輯器進來挑鈴聲（selection mode）＝「就是要新鈴聲才進來錄」——
+                // 錄完直接設成這顆鬧鐘的鈴聲並關頁，不要再逼家長回清單找剛錄的那條點一次。
+                if isSelectionMode { selectClip(clip) }
             }
         }
         // 從「檔案」App / iCloud Drive 匯入音檔（mp3/wav/m4a…）。DRM 保護的歌匯不進來 → 友善錯誤。
@@ -771,10 +783,8 @@ struct VoiceClipRecorderSheet: View {
                 return
             }
             let text = result.bestTranscription.formattedString
-            // Cap the auto-name length per language: Chinese 8 chars, English 16 letters.
-            let maxChars = SunnyLocalization.code == "en"
-                ? VoiceClipLimits.maxAutoNameCharsLatin
-                : VoiceClipLimits.maxAutoNameCharsCJK
+            // Cap the auto-name length per language（家長設定可加長，見 VoiceClipLimits）。
+            let maxChars = VoiceClipLimits.maxAutoNameChars
             let name = String(
                 text.trimmingCharacters(in: .whitespaces).prefix(maxChars)
             ).trimmingCharacters(in: .whitespaces)
