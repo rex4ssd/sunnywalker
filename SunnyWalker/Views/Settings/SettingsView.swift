@@ -75,6 +75,7 @@ struct SettingsView: View {
                     theme: theme,
                     gateSession: parentalSession,
                     showsUnlockControls: true,
+                    showsGateModeSwitch: true,     // 驗證方式：數學題 ↔ 4 位數密碼（預設 1234）
                     proRow: KidsProRow(
                         title: L("pro_settings_row"),
                         isUnlocked: store.isPro,
