@@ -34,6 +34,16 @@ struct AlarmEditorView: View {
     @State private var selectedGroupIndex = 0
     /// 報時次數（報時鬧鐘專用）：時間到要連報幾次。
     @State private var chimeCount = 1
+    /// 區間報時：開＝從鬧鐘時間起每隔 chimeIntervalMinutes 報一次直到 chimeEndTime（迄本身不報）。
+    @State private var chimeIntervalOn = false
+    @State private var chimeEndTime = Date()
+    @State private var chimeIntervalMinutes = 5
+    /// 報時人聲（女／男）。
+    @State private var chimeVoice: ChimeVoiceGender = .female
+    /// 儲存時正在背景合成報時語音（區間報時最多 12 句、每句約 1 秒）→ 顯示進度、擋重複儲存。
+    @State private var isComposingChime = false
+    /// 「進階選項」（溫和提醒模式、口令關閉）預設收起；任一個不是預設值時進頁就展開。
+    @State private var showAdvanced = false
     /// 待辦提醒：主頁顯示的圖示、顯示時長（分鐘，0＝直到點開）。
     @State private var todoIcon: TodoIcon = .balloon
     @State private var todoDuration = 10
@@ -71,6 +81,11 @@ struct AlarmEditorView: View {
         var segmentedBurst: Bool
         var groupIndex: Int
         var chimeCount: Int
+        var chimeIntervalOn: Bool
+        var chimeEndHour: Int
+        var chimeEndMinute: Int
+        var chimeInterval: Int
+        var chimeVoice: ChimeVoiceGender
         var todoIcon: TodoIcon
         var todoDuration: Int
         // 鈴聲相關：選鈴聲/錄音的 sheet 是直接寫進 tempAlarm 的，也要納入比對。
@@ -96,12 +111,21 @@ struct AlarmEditorView: View {
             segmentedBurst: segmentedBurst,
             groupIndex: selectedGroupIndex,
             chimeCount: chimeCount,
+            chimeIntervalOn: chimeIntervalOn,
+            chimeEndHour: endComps.hour ?? 0,
+            chimeEndMinute: endComps.minute ?? 0,
+            chimeInterval: chimeIntervalMinutes,
+            chimeVoice: chimeVoice,
             todoIcon: todoIcon,
             todoDuration: todoDuration,
             recordingName: tempAlarm.recordingName,
             recordingDisplayName: tempAlarm.recordingDisplayName ?? "",
             soundFileName: tempAlarm.soundFileName
         )
+    }
+
+    private var endComps: DateComponents {
+        Calendar.current.dateComponents([.hour, .minute], from: chimeEndTime)
     }
 
     private var hasUnsavedChanges: Bool { currentSnapshot != baseline }
@@ -154,6 +178,17 @@ struct AlarmEditorView: View {
             _segmentedBurst = State(initialValue: a.effectiveSegmentedBurst)
             _selectedGroupIndex = State(initialValue: a.effectiveGroupIndex)
             _chimeCount = State(initialValue: a.effectiveChimeCount)
+            // 區間報時：有迄時刻 + 間隔 → 開；否則迄預設＝起 + 30 分（家長一打開開關就有合理值）。
+            let intervalOn = (a.chimeIntervalMinutes ?? 0) > 0 && a.chimeEndHour != nil
+            let endH = a.chimeEndHour ?? ((a.hour * 60 + a.minute + 30) / 60 % 24)
+            let endM = a.chimeEndMinute ?? ((a.minute + 30) % 60)
+            var endComps = DateComponents(); endComps.hour = endH; endComps.minute = endM
+            _chimeIntervalOn = State(initialValue: intervalOn)
+            _chimeEndTime = State(initialValue: Calendar.current.date(from: endComps) ?? t)
+            _chimeIntervalMinutes = State(initialValue: max(1, a.chimeIntervalMinutes ?? 5))
+            _chimeVoice = State(initialValue: a.effectiveChimeVoice)
+            _showAdvanced = State(initialValue: a.effectiveBackgroundMode == .notification
+                                  || (!a.recordingName.isEmpty && a.effectiveTaskType == .voice))
             _todoIcon = State(initialValue: a.effectiveTodoIcon)
             _todoDuration = State(initialValue: a.effectiveTodoDurationMinutes)
             // 標籤剛好等於自己的時間字串（12h 或 24h 任一格式）→ 視為上次勾了「用時間當標籤」。
@@ -173,6 +208,11 @@ struct AlarmEditorView: View {
                 segmentedBurst: a.effectiveSegmentedBurst,
                 groupIndex: a.effectiveGroupIndex,
                 chimeCount: a.effectiveChimeCount,
+                chimeIntervalOn: intervalOn,
+                chimeEndHour: endH,
+                chimeEndMinute: endM,
+                chimeInterval: max(1, a.chimeIntervalMinutes ?? 5),
+                chimeVoice: a.effectiveChimeVoice,
                 todoIcon: a.effectiveTodoIcon,
                 todoDuration: a.effectiveTodoDurationMinutes,
                 recordingName: a.recordingName,
@@ -188,6 +228,10 @@ struct AlarmEditorView: View {
             _label            = State(initialValue: "起床囉")
             _selectedWeekdays = State(initialValue: [2, 3, 4, 5, 6])
             _selectedTaskType = State(initialValue: .button)
+            // 區間報時的迄預設＝現在 + 30 分。
+            let end = now.addingTimeInterval(30 * 60)
+            _chimeEndTime = State(initialValue: end)
+            let endParts = Calendar.current.dateComponents([.hour, .minute], from: end)
             // 同上：其餘欄位沿用 @State 的宣告預設值（notificationMode false / burst false /
             // group 0 / chime 1 / balloon / 10 分），這裡照抄一份當基準。
             let nowParts = Calendar.current.dateComponents([.hour, .minute], from: now)
@@ -202,6 +246,11 @@ struct AlarmEditorView: View {
                 segmentedBurst: false,
                 groupIndex: 0,
                 chimeCount: 1,
+                chimeIntervalOn: false,
+                chimeEndHour: endParts.hour ?? 0,
+                chimeEndMinute: endParts.minute ?? 0,
+                chimeInterval: 5,
+                chimeVoice: .female,
                 todoIcon: .balloon,
                 todoDuration: 10,
                 recordingName: fresh.recordingName,
@@ -227,18 +276,36 @@ struct AlarmEditorView: View {
                         // 待辦群組：鈴聲欄換成「待辦語音 + 圖示 + 顯示時長」（不會響，只在主頁冒圖示）。
                         // 一般群組維持原本的鈴聲與背景模式選擇。
                         if chimeActive {
-                            chimeCard
+                            ChimeCardView(
+                                startTime: selectedTime,
+                                chimeCount: $chimeCount,
+                                intervalOn: $chimeIntervalOn,
+                                endTime: $chimeEndTime,
+                                intervalMinutes: $chimeIntervalMinutes,
+                                voice: $chimeVoice,
+                                isPreviewing: previewingRow == "chime",
+                                onPreview: { previewChime() },
+                                pickerLocale: pickerLocale
+                            )
                         } else if todoActive {
                             todoCard
                         } else {
                             ringtoneCard
-                            backgroundModeCard
-                            // 口令關閉（Enable phrase dismiss）放最後：實際很少用，
-                            // 不該卡在「鈴聲」與「背景響鈴方式」這兩個常改的欄位中間。
-                            dismissMethodCard
+                            // 溫和提醒模式、口令關閉：多數鬧鐘用不到 → 收進「進階選項」，
+                            // 新增鬧鐘頁只剩 時間／標籤／重覆／鈴聲 四張卡。改過的鬧鐘進頁自動展開。
+                            advancedToggleRow
+                            if showAdvanced {
+                                backgroundModeCard
+                                // 口令關閉（Enable phrase dismiss）放最後：實際很少用，
+                                // 不該卡在「鈴聲」與「背景響鈴方式」這兩個常改的欄位中間。
+                                dismissMethodCard
+                            }
                         }
                     }
                     .padding(24)
+                }
+                if isComposingChime {
+                    composingOverlay
                 }
             }
             .onChange(of: selectedTime) { _, _ in
@@ -265,6 +332,7 @@ struct AlarmEditorView: View {
                     Button("取消") { requestDismiss() }
                         .font(SunnyFonts.caption())
                         .foregroundStyle(SunnyColors.sunnyGray)
+                        .disabled(isComposingChime)
                 }
                 // Save lives in the top-right corner (opposite Cancel), iOS-standard sheet layout.
                 ToolbarItem(placement: .confirmationAction) {
@@ -277,7 +345,9 @@ struct AlarmEditorView: View {
             }
             // 有未儲存的變更時，擋掉「往下滑關閉」——那條路沒有攔截點，滑掉就沒了。
             // 使用者仍可按「取消」，那會走下面的確認框。
-            .interactiveDismissDisabled(hasUnsavedChanges)
+            .interactiveDismissDisabled(hasUnsavedChanges || isComposingChime)
+            // 編輯器蓋在首頁上 → 首頁動畫暫停（見 SheetPresenceTracker）。
+            .countsAsPresentedSheet()
             // 取消 + 有改動 → 先問。預設（第一個、非破壞性）＝儲存，避免手滑丟掉剛設好的資料。
             .confirmationDialog(
                 "尚未儲存的變更",
@@ -419,59 +489,57 @@ struct AlarmEditorView: View {
         }
     }
 
-    /// 這顆鬧鐘是否屬於「報時群組」（要啟用分組 + 該組開了報時）。決定顯示「鈴聲」還是「報時次數」。
+    /// 這顆鬧鐘是否屬於「報時群組」（要啟用分組 + 該組開了報時）。決定顯示「鈴聲」還是「報時」卡。
     private var chimeActive: Bool {
         settings.groupEnabled && settings.isGroupChimeEnabled(selectedGroupIndex)
     }
 
-    /// 報時卡：取代鈴聲卡。家長設定時間到要連報幾次；可試聽。實際語音在儲存時用系統語音合成
-    /// （語言跟著 App 語言設定，只分中／英），背景與前景都放同一份報時音。
-    private var chimeCard: some View {
-        WatercolorCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 10) {
-                    Image(systemName: "bell.badge.fill")
-                        .font(.title2)
-                        .foregroundStyle(SunnyColors.lanternOrange)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("chime_card_title")
-                            .font(SunnyFonts.caption())
-                            .foregroundStyle(SunnyColors.nightIndigo)
-                        Text("chime_card_subtitle")
-                            .font(SunnyFonts.caption(13))
-                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
-                    }
-                    Spacer()
-                    // 試聽：合成目前時間 + 次數的報時音並播放。合成需約 1 秒，期間圖示先進入播放態。
-                    Button {
-                        previewChime()
-                    } label: {
-                        Image(systemName: previewingRow == "chime" ? "stop.circle.fill" : "play.circle.fill")
-                            .font(.title)
-                            .foregroundStyle(previewingRow == "chime" ? SunnyColors.lanternOrange : SunnyColors.skyBlue)
-                            .symbolEffect(.pulse, isActive: previewingRow == "chime")
-                    }
-                    .buttonStyle(.plain)
+    /// 「進階選項」開關列：展開才顯示溫和提醒模式與口令關閉兩張卡。
+    private var advancedToggleRow: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(showAdvanced ? 90 : 0))
+                Text("editor_advanced_options")
+                    .font(SunnyFonts.caption(15))
+                // 收起時提示裡面有哪些東西；展開時不重複。
+                if !showAdvanced {
+                    Text(verbatim: "·")
+                    Text(useNotificationMode
+                         ? LocalizedStringKey("溫和提醒模式（自動停、省電）")
+                         : LocalizedStringKey("啟用口令關閉"))
+                        .font(SunnyFonts.caption(13))
+                        .lineLimit(1)
                 }
-
-                Divider()
-
-                HStack {
-                    Label("chime_count_label", systemImage: "repeat")
-                        .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.nightIndigo)
-                    Spacer()
-                    Text(L("chime_times_value %lld", chimeCount))
-                        .font(SunnyFonts.caption())
-                        .foregroundStyle(SunnyColors.lanternOrange)
-                        .monospacedDigit()
-                    Stepper("", value: $chimeCount, in: 1...Alarm.maxChimeCount)
-                        .labelsHidden()
-                }
+                Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .foregroundStyle(SunnyColors.sunnyGray)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("editor_advanced_options"))
+        .accessibilityValue(Text(showAdvanced ? "group_on_badge" : "group_off_badge"))
+    }
+
+    /// 儲存時合成報時語音的遮罩（區間報時最多 12 句，每句約 1 秒；期間不能再按儲存／取消）。
+    private var composingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.25).ignoresSafeArea()
+            VStack(spacing: 12) {
+                ProgressView()
+                    .tint(SunnyColors.lanternOrange)
+                Text("chime_composing")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.nightIndigo)
+            }
+            .padding(24)
+            .background(RoundedRectangle(cornerRadius: 18).fill(SunnyColors.cloudWhite))
+        }
+        .transition(.opacity)
     }
 
     /// 這顆是否屬於「待辦群組」（啟用分組 + 該組開了待辦）。決定顯示「鈴聲」還是「待辦語音」卡。
@@ -653,8 +721,8 @@ struct AlarmEditorView: View {
                             guard !daysLongPressed else { return }
                             handleDaysTap()
                         })
-                    Spacer()
-                    HStack(spacing: 6) {
+                    Spacer(minLength: 8)
+                    HStack(spacing: 5) {
                         ForEach(weekdayLabels, id: \.0) { num, sym in
                             WeekdayChip(
                                 symbol: sym,
@@ -856,19 +924,17 @@ struct AlarmEditorView: View {
         let h = comps.hour ?? 7
         let m = comps.minute ?? 0
         let loc = SunnyLocalization.locale
+        let voice = chimeVoice
         Task {
-            let caf = await Task.detached(priority: .userInitiated) {
-                ChimeSoundComposer.compose(hour: h, minute: m, locale: loc)
+            // 試聽寫到 tmp（以前每按一次就在 Library/Sounds 留一個孤兒檔）。
+            let url = await Task.detached(priority: .userInitiated) {
+                ChimeSoundComposer.composePreview(hour: h, minute: m, locale: loc, voice: voice)
             }.value
             await MainActor.run {
-                guard previewingRow == "chime", let caf else {
+                guard previewingRow == "chime", let url else {
                     if previewingRow == "chime" { previewingRow = nil }
                     return
                 }
-                let url = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent("Sounds", isDirectory: true)
-                    .appendingPathComponent(caf)
-                guard FileManager.default.fileExists(atPath: url.path) else { previewingRow = nil; return }
                 previewPlayer.play(url: url, loop: false)
             }
         }
@@ -885,12 +951,8 @@ struct AlarmEditorView: View {
         if row == "builtin" {
             url = Bundle.main.url(forResource: tempAlarm.soundFileName, withExtension: nil)
         } else {
-            guard !tempAlarm.recordingName.isEmpty else { return }
-            let u = FileManager.default
-                .urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Recordings")
-                .appendingPathComponent(tempAlarm.recordingName + ".m4a")
-            url = FileManager.default.fileExists(atPath: u.path) ? u : nil
+            guard AppPaths.recordingExists(named: tempAlarm.recordingName) else { return }
+            url = AppPaths.recordingURL(named: tempAlarm.recordingName)
         }
         guard let url else { return }
         previewingRow = row
@@ -1056,22 +1118,40 @@ struct AlarmEditorView: View {
         let chimeOn = chimeActive
         let todoOn = todoActive
         let previousSound = tempAlarm.soundFileName
+        // 這顆鬧鐘之前留下的所有報時檔（單一時刻＝soundFileName；區間＝slot 陣列）。換模式／改時刻後清掉。
+        let previousChimeFiles = Set((tempAlarm.chimeSlotSoundFiles ?? []) + [previousSound])
+            .filter { $0.hasPrefix(Alarm.chimeFilePrefix) }
         // 統一先把「另外兩種模式」的殘留欄位清掉，避免切換模式後留下舊狀態。
-        func clearChimeSoundIfNeeded() {
+        func clearChimeIfNeeded() {
             if previousSound.hasPrefix(Alarm.chimeFilePrefix) {
                 tempAlarm.soundFileName = "sunny_wake.caf"
-                ChimeSoundComposer.removeChimeFile(named: previousSound)
             }
+            for f in previousChimeFiles { ChimeSoundComposer.removeChimeFile(named: f) }
+            tempAlarm.chimeSlotSoundFiles = nil
+            tempAlarm.chimeEndHour = nil
+            tempAlarm.chimeEndMinute = nil
+            tempAlarm.chimeIntervalMinutes = nil
+            tempAlarm.chimeVoice = nil
         }
         if chimeOn {
             tempAlarm.chimeCount = chimeCount
+            if chimeIntervalOn {
+                tempAlarm.chimeEndHour = endComps.hour ?? 0
+                tempAlarm.chimeEndMinute = endComps.minute ?? 0
+                tempAlarm.chimeIntervalMinutes = chimeIntervalMinutes
+            } else {
+                tempAlarm.chimeEndHour = nil
+                tempAlarm.chimeEndMinute = nil
+                tempAlarm.chimeIntervalMinutes = nil
+            }
+            tempAlarm.chimeVoice = chimeVoice.rawValue
             tempAlarm.todoIcon = nil
             tempAlarm.todoDurationMinutes = nil
             tempAlarm.recordingName = ""          // 報時沒有錄音；清掉才不會誤判成口令關閉
             tempAlarm.recordingDisplayName = nil
             tempAlarm.taskType = .button          // 報時用按鈕關（沒有錄音可做口令辨識）
             // 報時一律走「通知模式」：響一次（把報時音檔放完）就自動停。若走 AlarmKit 會無限 loop
-            // → 報完還一直響（使用者回報「響不停」）。單通知＝報時次數已合成在音檔裡，放完即止。
+            // → 報完還一直響（使用者回報「響不停」）。連報次數由 AlarmScheduler 排多顆通知達成。
             tempAlarm.backgroundRingMode = .notification
             tempAlarm.segmentedBurst = false
         } else if todoOn {
@@ -1080,12 +1160,12 @@ struct AlarmEditorView: View {
             tempAlarm.todoDurationMinutes = todoDuration
             tempAlarm.chimeCount = nil
             tempAlarm.taskType = .button
-            clearChimeSoundIfNeeded()
+            clearChimeIfNeeded()
         } else {
             tempAlarm.chimeCount = nil
             tempAlarm.todoIcon = nil
             tempAlarm.todoDurationMinutes = nil
-            clearChimeSoundIfNeeded()
+            clearChimeIfNeeded()
         }
 
         if !isEditing {
@@ -1093,24 +1173,29 @@ struct AlarmEditorView: View {
         }
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
 
-        let chimeHour = tempAlarm.hour
-        let chimeMinute = tempAlarm.minute
+        let chimeSlots = tempAlarm.chimeSlotTimes
         let chimeLocale = SunnyLocalization.locale
+        let chimeVoiceChoice = chimeVoice
         Task {
-            // 報時：先在背景合成「一句」語音 CAF（保持短、通知音不被截）。連報次數由 AlarmScheduler
-            // 排多顆秒級錯開的通知達成，所以這裡不把 N 次塞進同一個檔。
+            // 報時：每個時刻各合成「一句」語音 CAF（保持短、通知音不被截；區間報時每句內容不同）。
+            // 連報次數由 AlarmScheduler 排多顆秒級錯開的通知達成，所以這裡不把 N 次塞進同一個檔。
             if chimeOn {
-                let caf = await Task.detached(priority: .userInitiated) {
-                    ChimeSoundComposer.compose(hour: chimeHour, minute: chimeMinute, locale: chimeLocale)
+                withAnimation { isComposingChime = true }
+                let files = await Task.detached(priority: .userInitiated) {
+                    ChimeSoundComposer.composeSlots(chimeSlots, locale: chimeLocale, voice: chimeVoiceChoice)
                 }.value
                 await MainActor.run {
-                    if let caf {
-                        tempAlarm.soundFileName = caf
-                        if previousSound.hasPrefix(Alarm.chimeFilePrefix), previousSound != caf {
-                            ChimeSoundComposer.removeChimeFile(named: previousSound)
+                    if let files, let first = files.first {
+                        tempAlarm.chimeSlotSoundFiles = files
+                        tempAlarm.soundFileName = first
+                        for f in previousChimeFiles where !files.contains(f) {
+                            ChimeSoundComposer.removeChimeFile(named: f)
                         }
+                    } else {
+                        // 合成失敗（極少數）→ 保留原 soundFileName，AlarmScheduler 會用它排每個時刻，不會無聲。
+                        tempAlarm.chimeSlotSoundFiles = nil
                     }
-                    // 合成失敗（極少數）→ 保留原 soundFileName，鬧鐘仍會用既有鈴聲響，不會無聲。
+                    withAnimation { isComposingChime = false }
                 }
             }
             // UNNotification fallback (no-op while AlarmKit is authorized — it stands down).
@@ -1147,7 +1232,8 @@ private struct WeekdayChip: View {
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? .white : SunnyColors.sunnyGray)
-                .frame(width: 34, height: 34)
+                // 30pt（原 34）：7 顆 × 34 + 間距剛好吃光 iPhone 直向卡片內寬，英文的「Days」被擠成「D…」。
+                .frame(width: 30, height: 30)
                 .background(
                     Circle()
                         .fill(isSelected ? selectedFill : SunnyColors.sunnyGray.opacity(0.12))

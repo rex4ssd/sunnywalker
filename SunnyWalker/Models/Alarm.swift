@@ -29,6 +29,25 @@ enum AlarmBackgroundMode: String, Codable {
     case notification
 }
 
+// MARK: - Chime voice
+
+/// 報時用的 iOS 內建人聲性別（AVSpeechSynthesisVoice.gender）。Stored as raw String（migration-safe）。
+/// 該語言沒有對應性別的語音時，ChimeSoundComposer 退回該語言的預設語音，不會無聲。
+enum ChimeVoiceGender: String, Codable, CaseIterable, Identifiable {
+    case female
+    case male
+
+    var id: String { rawValue }
+
+    /// 給 UI 的在地化 key（Localizable.xcstrings）。
+    var labelKey: String {
+        switch self {
+        case .female: return "chime_voice_female"
+        case .male:   return "chime_voice_male"
+        }
+    }
+}
+
 // MARK: - Todo icon
 
 /// 待辦提醒在主頁吉祥物旁顯示的小圖示。家長每則待辦自己挑一個。Stored as raw String（migration-safe）。
@@ -113,6 +132,21 @@ final class Alarm {
     /// SwiftData lightweight migration。是否為報時鬧鐘請看 `isChimeAlarm`，次數請讀 `effectiveChimeCount`。
     var chimeCount: Int? = nil
 
+    /// 區間報時的「迄」時刻（時／分）。nil（舊資料 / 單一時刻報時）→ 只報 `hour:minute` 一次。
+    /// 「起」就是鬧鐘本身的 hour/minute。Optional + default nil 配合 SwiftData lightweight migration。
+    var chimeEndHour: Int? = nil
+    var chimeEndMinute: Int? = nil
+
+    /// 區間報時的間隔（分鐘）。nil / 0 → 單一時刻。讀取請用 `chimeSlotTimes`（已算好每個報時時刻）。
+    var chimeIntervalMinutes: Int? = nil
+
+    /// 報時人聲性別（ChimeVoiceGender rawValue）。nil → 女聲（跟以前一樣）。讀取請用 `effectiveChimeVoice`。
+    var chimeVoice: String? = nil
+
+    /// 區間報時每個時刻各自合成的 CAF 檔名（與 `chimeSlotTimes` 索引對齊；slot 0 同時也是 soundFileName）。
+    /// nil（舊資料）→ 由 AlarmSoundUpgradeHealer / AlarmScheduler 重新合成補齊。
+    var chimeSlotSoundFiles: [String]? = nil
+
     /// 待辦圖示（TodoIcon rawValue）。非 nil ⇒ 這顆是「待辦語音提醒」而不是會響的鬧鐘：時間到時在
     /// 主頁吉祥物旁冒出此圖示，兒童長按播放 recordingName 的錄音。nil（一般鬧鐘 / 報時）→ 不是待辦。
     /// Optional + default nil 配合 SwiftData lightweight migration。判斷請用 `isTodo`。
@@ -168,6 +202,71 @@ final class Alarm {
 
     /// 報時合成 CAF 的檔名前綴（與 ChimeSoundComposer 一致）。
     static let chimeFilePrefix = "chime_"
+
+    // MARK: 區間報時（起 → 迄，每隔 N 分報一次）
+
+    /// 區間報時最多幾個時刻。上限的來源是 iOS「每 app 最多 64 顆 pending 通知」：
+    /// 每個時刻每天至少 1 顆（勾 1–6 天時每天各 1 顆），12 個時刻 × 5 個上學日 ＝ 60 顆就已貼近上限。
+    static let maxChimeSlots = 12
+
+    /// 可選的報時間隔（分鐘）。
+    static let chimeIntervalOptions = [1, 2, 3, 5, 10, 15, 20, 30]
+
+    /// 報時人聲——nil（舊資料）→ 女聲。
+    var effectiveChimeVoice: ChimeVoiceGender {
+        ChimeVoiceGender(rawValue: chimeVoice ?? "") ?? .female
+    }
+
+    /// 是否為「區間報時」（有迄時刻 + 有間隔，且算出來不只一個時刻）。
+    var isIntervalChime: Bool { chimeSlotTimes.count > 1 }
+
+    /// 這顆報時鬧鐘要念出的每個時刻（起、起+N、起+2N…，**不含迄**）。
+    /// 單一時刻報時 / 一般鬧鐘 → 只有 `[hour:minute]`。純函式版見 `chimeSlotTimes(startHour:…)`。
+    var chimeSlotTimes: [(hour: Int, minute: Int)] {
+        Self.chimeSlotTimes(
+            startHour: hour, startMinute: minute,
+            endHour: chimeEndHour, endMinute: chimeEndMinute,
+            intervalMinutes: chimeIntervalMinutes
+        )
+    }
+
+    /// 起 07:00、迄 07:30、間隔 5 → 07:00, 07:05 … 07:25（六次；**迄時刻本身不報**——
+    /// Rex 的原始需求：「7:00 囉、7:05 囉 … 7:25 囉」，7:30 是該出門的時刻，不是再提醒一次）。
+    /// 迄 ≤ 起、間隔 ≤ 0、或任一欄 nil → 只有起這一個時刻。最多 `maxChimeSlots` 個。
+    static func chimeSlotTimes(startHour: Int, startMinute: Int,
+                               endHour: Int?, endMinute: Int?,
+                               intervalMinutes: Int?) -> [(hour: Int, minute: Int)] {
+        let start = startHour * 60 + startMinute
+        guard let eh = endHour, let em = endMinute,
+              let interval = intervalMinutes, interval > 0 else {
+            return [(startHour, startMinute)]
+        }
+        let end = eh * 60 + em
+        guard end > start else { return [(startHour, startMinute)] }
+        var out: [(hour: Int, minute: Int)] = []
+        var t = start
+        while t < end, out.count < maxChimeSlots {
+            out.append((t / 60, t % 60))
+            t += interval
+        }
+        return out
+    }
+
+    /// 每個報時時刻對應的 CAF 檔名（與 `chimeSlotTimes` 對齊）。
+    /// 陣列缺／長度不符（舊資料、改過時間但還沒重合成）→ nil，呼叫端要重新合成。
+    var alignedChimeSlotFiles: [String]? {
+        guard let files = chimeSlotSoundFiles, files.count == chimeSlotTimes.count,
+              !files.contains(where: \.isEmpty) else { return nil }
+        return files
+    }
+
+    /// 顯示用：`07:00–07:30`（區間）或 `07:00`（單一時刻）。
+    func formattedChimeRange(use24h: Bool) -> String {
+        guard isIntervalChime, let eh = chimeEndHour, let em = chimeEndMinute else {
+            return formattedTime(use24h: use24h)
+        }
+        return "\(formattedTime(use24h: use24h))–\(Self.timeString(hour: eh, minute: em, use24h: use24h))"
+    }
 
     /// 這顆是不是待辦語音提醒（有挑圖示即視為待辦）。待辦不會響（不進 AlarmKit / 通知），只在主頁冒圖示。
     var isTodo: Bool { todoIcon != nil }
@@ -249,8 +348,7 @@ extension Alarm {
         let fm = FileManager.default
 
         if !recordingName.isEmpty {
-            let url = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Recordings/\(recordingName).m4a")
+            let url = AppPaths.recordingURL(named: recordingName)
             if fm.fileExists(atPath: url.path) { return url }
             print("🔊 Alarm.ringtoneURL: recording \(recordingName).m4a MISSING — falling back")
         }
@@ -258,9 +356,7 @@ extension Alarm {
         // 匯出的自訂音／報時音在 Library/Sounds（AlarmSoundExporter / ChimeSoundComposer 寫在那），
         // 不在 bundle —— 先查 Library/Sounds，再查 bundle。
         if !soundFileName.isEmpty {
-            let cafURL = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Sounds", isDirectory: true)
-                .appendingPathComponent(soundFileName)
+            let cafURL = AppPaths.soundURL(named: soundFileName)
             if fm.fileExists(atPath: cafURL.path) { return cafURL }
             if let bundleURL = Bundle.main.url(forResource: soundFileName, withExtension: nil) { return bundleURL }
             print("🔊 Alarm.ringtoneURL: \(soundFileName) not in Library/Sounds or bundle — using default tone")
@@ -278,5 +374,31 @@ extension Alarm {
     /// 只有內建鈴聲的鬧鐘也能長按試聽，所以這個旗標目前只用來決定 VoiceOver 提示措辭。
     var hasCustomVoice: Bool {
         !recordingName.isEmpty || soundFileName.hasPrefix("alarm_") || soundFileName.hasPrefix(Self.chimeFilePrefix)
+    }
+}
+
+// MARK: - 鬧鐘種類（首頁卡片 / 統計用的單一判斷）
+
+/// 三種提醒的分類：一般鬧鐘（會響、要關）／報時（念時間、自動停）／待辦（不響、主頁冒圖示）。
+/// 判斷邏輯散在 `isTodo` / `isChimeAlarm` 兩個旗標，這裡收成一個 enum 讓 UI 只 switch 一次。
+enum AlarmKind {
+    case alarm
+    case chime
+    case todo
+
+    var systemImage: String {
+        switch self {
+        case .alarm: return "alarm.fill"
+        case .chime: return "speaker.wave.2.bubble.fill"
+        case .todo:  return "balloon.fill"
+        }
+    }
+}
+
+extension Alarm {
+    var kind: AlarmKind {
+        if isTodo { return .todo }
+        if isChimeAlarm { return .chime }
+        return .alarm
     }
 }

@@ -2,6 +2,7 @@
 
 import AppVersionKit
 import BackgroundTasks
+import KidsDiagnostics   // MetricKit 崩潰／凍結報告落盤（App Store 版的閃退證據）
 import KidsParentalUI
 import SwiftUI
 import SwiftData
@@ -33,6 +34,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Record the build number the very first time the app is ever launched (idempotent — only
         // writes on the first run). Powers the "首次啟動 First launch" row in Settings' version card.
         AppVersion.registerFirstLaunch()
+
+        // 生產環境崩潰／凍結證據：MetricKit 在「下一次啟動」送交前次的診斷，這裡落成
+        // Documents/diagnostics/*.json（不上網、無 PII）。Rex 回報 App Store 版「選音檔／錄音頁
+        // 有時整個 crash」但拉不到 log——之後用 devicectl 拉 Documents/diagnostics 就有 stack。
+        KidsDiagnostics.start()
 
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
@@ -217,6 +223,15 @@ struct SunnyWalkerApp: App {
                 // from Localizable.xcstrings whenever the chosen language changes.
                 .environment(\.locale, localization.locale)
                 .task {
+                    // 家長頁尾段（共用件）的「延長解鎖 N 分」stepper 讀寫 session.defaultMinutes；
+                    // 開機用 app 自己存的分鐘數餵進去（共用件 stepper 範圍 1–30，夾一下）。
+                    parentalSession.defaultMinutes = min(30, max(1, AppSettings.shared.parentalUnlockDurationMinutes))
+                    // AppSettings 的解鎖窗是持久化的、共用 session 是 in-memory：重開 app 若窗還沒過，
+                    // 把剩餘時間餵回 session，家長頁尾段的「立即上鎖／倒數」才跟首頁的免驗證狀態一致。
+                    let remaining = AppSettings.shared.remainingParentalUnlockSeconds()
+                    if remaining > 0 {
+                        parentalSession.unlock(minutes: max(1, Int((Double(remaining) / 60).rounded(.up))))
+                    }
                     // Open the StoreKit Transaction.updates listener + refresh entitlement BEFORE any
                     // purchase UI. Missing the listener loses async transactions (Ask-to-Buy approval,
                     // Family Sharing, refund/revocation). Safe to call repeatedly — start() is idempotent.

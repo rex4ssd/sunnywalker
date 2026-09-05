@@ -31,11 +31,7 @@ final class AudioRecorder: ObservableObject {
     static var maxRecordingSeconds: TimeInterval { FeatureLimits.maxAlarmRecordingSeconds }
 
     /// 錄音落點 — 沿用 AVAudioRecorder 時代的目錄，不得改（既有用戶檔案都在這）。
-    nonisolated static var recordingsDirectory: URL {
-        FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings", isDirectory: true)
-    }
+    nonisolated static var recordingsDirectory: URL { AppPaths.recordingsDirectory }
 
     /// 純函式：已錄秒數是否達上限（Pro 的 .infinity 永遠 false）。拆出來可測。
     nonisolated static func shouldAutoStop(elapsed: TimeInterval, cap: TimeInterval) -> Bool {
@@ -371,12 +367,9 @@ final class BackgroundListeningManager: ObservableObject {
     }
 
     private func playAlarmSound(_ a: AlarmSnapshot) {
-        let fm = FileManager.default
         var url: URL?
-        if !a.recordingName.isEmpty {
-            let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let m4a = docs.appendingPathComponent("Recordings/\(a.recordingName).m4a")
-            if fm.fileExists(atPath: m4a.path) { url = m4a }
+        if AppPaths.recordingExists(named: a.recordingName) {
+            url = AppPaths.recordingURL(named: a.recordingName)
         }
         if url == nil {
             let name = a.soundFileName.isEmpty ? "sunny_wake.caf" : a.soundFileName
@@ -452,12 +445,31 @@ final class BackgroundListeningManager: ObservableObject {
 /// until the user opens the app; only then does AVAudioPlayer play the custom recording.
 enum AlarmSoundExporter {
 
+    /// 16-bit linear PCM CAF — AlarmKit / UNNotificationSound 最穩定接受的格式。
+    /// 錄音匯出、內建鈴聲修剪、報時合成、DEBUG 尺規音以前各自抄一份 outSettings；
+    /// 這裡是唯一一份（AVAudioFile 寫檔時自動把 float buffer 轉成 16-bit）。
+    static func writePCMCAF(_ buffer: AVAudioPCMBuffer, to url: URL) throws {
+        let format = buffer.format
+        let outSettings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: format.sampleRate,
+            AVNumberOfChannelsKey: format.channelCount,
+            AVLinearPCMBitDepthKey: 16,
+            AVLinearPCMIsFloatKey: false,
+            AVLinearPCMIsBigEndianKey: false,
+            AVLinearPCMIsNonInterleaved: false
+        ]
+        let outFile = try AVAudioFile(forWriting: url, settings: outSettings)
+        try outFile.write(from: buffer)
+    }
+
     /// Export `Recordings/<name>.m4a` → `Library/Sounds/alarm_<name>_<epoch>.caf`.
     /// - Returns: the CAF filename to store in `Alarm.soundFileName`, or nil on failure.
+    /// ⚠️ 同步、會讀整段錄音進記憶體再寫檔——**不要在 main thread 呼叫**（UI 會頓），
+    ///    請用 `Task.detached { AlarmSoundExporter.exportLockScreenCAF(...) }`。
     static func exportLockScreenCAF(fromRecordingNamed name: String) -> String? {
         let fm = FileManager.default
-        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let m4a = docs.appendingPathComponent("Recordings/\(name).m4a")
+        let m4a = AppPaths.recordingURL(named: name)
         guard fm.fileExists(atPath: m4a.path) else {
             print("🎚️ Exporter: SOURCE m4a MISSING at \(m4a.path) — abort")
             return nil
@@ -467,9 +479,7 @@ enum AlarmSoundExporter {
 
         // Library/Sounds is the ONLY container directory iOS reads custom alarm/notification
         // sounds from. Create it if this is the first custom recording.
-        let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Sounds", isDirectory: true)
-        try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
+        let soundsDir = AppPaths.ensureSoundsDirectory()
 
         // Unique filename per export: the system sound server caches CAF by name for the app's
         // lifetime, so reusing one name would replay the OLD recording after a re-record.
@@ -495,24 +505,13 @@ enum AlarmSoundExporter {
             }
             try inFile.read(into: buffer, frameCount: AVAudioFrameCount(frames))
 
-            // 16-bit linear PCM CAF — the format AlarmKit/UNNotification reliably accept.
-            let outSettings: [String: Any] = [
-                AVFormatIDKey: kAudioFormatLinearPCM,
-                AVSampleRateKey: format.sampleRate,
-                AVNumberOfChannelsKey: format.channelCount,
-                AVLinearPCMBitDepthKey: 16,
-                AVLinearPCMIsFloatKey: false,
-                AVLinearPCMIsBigEndianKey: false,
-                AVLinearPCMIsNonInterleaved: false
-            ]
-            let outFile = try AVAudioFile(forWriting: cafURL, settings: outSettings)
             // 2026-06-13：不再 loop 成 29s。真機證實 iOS 會把「長的」自訂通知音整顆退成 ~2s 預設音，
             //   但「短的」（如 4.6s 原始錄音）照播完整。提醒模式改走「短 CAF＋堆疊多顆通知」鋪滿 ~30s
             //   （見 AlarmScheduler.scheduleGentleRepeatBurst），所以這裡只寫一輪原始錄音（已 cap ≤30s）。
             //   AlarmKit 模式系統本來就會自己無限 loop，短 CAF 同樣 OK。
             //   ⚠️ 家長若錄超長（超過 iOS 的自訂音截斷點），單顆通知音仍可能被 iOS 截短；多數叫醒語很短，
             //      且「響滿 30s」交給堆疊負責，故此處不再人工補長（補長只會重蹈 29s→2s 之雷）。
-            try outFile.write(from: buffer)
+            try writePCMCAF(buffer, to: cafURL)
             print("🎚️ Exporter: wrote \(String(format: "%.1f", Double(buffer.frameLength) / format.sampleRate))s recording (no loop) → short CAF")
         } catch {
             print("🎚️ Exporter: m4a→caf export FAILED — \(error.localizedDescription)")
@@ -550,9 +549,7 @@ enum AlarmSoundExporter {
             print("🎚️ Exporter: bundled sound \(bundledName) NOT in bundle — abort")
             return nil
         }
-        let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Sounds", isDirectory: true)
-        try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
+        let soundsDir = AppPaths.ensureSoundsDirectory()
 
         // Name encodes bundle base + safe-length（改 bundledSafeSeconds 會自動重匯）+ export epoch。
         // e.g. bundled_sunny_wake_45_1753772400.caf（2026-07 以前的舊檔名無 epoch，不會被當 cache）。
@@ -581,19 +578,7 @@ enum AlarmSoundExporter {
                 return nil
             }
             try inFile.read(into: buffer, frameCount: AVAudioFrameCount(frames))
-
-            // 16-bit linear PCM CAF — the format UNNotificationSound reliably accepts (same as recordings).
-            let outSettings: [String: Any] = [
-                AVFormatIDKey: kAudioFormatLinearPCM,
-                AVSampleRateKey: format.sampleRate,
-                AVNumberOfChannelsKey: format.channelCount,
-                AVLinearPCMBitDepthKey: 16,
-                AVLinearPCMIsFloatKey: false,
-                AVLinearPCMIsBigEndianKey: false,
-                AVLinearPCMIsNonInterleaved: false
-            ]
-            let outFile = try AVAudioFile(forWriting: shortURL, settings: outSettings)
-            try outFile.write(from: buffer)
+            try writePCMCAF(buffer, to: shortURL)
             print("🎚️ Exporter: bundled \(bundledName) → short \(shortName) (\(String(format: "%.1f", Double(buffer.frameLength) / format.sampleRate))s)")
         } catch {
             print("🎚️ Exporter: bundled short export FAILED — \(error.localizedDescription)")
@@ -615,10 +600,7 @@ enum AlarmSoundExporter {
     /// 長度 = seconds（cap ≤29，因 >30 會被 iOS 整顆退預設）。5 的倍數那聲用高音、較長，方便數。
     /// 用途：殺 App+關屏下逐顆聽，找出 iOS「完整播放自訂通知音」的真實上限。測完整個 #if DEBUG 可刪。
     static func makeProbeBeepCAF(seconds: Int) -> String? {
-        let fm = FileManager.default
-        let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Sounds", isDirectory: true)
-        try? fm.createDirectory(at: soundsDir, withIntermediateDirectories: true)
+        let soundsDir = AppPaths.ensureSoundsDirectory()
 
         let sr = 44100.0
         let dur = min(max(seconds, 1), 29)
@@ -642,20 +624,10 @@ enum AlarmSoundExporter {
             }
         }
 
-        let outSettings: [String: Any] = [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: sr,
-            AVNumberOfChannelsKey: 1,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsNonInterleaved: false
-        ]
         let cafName = "debug_probe_\(dur)s_\(Int(Date().timeIntervalSince1970)).caf"
         let cafURL = soundsDir.appendingPathComponent(cafName)
         do {
-            let outFile = try AVAudioFile(forWriting: cafURL, settings: outSettings)
-            try outFile.write(from: buf)
+            try writePCMCAF(buf, to: cafURL)
         } catch {
             print("🔬 Probe: make \(dur)s CAF failed — \(error.localizedDescription)")
             return nil

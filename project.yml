@@ -63,6 +63,9 @@ targets:
       # 家長錄音正本：VoiceRecordController（AVAudioEngine + voice processing、分段防 crash）
       - package: CommonLibIOS
         product: AudioCoreKit
+      # 生產環境崩潰／凍結報告（MetricKit → Documents/diagnostics/*.json）。App Store 版閃退時的唯一證據。
+      - package: CommonLibIOS
+        product: KidsDiagnostics
     info:
       path: SunnyWalker/Info.plist
       properties:

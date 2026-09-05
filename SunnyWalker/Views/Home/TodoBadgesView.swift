@@ -98,10 +98,8 @@ struct TodoBadgesView: View {
 
     /// 兒童點一下 → 播放提醒語音（不消失、不記錄；播完才解鎖長按確認）。
     private func play(_ todo: Alarm) {
-        guard !todo.recordingName.isEmpty else { return }
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings/\(todo.recordingName).m4a")
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        guard AppPaths.recordingExists(named: todo.recordingName) else { return }
+        let url = AppPaths.recordingURL(named: todo.recordingName)
         // ⚠️ 順序很重要，否則會「沒聽完就解鎖長按確認」：
         //   player.play() 內部一開始會 stop()（isPlaying→false）。若此時 playingTodoID 還指著某則
         //   （首播的上一則、或重複點同一則 / 中途改點別則時的「正在播的那則」），那個 false 事件會被

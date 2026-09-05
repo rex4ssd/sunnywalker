@@ -8,6 +8,8 @@ struct MascotView: View {
     /// When true, tapping the mascot plays a cheerful greeting + a little bounce. Off by default so
     /// the mascot on the recording screens never steals the audio session (they use .playAndRecord).
     var tappable: Bool = false
+    /// false ＝ 暫停 24fps 呼吸／眨眼（首頁被 sheet 蓋住時省下 GPU，讓上面的清單捲得順）。
+    var animated: Bool = true
     var scene: DaytimeScene? = nil
     /// 多人鬧鐘：覆寫要顯示的吉祥物（首頁每個群組各自的吉祥物）。nil → 用全域 settings.mascotTheme。
     var themeOverride: MascotTheme? = nil
@@ -38,7 +40,7 @@ struct MascotView: View {
     }
 
     private var livingAvatar: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 24.0, paused: reduceMotion || !animated)) { timeline in
             let t = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
             let pace = effectiveScene == .dusk || effectiveScene == .night ? 0.72 : 1.0
             let breath = reduceMotion ? 1.0 : 1.0 + sin(t * .pi / 2 * pace) * 0.018

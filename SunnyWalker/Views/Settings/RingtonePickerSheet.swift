@@ -71,10 +71,10 @@ struct RingtonePickerSheet: View {
                     if mode == .bundled || mode == .all {
                         bundledSection
                     }
-                    if (mode == .custom || mode == .all), !clips.isEmpty {
+                    if (mode == .custom || mode == .all), !liveClips.isEmpty {
                         recordingSection
                     }
-                    if mode == .custom && clips.isEmpty {
+                    if mode == .custom && liveClips.isEmpty {
                         emptyCustomSection
                     }
                     // 「新增錄音」— 自定鈴聲頁直接錄，錄完 @Query 自動刷新顯示在上面清單
@@ -95,6 +95,7 @@ struct RingtonePickerSheet: View {
                 }
             }
         }
+        .countsAsPresentedSheet()
         .onReceive(player.$isPlaying) { playing in
             if !playing { previewingFile = nil }
         }
@@ -272,9 +273,12 @@ struct RingtonePickerSheet: View {
         }
     }
 
+    /// 排除已被 modelContext.delete、@Query 尚未刷新的物件（對已刪物件取值會炸）。
+    private var liveClips: [VoiceClip] { clips.filter { !$0.isDeleted } }
+
     private var recordingSection: some View {
         Section(header: Text("自錄鈴聲").font(SunnyFonts.caption(13))) {
-            ForEach(clips) { clip in
+            ForEach(liveClips) { clip in
                 RingtoneClipRow(
                     clip: clip,
                     isSelected: isClipSelected(clip),
@@ -293,8 +297,7 @@ struct RingtonePickerSheet: View {
     private func isClipSelected(_ clip: VoiceClip) -> Bool {
         // The alarm stores a CAF filename derived from the clip's base name.
         // Check whether current sound was exported from this clip.
-        let base = String(clip.fileName.dropLast(4))  // strip ".m4a"
-        return currentFileName.hasPrefix("alarm_\(base)_")
+        currentFileName.hasPrefix("alarm_\(clip.baseName)_")
     }
 
     private func toggleBundledPreview(_ sound: BundledSound) {
@@ -320,12 +323,18 @@ struct RingtonePickerSheet: View {
 
     private func selectClip(_ clip: VoiceClip) {
         player.stop()
-        // Export m4a → CAF for AlarmKit / UNNotification lock-screen sound.
-        let base = String(clip.fileName.dropLast(4))
-        if let cafName = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base) {
-            onSelect(cafName, SelectedRecordingInfo(baseName: base, displayName: clip.name))
+        // Export m4a → CAF for AlarmKit / UNNotification lock-screen sound（背景執行緒，不卡 main）.
+        let base = clip.baseName
+        let name = clip.name
+        Task {
+            let cafName = await Task.detached(priority: .userInitiated) {
+                AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base)
+            }.value
+            if let cafName {
+                onSelect(cafName, SelectedRecordingInfo(baseName: base, displayName: name))
+            }
+            dismiss()
         }
-        dismiss()
     }
 
     private func beginRename(_ clip: VoiceClip) {
@@ -340,8 +349,7 @@ struct RingtonePickerSheet: View {
         clip.name = trimmed
         try? modelContext.save()
         if isClipSelected(clip) {
-            let base = String(clip.fileName.dropLast(4))
-            onSelect(currentFileName, SelectedRecordingInfo(baseName: base, displayName: trimmed))
+            onSelect(currentFileName, SelectedRecordingInfo(baseName: clip.baseName, displayName: trimmed))
         }
         renamingClip = nil
         renameDraft = ""

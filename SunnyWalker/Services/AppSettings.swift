@@ -46,6 +46,37 @@ enum FeatureLimits {
     static var maxAlarmRecordingSeconds: TimeInterval { isPro ? .infinity : freeMaxAlarmRecordingSeconds }
 }
 
+// MARK: - Home list layout
+
+/// 首頁鬧鐘清單的排列方式。
+enum HomeListLayout: String, CaseIterable, Identifiable {
+    /// 一條清單依時間排序（原本的預設）。
+    case time
+    /// 依時段分節：早上 / 上午 / 下午 / 晚上——大人設一堆鬧鐘時最好掃（起床、出門、放學、睡前各一區）。
+    case daypart
+    /// 依星期分節（同一顆鬧鐘出現在它的每個響鈴日底下）。
+    case weekday
+
+    var id: String { rawValue }
+
+    /// Localizable.xcstrings key。
+    var labelKey: String {
+        switch self {
+        case .time:    return "home_layout_time"
+        case .daypart: return "home_layout_daypart"
+        case .weekday: return "home_layout_weekday"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .time:    return "list.bullet"
+        case .daypart: return "sun.horizon.fill"
+        case .weekday: return "calendar"
+        }
+    }
+}
+
 // MARK: - Mascot theme
 
 enum MascotTheme: String, CaseIterable, Identifiable {
@@ -103,7 +134,14 @@ final class AppSettings: ObservableObject {
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
         self.burstGapSeconds = UserDefaults.standard.object(forKey: "burstGapSeconds") as? Int ?? 2
         self.burstSpanSeconds = UserDefaults.standard.object(forKey: "burstSpanSeconds") as? Int ?? AppSettings.burstSpanOptions.last!
-        self.homeGroupByWeekday = UserDefaults.standard.object(forKey: "homeGroupByWeekday") as? Bool ?? false
+        // 首頁排列：新 key 優先；沒有時沿用舊的「依星期分組」布林（開＝weekday、關＝time），舊用戶感覺不到差別。
+        if let raw = UserDefaults.standard.string(forKey: "homeListLayout"),
+           let layout = HomeListLayout(rawValue: raw) {
+            self.homeListLayout = layout
+        } else {
+            let legacyWeekday = UserDefaults.standard.object(forKey: "homeGroupByWeekday") as? Bool ?? false
+            self.homeListLayout = legacyWeekday ? .weekday : .time
+        }
         self.longAutoNames = UserDefaults.standard.object(forKey: "longAutoNames") as? Bool ?? true
         self.alarmRingDurationMinutes = UserDefaults.standard.object(forKey: "alarmRingDurationMinutes") as? Int ?? 5
         self.backgroundListeningEnabled = UserDefaults.standard.object(forKey: "backgroundListeningEnabled") as? Bool ?? false
@@ -193,10 +231,9 @@ final class AppSettings: ObservableObject {
 
     // MARK: - Home list layout
 
-    /// 首頁鬧鐘清單依星期分組（週一…週日各一節，同一顆鬧鐘出現在它的每個響鈴日底下）。
-    /// 預設 off＝原本的單一清單（依時間排序）。
-    @Published var homeGroupByWeekday: Bool {
-        didSet { UserDefaults.standard.set(homeGroupByWeekday, forKey: "homeGroupByWeekday") }
+    /// 首頁鬧鐘清單排列方式（依時間 / 依時段 / 依星期）。預設依時間＝原本的單一清單。
+    @Published var homeListLayout: HomeListLayout {
+        didSet { UserDefaults.standard.set(homeListLayout.rawValue, forKey: "homeListLayout") }
     }
 
     // MARK: - Auto-name length
@@ -476,6 +513,14 @@ final class AppSettings: ObservableObject {
     /// End the temporary unlock immediately ("立即上鎖") — next Settings / New Alarm re-shows the gate.
     func endParentalUnlockWindow() {
         parentalUnlockUntil = nil
+    }
+
+    /// 與共用件 `ParentalUnlockSession`（家長頁尾段的「延長解鎖／立即上鎖」）同步：
+    /// 那邊改了截止時間就鏡射進來，首頁的「＋」與設定鈕才會跟著免驗證／重新上鎖。
+    /// 已過期或 nil → 上鎖。相同值不重寫（避免 didSet 反覆寫 UserDefaults）。
+    func applyParentalUnlock(until: Date?) {
+        let effective: Date? = (until.map { $0 > Date() } ?? false) ? until : nil
+        if effective != parentalUnlockUntil { parentalUnlockUntil = effective }
     }
 
     func clearExpiredParentalUnlockIfNeeded(referenceDate: Date = .now) {

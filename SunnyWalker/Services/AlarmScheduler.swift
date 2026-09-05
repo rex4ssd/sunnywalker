@@ -40,18 +40,23 @@ final class AlarmScheduler {
         // weekday、weekday↔一次性切換後的舊格式）。這讓排程沒有「已 remove、未 add 完成」的
         // 空窗；之前 force-quit 卡在這個空窗會把通知整批清掉（見 issue 文件第二輪）。
         let isNotificationMode = alarm.effectiveBackgroundMode == .notification
-        // rep-k（gentle-repeat burst）一律列入清掃：它們是「下一次發生」的一次性 slot，
-        // 不放進 keepIDs → 每次排程先清掉舊的，再由 scheduleGentleRepeatBurst 重排新的。
-        let allIDs = (1...7).map { "\(alarm.id.uuidString)-\($0)" }
-            + (1...Self.maxRepeatSlots).map { "\(alarm.id.uuidString)-rep-\($0)" }
-            + (1...Alarm.maxChimeCount).map { "\(alarm.id.uuidString)-chime-\($0)" }
-            + [alarm.id.uuidString]
-        let keepIDs: Set<String> = isNotificationMode || !AlarmKitService.shared.isAuthorized
-            ? (alarm.weekdays.isEmpty
-                ? [alarm.id.uuidString]
-                : Set(alarm.weekdays.map { "\(alarm.id.uuidString)-\($0)" }))
-            : []  // AlarmKit 模式且已授權 → 此路徑只負責清掉殘留通知，全移除
-        center.removePendingNotificationRequests(withIdentifiers: allIDs.filter { !keepIDs.contains($0) })
+        // 後續通知（rep-k 切段堆疊、chime 連報、nag）一律列入清掃：它們是「下一次發生」的一次性 slot，
+        // 不放進 keepIDs → 每次排程先清掉舊的，再重排新的。id 清單統一來自 AlarmNotificationIDs。
+        let keepIDs: Set<String>
+        if isNotificationMode || !AlarmKitService.shared.isAuthorized {
+            if alarm.isChimeAlarm {
+                keepIDs = Set(chimeRequestIDs(for: alarm))
+            } else if alarm.weekdays.isEmpty {
+                keepIDs = [AlarmNotificationIDs.base(alarm.id)]
+            } else {
+                keepIDs = Set(alarm.weekdays.map { AlarmNotificationIDs.weekday(alarm.id, $0) })
+            }
+        } else {
+            keepIDs = []  // AlarmKit 模式且已授權 → 此路徑只負責清掉殘留通知，全移除
+        }
+        center.removePendingNotificationRequests(
+            withIdentifiers: AlarmNotificationIDs.all(for: alarm.id).filter { !keepIDs.contains($0) }
+        )
 
         // AlarmKit is the single source of truth once authorized. Scheduling both an
         // AlarmKit alarm AND a UNNotification makes the device fire twice (full-screen
@@ -69,6 +74,13 @@ final class AlarmScheduler {
         }
         if isNotificationMode {
             print("🔔 AlarmScheduler: NOTIFICATION-mode alarm \(alarm.id.uuidString.prefix(8)) — scheduling .timeSensitive UNNotification (AlarmKit deliberately not used)")
+        }
+
+        // 報時（單一時刻或區間）：自己一條路——每個時刻各一個語音檔、各自的 request。
+        if alarm.isChimeAlarm {
+            await scheduleChime(alarm: alarm, center: center,
+                                timeSensitiveEnabled: ns.timeSensitiveSetting == .enabled)
+            return
         }
 
         // Self-heal: alarms recorded before the CAF export existed still point at the bundled
@@ -98,57 +110,20 @@ final class AlarmScheduler {
         // 量到的 CAF 長度（秒）— 餵給 gentle-repeat burst 算「下一顆通知」的秒級間距。預設 5。
         var cafSeconds: Double = 5
         let custom = alarm.soundFileName
-        // 報時鬧鐘：soundFileName 是 ChimeSoundComposer 寫進 Library/Sounds 的 chime_*.caf（無錄音）。
-        let isChimeSelection = custom.hasPrefix(Alarm.chimeFilePrefix)
-        let wantsCustom = !custom.isEmpty && custom != "sunny_wake.caf" && !alarm.recordingName.isEmpty && !isChimeSelection
+        let wantsCustom = !custom.isEmpty && custom != "sunny_wake.caf" && !alarm.recordingName.isEmpty
         // 內建鈴聲選擇＝有 soundFileName、沒有 recordingName、且檔案在 app bundle 裡（sunny_wake.caf / leaf_rustle.caf）。
         // 這條跟 wantsCustom 互斥：錄音走上面、內建走下面、其餘（沒選/舊資料）落 .default。
         let isBundledSelection = !custom.isEmpty
             && alarm.recordingName.isEmpty
             && Bundle.main.url(forResource: custom, withExtension: nil) != nil
-        if isChimeSelection {
-            // 自我修復：舊版報時把「連報 N 次」烤進同一個檔（檔名 chime_HHMM_COUNT_lang_epoch，5 段），
-            //   太長 → iOS 把通知音整顆退成預設音（使用者回報「報時開不起來」，count=2 已 5.4s）。
-            //   新版單句檔是 chime_HHMM_lang_epoch（4 段）+ 由 scheduleChimeRepeats 排多顆達成連報。
-            //   偵測到舊檔就在這裡重合成短單句、換掉 soundFileName，既有報時鬧鐘下次 re-arm 自動痊癒。
-            var chimeName = custom
-            let segs = (chimeName as NSString).deletingPathExtension.components(separatedBy: "_")
-            if segs.count >= 5 {
-                let hh = alarm.hour, mm = alarm.minute
-                let loc = SunnyLocalization.locale
-                if let fresh = await Task.detached(priority: .userInitiated, operation: {
-                    ChimeSoundComposer.compose(hour: hh, minute: mm, locale: loc)
-                }).value {
-                    ChimeSoundComposer.removeChimeFile(named: chimeName)
-                    alarm.soundFileName = fresh
-                    chimeName = fresh
-                    print("🔔 AlarmScheduler: chime auto-healed old long file → \(fresh)")
-                }
-            }
-            // 報時音檔已是 Library/Sounds 裡的短 16-bit PCM CAF（ChimeSoundComposer 產生）。直接用。
-            let fm = FileManager.default
-            let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Sounds", isDirectory: true)
-            let cafURL = soundsDir.appendingPathComponent(chimeName)
-            if fm.fileExists(atPath: cafURL.path) {
-                if let caf = try? AVAudioFile(forReading: cafURL) {
-                    cafSeconds = max(1, Double(caf.length) / caf.fileFormat.sampleRate)
-                }
-                content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: chimeName))
-                print("🔔 AlarmScheduler: using CHIME banner sound → \(chimeName) (\(String(format: "%.1f", cafSeconds))s)")
-            } else {
-                content.sound = .default
-                print("🔔 AlarmScheduler: ⚠️ chime CAF missing (\(chimeName)) — FALLING BACK to default. (re-save the alarm to regenerate)")
-            }
-        } else if wantsCustom {
+        if wantsCustom {
             // Verify the CAF actually exists in Library/Sounds — UNNotificationSound(named:)
             // SILENTLY falls back to the default tone if the file is missing or wrong format.
             // ⚠️ 2026-06-13 真機實證：iOS 對「過長」的自訂通知音也會悄悄退成 ~2s 預設音，門檻【遠低於】
             //   文件寫的 30s（實測 29s 就掛、只驗到 4.6s 安全）。所以下面用短 CAF + 反向自我修復處理。
             //   Checking here turns that invisible failure into a visible log line.
             let fm = FileManager.default
-            let soundsDir = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent("Sounds", isDirectory: true)
+            let soundsDir = AppPaths.soundsDirectory
             let cafPath = soundsDir.appendingPathComponent(custom).path
             let exists = fm.fileExists(atPath: cafPath)
             let dirList = (try? fm.contentsOfDirectory(atPath: soundsDir.path)) ?? []
@@ -192,9 +167,7 @@ final class AlarmScheduler {
             // 內建音從來沒響過。現在比照錄音路徑：把 bundle 裡的 18–20s CAF 修剪成短 CAF（避開 iOS 對
             // 長自訂通知音「鎖屏退成 ~2s」的雷），存進 Library/Sounds，再交給 gentle-repeat burst 鋪滿 ~30s。
             if let shortName = AlarmSoundExporter.exportBundledShortCAF(bundledName: custom) {
-                let soundsDir = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent("Sounds", isDirectory: true)
-                if let caf = try? AVAudioFile(forReading: soundsDir.appendingPathComponent(shortName)) {
+                if let caf = try? AVAudioFile(forReading: AppPaths.soundURL(named: shortName)) {
                     cafSeconds = max(1, Double(caf.length) / caf.fileFormat.sampleRate)
                 }
                 content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: shortName))
@@ -259,8 +232,6 @@ final class AlarmScheduler {
             if alarm.effectiveSegmentedBurst {
                 await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: fireDate, voiceSeconds: cafSeconds, center: center)
             }
-            // 報時連報 N 次：baseline 是第 1 次，這裡補排第 2…N 次（秒級錯開）。
-            await scheduleChimeRepeats(alarm: alarm, content: content, fireDate: fireDate, voiceSeconds: cafSeconds, center: center)
             return
         }
 
@@ -287,10 +258,157 @@ final class AlarmScheduler {
             if alarm.effectiveSegmentedBurst {
                 await scheduleGentleRepeatBurst(alarm: alarm, content: content, fireDate: next, voiceSeconds: cafSeconds, center: center)
             }
-            // 報時連報 N 次：每週循環的 baseline 已排好，這裡為「下一次發生」補排第 2…N 次（一次性，
-            // 每次 app 啟動 / 進背景 re-arm；跟 gentle-repeat burst 同個慣例與限制）。
-            await scheduleChimeRepeats(alarm: alarm, content: content, fireDate: next, voiceSeconds: cafSeconds, center: center)
         }
+    }
+
+    // MARK: - 報時（單一時刻 / 區間）
+
+    /// 這顆報時鬧鐘「會被 add」的所有 request id（給 schedule() 的清掃當 keep 清單用）。
+    private func chimeRequestIDs(for alarm: Alarm) -> [String] {
+        let slots = alarm.chimeSlotTimes.indices
+        let daily = Set(alarm.weekdays) == Set(1...7)
+        if alarm.weekdays.isEmpty || daily {
+            return slots.map { AlarmNotificationIDs.chimeSlot(alarm.id, slot: $0) }
+        }
+        return slots.flatMap { s in alarm.weekdays.map { AlarmNotificationIDs.chimeSlot(alarm.id, slot: s, weekday: $0) } }
+    }
+
+    /// 報時排程：每個時刻（slot）各自一個語音檔 + 各自的 request；連報 N 次為每個時刻的下一次發生
+    /// 補排第 2…N 顆秒級錯開的一次性通知。
+    ///
+    /// 通知額度（iOS 每 app 64 顆 pending）：
+    ///   • 七天都勾 → 每個 slot 只用 1 顆「每天重複」的 request（不帶 weekday），12 個時刻＝12 顆。
+    ///   • 勾部分星期 → 每個 slot × 每個星期各 1 顆；12 × 5 ＝ 60，貼近上限，所以先排「時刻」
+    ///     再排「連報」，額度不夠時連報自動少排（時刻優先，寧可少報幾次也不能漏掉時刻）。
+    ///   • 語音檔缺／舊資料 → 先在背景重新合成全部時刻（全成功才換），失敗保留舊檔照排。
+    private func scheduleChime(alarm: Alarm, center: UNUserNotificationCenter,
+                               timeSensitiveEnabled: Bool) async {
+        let slots = alarm.chimeSlotTimes
+        let locale = SunnyLocalization.locale
+        let voice = alarm.effectiveChimeVoice
+
+        // 1. 語音檔：與時刻數對齊且檔案都在 → 直接用；否則重新合成（舊格式單檔、改過時間/人聲、檔案遺失）。
+        var files = alarm.alignedChimeSlotFiles
+        if let f = files, f.contains(where: { !FileManager.default.fileExists(atPath: AppPaths.soundURL(named: $0).path) }) {
+            files = nil
+        }
+        if files == nil {
+            let old = Set((alarm.chimeSlotSoundFiles ?? []) + [alarm.soundFileName])
+            let composed = await Task.detached(priority: .userInitiated) {
+                ChimeSoundComposer.composeSlots(slots, locale: locale, voice: voice)
+            }.value
+            if let composed, let first = composed.first {
+                alarm.chimeSlotSoundFiles = composed
+                alarm.soundFileName = first
+                for o in old where !composed.contains(o) { ChimeSoundComposer.removeChimeFile(named: o) }
+                files = composed
+                print("🔔 AlarmScheduler.chime: (re)composed \(composed.count) slot file(s) for \(alarm.id.uuidString.prefix(8))")
+            } else if !alarm.soundFileName.isEmpty,
+                      FileManager.default.fileExists(atPath: AppPaths.soundURL(named: alarm.soundFileName).path) {
+                // 合成失敗（極少數）→ 至少讓每個時刻都用舊的那句報時，不會無聲。
+                files = Array(repeating: alarm.soundFileName, count: slots.count)
+                print("🔔 AlarmScheduler.chime: ⚠️ compose failed — reusing \(alarm.soundFileName) for all \(slots.count) slot(s)")
+            }
+        }
+        guard let files else {
+            print("🔔 AlarmScheduler.chime: ⚠️ no chime sound available for \(alarm.id.uuidString.prefix(8)) — nothing scheduled")
+            return
+        }
+
+        // 2. 額度：扣掉「不是這顆鬧鐘」的 pending（自己的會被同 id add 取代，不佔新額度）。
+        let pending = await center.pendingNotificationRequests()
+        let others = pending.filter { !$0.identifier.hasPrefix(alarm.id.uuidString) }.count
+        var budget = max(0, 64 - others - 2)
+
+        let cal = Calendar.current
+        let daily = Set(alarm.weekdays) == Set(1...7)
+        var added = 0
+        var slotSeconds: [Double] = []
+
+        for (s, slot) in slots.enumerated() {
+            let file = files[s]
+            let content = makeChimeContent(alarm: alarm, hour: slot.hour, minute: slot.minute,
+                                           soundFile: file, locale: locale,
+                                           timeSensitiveEnabled: timeSensitiveEnabled)
+            var secs: Double = 3
+            if let caf = try? AVAudioFile(forReading: AppPaths.soundURL(named: file)) {
+                secs = max(1, Double(caf.length) / caf.fileFormat.sampleRate)
+            }
+            slotSeconds.append(secs)
+
+            var comps = DateComponents()
+            comps.hour = slot.hour; comps.minute = slot.minute
+            if alarm.weekdays.isEmpty {
+                // 單次：下一次發生（今天或明天）
+                guard budget > 0,
+                      let fire = cal.nextDate(after: Date(), matching: { var c = comps; c.second = 0; return c }(),
+                                              matchingPolicy: .nextTime) else { continue }
+                let parts = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+                let req = UNNotificationRequest(
+                    identifier: AlarmNotificationIDs.chimeSlot(alarm.id, slot: s), content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+                if (try? await center.add(req)) != nil { added += 1; budget -= 1 }
+            } else if daily {
+                guard budget > 0 else { break }
+                let req = UNNotificationRequest(
+                    identifier: AlarmNotificationIDs.chimeSlot(alarm.id, slot: s), content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: true))
+                if (try? await center.add(req)) != nil { added += 1; budget -= 1 }
+            } else {
+                for wd in alarm.weekdays {
+                    guard budget > 0 else { break }
+                    var c = comps; c.weekday = wd
+                    let req = UNNotificationRequest(
+                        identifier: AlarmNotificationIDs.chimeSlot(alarm.id, slot: s, weekday: wd), content: content,
+                        trigger: UNCalendarNotificationTrigger(dateMatching: c, repeats: true))
+                    if (try? await center.add(req)) != nil { added += 1; budget -= 1 }
+                }
+            }
+        }
+        print("🔔 AlarmScheduler.chime: \(alarm.id.uuidString.prefix(8)) \(slots.count) slot(s) × \(alarm.weekdays.isEmpty ? "once" : (daily ? "daily" : "\(alarm.weekdays.count) day(s)")) → \(added) request(s), voice=\(voice.rawValue), budgetLeft=\(budget)")
+
+        // 3. 連報 N 次：每個時刻的「下一次發生」補排第 2…N 顆（一次性，每次 re-arm 重排）。
+        let count = alarm.effectiveChimeCount
+        guard count > 1 else { return }
+        var extra = 0
+        for (s, slot) in slots.enumerated() {
+            guard let next = nextOccurrence(hour: slot.hour, minute: slot.minute, weekdays: alarm.weekdays) else { continue }
+            // 兩句報時之間的間距（秒）＝一句長度 + ~1s 喘息，至少 2 秒；slot 秒位須 < 60 留在同一分鐘內。
+            let period = max(2, Int(ceil(slotSeconds[s])) + 1)
+            let content = makeChimeContent(alarm: alarm, hour: slot.hour, minute: slot.minute,
+                                           soundFile: files[s], locale: locale,
+                                           timeSensitiveEnabled: timeSensitiveEnabled)
+            for k in 2...count {
+                let off = period * (k - 1)
+                guard off < 60, budget > 0, let date = cal.date(byAdding: .second, value: off, to: next) else { break }
+                let parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+                let req = UNNotificationRequest(
+                    identifier: AlarmNotificationIDs.chimeSlotRepeat(alarm.id, slot: s, k), content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+                if (try? await center.add(req)) != nil { extra += 1; budget -= 1 }
+            }
+        }
+        print("🔔 AlarmScheduler.chime: repeats ×\(count) → +\(extra) one-shot(s) (budgetLeft=\(budget))")
+    }
+
+    /// 報時橫幅：標題＝鬧鐘標籤（沒有就「報時」），內文＝跟語音念的一模一樣（早上七點零五分）。
+    private func makeChimeContent(alarm: Alarm, hour: Int, minute: Int, soundFile: String,
+                                  locale: Locale, timeSensitiveEnabled: Bool) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        let label = alarm.label.trimmingCharacters(in: .whitespaces)
+        content.title = label.isEmpty ? L("chime_notification_title") : label
+        content.body = ChimeSoundComposer.phrase(hour: hour, minute: minute, locale: locale)
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundFile))
+        content.categoryIdentifier = "SUNNYWAKE_ALARM"
+        content.threadIdentifier = alarm.id.uuidString
+        content.interruptionLevel = timeSensitiveEnabled ? .timeSensitive : .active
+        content.userInfo = [
+            "alarmID": alarm.id.uuidString,
+            "requireAppToStop": false,
+            // 點橫幅只回主畫面（報時放完就停，沒有「關鬧鐘」的需求）。AppDelegate.didReceive 讀這個 key。
+            "backgroundMode": AlarmBackgroundMode.notification.rawValue
+        ]
+        return content
     }
 
     // MARK: - Strict mode ("貪睡模式") nag notifications
@@ -313,7 +431,7 @@ final class AlarmScheduler {
             let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: nagDate)
             let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
             let req = UNNotificationRequest(
-                identifier: "\(alarm.id.uuidString)-nag-\(k)", content: content, trigger: trigger
+                identifier: AlarmNotificationIDs.nag(alarm.id, k), content: content, trigger: trigger
             )
             try? await center.add(req)
         }
@@ -322,7 +440,6 @@ final class AlarmScheduler {
 
     // MARK: - 溫和提醒「響滿 ~30s」堆疊（gentle-repeat burst）
 
-    private static let maxRepeatSlots = 12   // 清理 {uuid}-rep-k 用的列舉上限
 
     /// 提醒模式「響滿 ~30s」：真機證實 iOS 只完整播「短的」自訂通知音，單顆只響一段語音。
     /// 這裡對【下一次發生】加排數顆秒級錯開的一次性通知（`{uuid}-rep-k`），把語音重複鋪到 ~30s，
@@ -361,9 +478,9 @@ final class AlarmScheduler {
             print("🔔 AlarmScheduler: gentle-repeat burst SKIPPED — pending=\(pendingNow) near 64 limit")
             return
         }
-        let slots = Array(offsets.prefix(min(budget, Self.maxRepeatSlots)))
+        let slots = Array(offsets.prefix(min(budget, AlarmNotificationIDs.maxRepeatSlots)))
         if slots.count < offsets.count {
-            print("🔔 AlarmScheduler: gentle-repeat burst TRUNCATED — planned \(offsets.count) slots, room for \(slots.count) (pending=\(pendingNow), maxRepeatSlots=\(Self.maxRepeatSlots))")
+            print("🔔 AlarmScheduler: gentle-repeat burst TRUNCATED — planned \(offsets.count) slots, room for \(slots.count) (pending=\(pendingNow), maxRepeatSlots=\(AlarmNotificationIDs.maxRepeatSlots))")
         }
 
         let cal = Calendar.current
@@ -373,7 +490,7 @@ final class AlarmScheduler {
             let parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: slotDate)
             let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
             let req = UNNotificationRequest(
-                identifier: "\(alarm.id.uuidString)-rep-\(i + 1)", content: content, trigger: trigger
+                identifier: AlarmNotificationIDs.repeatSlot(alarm.id, i + 1), content: content, trigger: trigger
             )
             do { try await center.add(req); added += 1 } catch {
                 print("🔔 AlarmScheduler: gentle-repeat slot \(i + 1) add failed — \(error.localizedDescription)")
@@ -389,51 +506,21 @@ final class AlarmScheduler {
         print("🔬 BurstPlan[\(alarm.id.uuidString.prefix(8))]: baseline@\(hhmmss(fireDate)) +\(slots.map(String.init).joined(separator: "s,+"))s | period=\(period)s (voice=\(String(format: "%.1f", voiceSeconds))s + burstGap=\(gap)s) added=\(added)/\(slots.count) pendingWas=\(pendingNow) sound=\(alarm.soundFileName)")
     }
 
-    // MARK: - 報時連報 N 次
-
-    /// 報時鬧鐘「連報 N 次」：報時音檔本身只有「一句」（保持短、通知音不被 iOS 截成預設音）。
-    /// 連報靠這裡為同一個 fireDate 補排第 2…N 顆秒級錯開的一次性通知（共用 threadIdentifier → 通知中心
-    /// 收成一組）。第 1 次是 baseline（已排在 fireDate 第 0 秒）。slot 必須 < 60 秒，留在同一分鐘內。
-    private func scheduleChimeRepeats(
-        alarm: Alarm,
-        content: UNNotificationContent,
-        fireDate: Date,
-        voiceSeconds: Double,
-        center: UNUserNotificationCenter
-    ) async {
-        guard alarm.isChimeAlarm else { return }
-        let count = alarm.effectiveChimeCount
-        guard count > 1 else { return }
-        // 兩句報時之間的間距（秒）＝一句長度 + ~0.6s 喘息。至少 2 秒。
-        let period = max(2, Int(ceil(voiceSeconds)) + 1)
-
-        let cal = Calendar.current
-        var added = 0
-        for k in 2...count {
-            let off = period * (k - 1)
-            guard off < 60, let slotDate = cal.date(byAdding: .second, value: off, to: fireDate) else { break }
-            let parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: slotDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
-            let req = UNNotificationRequest(
-                identifier: "\(alarm.id.uuidString)-chime-\(k)", content: content, trigger: trigger
-            )
-            do { try await center.add(req); added += 1 } catch {
-                print("🔔 AlarmScheduler: chime repeat \(k) add failed — \(error.localizedDescription)")
-            }
-        }
-        print("🔔 AlarmScheduler: chime repeats → baseline + \(added) extra (count=\(count), every \(period)s, voice=\(String(format: "%.1f", voiceSeconds))s)")
+    /// Soonest future fire date across an alarm's weekdays (for scheduling strict-mode nags / bursts).
+    private func nextOccurrence(for alarm: Alarm) -> Date? {
+        nextOccurrence(hour: alarm.hour, minute: alarm.minute, weekdays: alarm.weekdays)
     }
 
-    /// Soonest future fire date across an alarm's weekdays (for scheduling strict-mode nags).
-    private func nextOccurrence(for alarm: Alarm) -> Date? {
+    /// 給定時刻 + 星期集合的下一次發生（星期空＝今天或明天）。
+    private func nextOccurrence(hour: Int, minute: Int, weekdays: [Int]) -> Date? {
         var comps = DateComponents()
-        comps.hour = alarm.hour; comps.minute = alarm.minute; comps.second = 0
+        comps.hour = hour; comps.minute = minute; comps.second = 0
         let cal = Calendar.current
-        if alarm.weekdays.isEmpty {
+        if weekdays.isEmpty {
             return cal.nextDate(after: Date(), matching: comps, matchingPolicy: .nextTime)
         }
         var best: Date?
-        for wd in alarm.weekdays {
+        for wd in weekdays {
             var c = comps; c.weekday = wd
             if let d = cal.nextDate(after: Date(), matching: c, matchingPolicy: .nextTime),
                best == nil || d < best! {
@@ -443,24 +530,20 @@ final class AlarmScheduler {
         return best
     }
 
-    /// Cancel only the strict-mode nag notifications for an alarm (leaves the main alarm intact so
+    /// Cancel only the follow-up notifications for an alarm (leaves the main alarm intact so
     /// a repeating alarm still fires next time). Called when the app opens for the ringing alarm.
+    /// 連 gentle-repeat burst / 報時連報一起清——app 為這顆鬧鐘開起來＝小孩醒了，後續語音不該再響。
     func cancelNags(_ alarmID: UUID) {
-        // 連 gentle-repeat burst 一起清——app 為這顆鬧鐘開起來＝小孩醒了，後續語音不該再響。
-        let ids = (1...9).map { "\(alarmID.uuidString)-nag-\($0)" }
-            + (1...Self.maxRepeatSlots).map { "\(alarmID.uuidString)-rep-\($0)" }
-            + (1...Alarm.maxChimeCount).map { "\(alarmID.uuidString)-chime-\($0)" }
+        let ids = AlarmNotificationIDs.followUps(for: alarmID)
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: ids)
         center.removeDeliveredNotifications(withIdentifiers: ids)
-        print("🔔 AlarmScheduler: cancelled nags for \(alarmID.uuidString.prefix(8))")
+        print("🔔 AlarmScheduler: cancelled follow-ups for \(alarmID.uuidString.prefix(8))")
     }
 
+    /// 清掉這顆鬧鐘在系統裡的【每一顆】通知（baseline + 後續 + 區間報時 slot）。刪除／停用時用。
     func cancel(_ alarmID: UUID) {
-        let identifiers = (1...7).map { "\(alarmID.uuidString)-\($0)" }
-            + (1...9).map { "\(alarmID.uuidString)-nag-\($0)" }
-            + (1...Self.maxRepeatSlots).map { "\(alarmID.uuidString)-rep-\($0)" }
-            + [alarmID.uuidString]
+        let identifiers = AlarmNotificationIDs.all(for: alarmID)
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: identifiers)
         center.removeDeliveredNotifications(withIdentifiers: identifiers)
@@ -518,36 +601,28 @@ final class AlarmScheduler {
 enum AlarmSoundUpgradeHealer {
     private static let lastHealedBuildKey = "alarmSoundHealBuild"
 
-    static func healIfNeeded(alarms: [Alarm]) {
+    static func healIfNeeded(alarms: [Alarm]) async {
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let last = UserDefaults.standard.string(forKey: lastHealedBuildKey)
         guard last != build else { return }
         print("🩹 SoundHealer: build \(last ?? "首次") → \(build) — 重匯出 \(alarms.count) 顆鬧鐘的聲音（繞過更新後的 stale 路徑/快取）")
-        for alarm in alarms { heal(alarm) }
+        for alarm in alarms { await heal(alarm) }
         UserDefaults.standard.set(build, forKey: lastHealedBuildKey)
     }
 
     /// 先修舊版資料的欄位組合（否則 schedule() 的分支判斷會直接落 .default），再換新檔名重匯。
-    private static func heal(_ alarm: Alarm) {
+    /// 匯出（整段錄音讀進記憶體再寫 CAF）走背景執行緒——這裡是 app 啟動第一畫面，卡 main 會白屏。
+    private static func heal(_ alarm: Alarm) async {
         guard !alarm.isTodo else { return }   // 待辦不發通知、無聲音檔
         if alarm.isChimeAlarm {
-            // 報時音檔（chime_*.caf）也在 Library/Sounds，同樣中更新後 stale 路徑/快取的雷
-            // → 重合成（compose 檔名自帶新 epoch），舊檔清掉。
-            if let fresh = ChimeSoundComposer.compose(
-                hour: alarm.hour, minute: alarm.minute, locale: SunnyLocalization.locale
-            ) {
-                ChimeSoundComposer.removeChimeFile(named: alarm.soundFileName)
-                alarm.soundFileName = fresh
-                print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) chime recomposed → \(fresh)")
-            }
+            // 報時音檔（chime_*.caf）也在 Library/Sounds，同樣中更新後 stale 路徑/快取的雷。
+            // 只把 slot 檔清單標成「需重合成」——實際合成在 AlarmScheduler.scheduleChime（背景執行緒、
+            // 全成功才換檔、順手刪舊檔）。soundFileName 刻意保留：isChimeAlarm 靠它的 chime_ 前綴判斷。
+            alarm.chimeSlotSoundFiles = nil
+            print("🩹 SoundHealer: \(alarm.id.uuidString.prefix(8)) chime marked for recompose")
             return
         }
-        let fm = FileManager.default
-        let recordingsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings", isDirectory: true)
-        func recordingExists(_ name: String) -> Bool {
-            fm.fileExists(atPath: recordingsDir.appendingPathComponent("\(name).m4a").path)
-        }
+        func recordingExists(_ name: String) -> Bool { AppPaths.recordingExists(named: name) }
 
         if alarm.recordingName.isEmpty, alarm.soundFileName.hasPrefix("alarm_"),
            let base = recordingBase(fromCAFName: alarm.soundFileName) {
@@ -577,12 +652,18 @@ enum AlarmSoundUpgradeHealer {
         }
 
         // 換新檔名重匯出，讓 sound server / AlarmKit 不可能命中更新前的 stale 參照。
-        if !alarm.recordingName.isEmpty {
-            if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: alarm.recordingName) {
+        let recording = alarm.recordingName
+        let bundled = alarm.soundFileName
+        if !recording.isEmpty {
+            if let caf = await Task.detached(priority: .userInitiated, operation: {
+                AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: recording)
+            }).value {
                 alarm.soundFileName = caf
             }
-        } else if Bundle.main.url(forResource: alarm.soundFileName, withExtension: nil) != nil {
-            _ = AlarmSoundExporter.exportBundledShortCAF(bundledName: alarm.soundFileName, regenerate: true)
+        } else if Bundle.main.url(forResource: bundled, withExtension: nil) != nil {
+            _ = await Task.detached(priority: .userInitiated) {
+                AlarmSoundExporter.exportBundledShortCAF(bundledName: bundled, regenerate: true)
+            }.value
         }
     }
 

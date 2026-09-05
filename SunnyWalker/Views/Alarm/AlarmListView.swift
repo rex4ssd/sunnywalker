@@ -1,4 +1,13 @@
-// SunnyWalker — AlarmListView.swift  |  Day 25  |  swipe-to-delete + edit mode
+// SunnyWalker — AlarmListView.swift  |  首頁鬧鐘清單（一般 / 報時 / 待辦三種卡片，三種排列）
+//
+// 2026-09-03 整理（Rex：「大人會設一堆鬧鐘，怎麼整理比較美、清楚不會亂」）：
+//   • 卡片左側圖示改成「種類」：鬧鐘（時段太陽／月亮）、報時（喇叭泡泡，橘）、待辦（家長挑的 emoji）——
+//     以前三種長得一模一樣，十顆排下來分不出哪顆會響、哪顆只是主頁冒圖示。
+//   • 區間報時顯示「07:00–07:30 · 每 5 分」，不是只有起時刻。
+//   • 星期改成「每天／平日／週末」縮寫，其餘才用 7 顆小圓點（選中亮、沒選淡）——一眼看得出哪天響。
+//   • 「下一個」：今天接下來最先響的那顆加一條橘色標籤，孩子睡前家長掃一眼就知道明早哪顆先響。
+//   • 排列三選一（設定 › 首頁清單）：依時間（原本）／依時段（早上・上午・下午・晚上）／依星期。
+//     「依時段」是給設很多鬧鐘的家庭的：起床、出門、放學、睡前天然各一區，不會像依星期那樣一顆重複七次。
 
 import SwiftUI
 import SwiftData
@@ -66,6 +75,41 @@ final class AlarmPreviewPlayer: ObservableObject {
     }
 }
 
+// MARK: - 時段（依時段排列用）
+
+/// 首頁「依時段」分節：早上 05–08、上午 09–11、下午 12–17、晚上 18–04。
+/// 跟 DaytimeScene（畫面天色）刻意分開：天色是給孩子看氣氛的，這裡是給大人整理鬧鐘的。
+enum AlarmDaypart: Int, CaseIterable {
+    case morning, forenoon, afternoon, evening
+
+    static func of(hour: Int) -> AlarmDaypart {
+        switch hour {
+        case 5...8:   return .morning
+        case 9...11:  return .forenoon
+        case 12...17: return .afternoon
+        default:      return .evening
+        }
+    }
+
+    var titleKey: String {
+        switch self {
+        case .morning:   return "daypart_morning"
+        case .forenoon:  return "daypart_forenoon"
+        case .afternoon: return "daypart_afternoon"
+        case .evening:   return "daypart_evening"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .morning:   return "sunrise.fill"
+        case .forenoon:  return "sun.max.fill"
+        case .afternoon: return "sun.haze.fill"
+        case .evening:   return "moon.stars.fill"
+        }
+    }
+}
+
 // MARK: - AlarmListView
 
 struct AlarmListView: View {
@@ -76,15 +120,17 @@ struct AlarmListView: View {
     var header: AnyView? = nil
     /// 多人鬧鐘：該群組被首頁橫幅關閉時為 true → 把鬧鐘卡片變灰、不可點（header 不受影響，仍可點橫幅開回）。
     var dimmed: Bool = false
-    /// 依星期分組（設定頁「依星期分組」）：週一…週日各一節，同一顆鬧鐘出現在它的每個
-    /// 響鈴日底下；一次性鬧鐘（沒勾任何星期）收在最後的「單次鬧鐘」節。off＝原本單一清單。
-    var groupByWeekday: Bool = false
+    /// 排列方式（設定 › 首頁清單）。
+    var layout: HomeListLayout = .time
     @Environment(\.modelContext) private var modelContext
     /// 長按左側圖示試聽——整份清單共用一個播放器（見 AlarmPreviewPlayer）。
     @StateObject private var previewPlayer = AlarmPreviewPlayer()
 
+    /// 已被 modelContext.delete 但 @Query 還沒刷新的物件不能再碰（SwiftData 對已刪物件取值會炸）。
+    private var liveAlarms: [Alarm] { alarms.filter { !$0.isDeleted } }
+
     var body: some View {
-        if alarms.isEmpty {
+        if liveAlarms.isEmpty {
             // Empty state still scrolls, with the header (clock+mascot) on top.
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -95,6 +141,7 @@ struct AlarmListView: View {
                 }
             }
         } else {
+            let nextID = Self.nextUpcomingAlarmID(in: liveAlarms, now: Date())
             // Single List: header row (clock+mascot) + alarm cards scroll together as one long strip.
             // List (not ScrollView+LazyVStack) so .swipeActions works natively.
             List {
@@ -104,19 +151,26 @@ struct AlarmListView: View {
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets())
                 }
-                if groupByWeekday {
-                    ForEach(weekdaySections, id: \.title) { section in
+                switch layout {
+                case .time:
+                    ForEach(liveAlarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
+                case .daypart:
+                    ForEach(daypartSections, id: \.part) { section in
                         Section {
-                            ForEach(section.alarms) { alarm in alarmRow(alarm) }
+                            ForEach(section.alarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
                         } header: {
-                            Text(LocalizedStringKey(section.title))
-                                .font(SunnyFonts.caption(15))
-                                .foregroundStyle(SunnyColors.cloudWhite.opacity(0.92))
-                                .listRowInsets(EdgeInsets(top: 10, leading: 28, bottom: 2, trailing: 20))
+                            sectionHeader(Text(LocalizedStringKey(section.part.titleKey)),
+                                          systemImage: section.part.systemImage)
                         }
                     }
-                } else {
-                    ForEach(alarms) { alarm in alarmRow(alarm) }
+                case .weekday:
+                    ForEach(weekdaySections, id: \.title) { section in
+                        Section {
+                            ForEach(section.alarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
+                        } header: {
+                            sectionHeader(Text(LocalizedStringKey(section.title)), systemImage: nil)
+                        }
+                    }
                 }
             }
             .listStyle(.plain)
@@ -132,9 +186,9 @@ struct AlarmListView: View {
         }
     }
 
-    /// 一列鬧鐘卡（單一清單與星期分組共用同一組 row modifiers）。
-    private func alarmRow(_ alarm: Alarm) -> some View {
-        AlarmCard(alarm: alarm, onDelete: { deleteAlarm(alarm) }, preview: previewPlayer)
+    /// 一列鬧鐘卡（三種排列共用同一組 row modifiers）。
+    private func alarmRow(_ alarm: Alarm, isNext: Bool) -> some View {
+        AlarmCard(alarm: alarm, isNext: isNext, onDelete: { deleteAlarm(alarm) }, preview: previewPlayer)
             .grayscale(dimmed ? 1 : 0)
             .opacity(dimmed ? 0.5 : 1)
             .allowsHitTesting(!dimmed)   // 關閉的群組：卡片不可點/不可滑（要先點橫幅開回）
@@ -142,6 +196,50 @@ struct AlarmListView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+    }
+
+    private func sectionHeader(_ title: Text, systemImage: String?) -> some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage).font(.caption)
+            }
+            title.font(SunnyFonts.caption(15))
+        }
+        .foregroundStyle(SunnyColors.cloudWhite.opacity(0.92))
+        .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+        .listRowInsets(EdgeInsets(top: 10, leading: 28, bottom: 2, trailing: 20))
+    }
+
+    // MARK: - 「下一個」
+
+    /// 今天接下來最先響的那顆（只算會響的：一般鬧鐘與報時；待辦不響不算）。
+    /// 今天沒有剩下的 → nil（不硬標明天的，避免「下一個」跟畫面上的星期矛盾）。
+    static func nextUpcomingAlarmID(in alarms: [Alarm], now: Date) -> UUID? {
+        let cal = Calendar.current
+        let c = cal.dateComponents([.hour, .minute, .weekday], from: now)
+        guard let h = c.hour, let m = c.minute, let wd = c.weekday else { return nil }
+        let nowMin = h * 60 + m
+        return alarms
+            .filter { $0.isEnabled && !$0.isTodo
+                && ($0.weekdays.isEmpty || $0.weekdays.contains(wd))
+                && ($0.hour * 60 + $0.minute) > nowMin }
+            .min { ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute) }?
+            .id
+    }
+
+    // MARK: - 依時段分組
+
+    private struct DaypartSection {
+        let part: AlarmDaypart
+        let alarms: [Alarm]
+    }
+
+    /// 早上 → 上午 → 下午 → 晚上；沒有鬧鐘的節直接不出現。alarms 已依 (hour, minute) 排序。
+    private var daypartSections: [DaypartSection] {
+        AlarmDaypart.allCases.compactMap { part in
+            let a = liveAlarms.filter { AlarmDaypart.of(hour: $0.hour) == part }
+            return a.isEmpty ? nil : DaypartSection(part: part, alarms: a)
+        }
     }
 
     // MARK: - 依星期分組
@@ -157,10 +255,10 @@ struct AlarmListView: View {
         let titles = [1: "星期日", 2: "星期一", 3: "星期二", 4: "星期三",
                       5: "星期四", 6: "星期五", 7: "星期六"]
         var sections: [WeekdaySection] = [2, 3, 4, 5, 6, 7, 1].compactMap { day in
-            let dayAlarms = alarms.filter { $0.weekdays.contains(day) }
+            let dayAlarms = liveAlarms.filter { $0.weekdays.contains(day) }
             return dayAlarms.isEmpty ? nil : WeekdaySection(title: titles[day]!, alarms: dayAlarms)
         }
-        let oneShots = alarms.filter { $0.weekdays.isEmpty }
+        let oneShots = liveAlarms.filter { $0.weekdays.isEmpty }
         if !oneShots.isEmpty {
             sections.append(WeekdaySection(title: "單次鬧鐘", alarms: oneShots))
         }
@@ -170,12 +268,14 @@ struct AlarmListView: View {
     // MARK: - Delete
 
     private func deleteAlarm(_ alarm: Alarm) {
-        // Cancel from AlarmKit and v1 scheduler
+        let id = alarm.id
+        let chimeFiles = (alarm.chimeSlotSoundFiles ?? []) + [alarm.soundFileName]
+        // Cancel from AlarmKit and the UNNotification path. 以前只清 baseline 7 顆——
+        // 切段堆疊 / 報時連報的一次性通知會留在系統裡照響（鬧鐘已不在清單上卻還在響）。
         Task {
             try? AlarmKitService.shared.removeAlarm(alarm)
-            let id = alarm.id
-            let staleIDs = (1...7).map { "\(id.uuidString)-\($0)" } + [id.uuidString]
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: staleIDs)
+            AlarmScheduler.shared.cancel(id)
+            for f in chimeFiles { ChimeSoundComposer.removeChimeFile(named: f) }
         }
         modelContext.delete(alarm)
     }
@@ -213,6 +313,8 @@ struct AlarmListView: View {
 
 private struct AlarmCard: View {
     @Bindable var alarm: Alarm
+    /// 今天接下來最先響的那顆 → 加「下一個」標籤與橘框。
+    var isNext: Bool = false
     var onDelete: () -> Void = {}
     /// 整份清單共用的試聽播放器（長按左側圖示）。
     @ObservedObject var preview: AlarmPreviewPlayer
@@ -226,10 +328,7 @@ private struct AlarmCard: View {
             HStack(alignment: .center, spacing: 0) {
                 // 左側圖示自成一個熱區：點＝編輯（與卡片其他地方一致），長按＝試聽這顆鬧鐘的聲音。
                 // 它刻意【不】包在下面那顆編輯 Button 裡——Button 會把長按整個吃掉。
-                DaytimeAlarmIcon(
-                    scene: DaytimeScene.current(hour: alarm.hour),
-                    isPlaying: isPreviewing
-                )
+                AlarmKindIcon(alarm: alarm, isPlaying: isPreviewing)
                 .padding(.leading, 14)
                 .padding(.trailing, 12)
                 .padding(.vertical, 10)
@@ -262,23 +361,14 @@ private struct AlarmCard: View {
                 } label: {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(alarm.formattedTime(use24h: settings.use24HourClock))
-                                .font(SunnyFonts.clock(30))
-                                .foregroundStyle(
-                                    alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
-                                )
-                            HStack(spacing: 4) {
+                            timeLine
+                            HStack(spacing: 6) {
                                 // Known default/common names localize; custom parent names show as typed.
                                 Text(LocalizedStringKey(alarm.label))
                                     .font(SunnyFonts.caption())
                                     .foregroundStyle(SunnyColors.sunnyGray)
-                                if !alarm.weekdays.isEmpty {
-                                    Text("·")
-                                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.5))
-                                    Text(alarm.weekdaySymbols.joined(separator: " "))
-                                        .font(SunnyFonts.caption(14))
-                                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
-                                }
+                                    .lineLimit(1)
+                                WeekdayDots(weekdays: alarm.weekdays)
                             }
                         }
                         Spacer()
@@ -307,8 +397,30 @@ private struct AlarmCard: View {
                     .padding(.vertical, 10)
             }
         }
+        // 「下一個」：橘色細框 + 右上角小標籤。只是提示，不改變卡片其他排版。
+        .overlay {
+            if isNext && alarm.isEnabled {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(SunnyColors.lanternOrange.opacity(0.75), lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if isNext && alarm.isEnabled {
+                Text("alarm_next_badge")
+                    .font(SunnyFonts.caption(11))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(SunnyColors.lanternOrange))
+                    .offset(x: -14, y: -7)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .opacity(alarm.isEnabled ? 1.0 : 0.6)
         .animation(.easeInOut(duration: 0.2), value: alarm.isEnabled)
+        .animation(.easeInOut(duration: 0.2), value: isNext)
         .onChange(of: alarm.isEnabled) { _, _ in
             Task {
                 // UNNotification fallback (no-op while AlarmKit is authorized — it stands down).
@@ -339,19 +451,46 @@ private struct AlarmCard: View {
             .tint(SunnyColors.forestDeep)
         }
     }
+
+    /// 時間那一行：一般＝大字時刻；區間報時＝「07:00–07:30」+「每 5 分」小標；待辦＝時刻 + 圖示 emoji。
+    @ViewBuilder
+    private var timeLine: some View {
+        let color = alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
+        if alarm.kind == .chime, alarm.isIntervalChime {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(alarm.formattedChimeRange(use24h: settings.use24HourClock))
+                    .font(SunnyFonts.clock(24))
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(L("chime_every_minutes %lld", alarm.chimeIntervalMinutes ?? 0))
+                    .font(SunnyFonts.caption(12))
+                    .foregroundStyle(SunnyColors.lanternOrange)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(SunnyColors.lanternOrange.opacity(0.14)))
+            }
+        } else {
+            Text(alarm.formattedTime(use24h: settings.use24HourClock))
+                .font(SunnyFonts.clock(30))
+                .foregroundStyle(color)
+        }
+    }
 }
 
-// MARK: - Time-of-day story icon
+// MARK: - 種類圖示（一般：時段太陽／月亮；報時：喇叭泡泡；待辦：家長挑的 emoji）
 
-private struct DaytimeAlarmIcon: View {
-    let scene: DaytimeScene
+private struct AlarmKindIcon: View {
+    let alarm: Alarm
     /// true = 這顆鬧鐘正在被長按試聽 → 圖示換成喇叭並脈動，讓家長知道聲音來自哪一顆。
     var isPlaying: Bool = false
+
+    private var scene: DaytimeScene { DaytimeScene.current(hour: alarm.hour) }
 
     var body: some View {
         ZStack {
             Circle()
-                .fill((isPlaying ? SunnyColors.lanternOrange : iconColor).opacity(isPlaying ? 0.24 : 0.14))
+                .fill((isPlaying ? SunnyColors.lanternOrange : tint).opacity(isPlaying ? 0.24 : 0.14))
                 .frame(width: 40, height: 40)
 
             if isPlaying {
@@ -359,19 +498,28 @@ private struct DaytimeAlarmIcon: View {
                     .foregroundStyle(SunnyColors.lanternOrange)
                     .symbolEffect(.pulse, isActive: true)
             } else {
-                switch scene {
-                case .dawn, .morning:
-                    Image(systemName: "sunrise.fill")
-                        .foregroundStyle(SunnyColors.lanternOrange, SunnyColors.wheatGold)
-                case .noon:
-                    Image(systemName: "sun.max.fill")
-                        .foregroundStyle(SunnyColors.wheatGold)
-                case .dusk:
-                    Image(systemName: "lamp.desk.fill")
+                switch alarm.kind {
+                case .todo:
+                    Text(alarm.effectiveTodoIcon.emoji)
+                        .font(.title3)
+                case .chime:
+                    Image(systemName: AlarmKind.chime.systemImage)
                         .foregroundStyle(SunnyColors.lanternOrange)
-                case .night:
-                    Image(systemName: "moon.stars.fill")
-                        .foregroundStyle(SunnyColors.nightIndigo, SunnyColors.starGold)
+                case .alarm:
+                    switch scene {
+                    case .dawn, .morning:
+                        Image(systemName: "sunrise.fill")
+                            .foregroundStyle(SunnyColors.lanternOrange, SunnyColors.wheatGold)
+                    case .noon:
+                        Image(systemName: "sun.max.fill")
+                            .foregroundStyle(SunnyColors.wheatGold)
+                    case .dusk:
+                        Image(systemName: "lamp.desk.fill")
+                            .foregroundStyle(SunnyColors.lanternOrange)
+                    case .night:
+                        Image(systemName: "moon.stars.fill")
+                            .foregroundStyle(SunnyColors.nightIndigo, SunnyColors.starGold)
+                    }
                 }
             }
         }
@@ -381,8 +529,60 @@ private struct DaytimeAlarmIcon: View {
         .accessibilityHidden(true)
     }
 
-    private var iconColor: Color {
-        scene == .night ? SunnyColors.nightIndigo : SunnyColors.lanternOrange
+    private var tint: Color {
+        switch alarm.kind {
+        case .todo:  return SunnyColors.leafFresh
+        case .chime: return SunnyColors.lanternOrange
+        case .alarm: return scene == .night ? SunnyColors.nightIndigo : SunnyColors.lanternOrange
+        }
+    }
+}
+
+// MARK: - 星期（每天／平日／週末縮寫，其餘 7 顆小圓點）
+
+private struct WeekdayDots: View {
+    let weekdays: [Int]   // 1=日 … 7=六
+
+    private static let all: Set<Int> = [1, 2, 3, 4, 5, 6, 7]
+    private static let workdays: Set<Int> = [2, 3, 4, 5, 6]
+    private static let weekend: Set<Int> = [1, 7]
+    private static let symbols = ["日", "一", "二", "三", "四", "五", "六"]
+
+    var body: some View {
+        let set = Set(weekdays)
+        if set.isEmpty {
+            EmptyView()
+        } else if set == Self.all {
+            shorthand("days_every")
+        } else if set == Self.workdays {
+            shorthand("days_weekdays")
+        } else if set == Self.weekend {
+            shorthand("days_weekend")
+        } else {
+            HStack(spacing: 3) {
+                ForEach([2, 3, 4, 5, 6, 7, 1], id: \.self) { d in
+                    let on = set.contains(d)
+                    Text(LocalizedStringKey(Self.symbols[d - 1]))
+                        .font(.system(size: 9, weight: .semibold))
+                        .frame(width: 15, height: 15)
+                        .foregroundStyle(on ? .white : SunnyColors.sunnyGray.opacity(0.55))
+                        .background(Circle().fill(on ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12)))
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: weekdays.sorted().compactMap { d in
+                (1...7).contains(d) ? L(Self.symbols[d - 1]) : nil
+            }.joined(separator: " ")))
+        }
+    }
+
+    private func shorthand(_ key: String) -> some View {
+        Text(LocalizedStringKey(key))
+            .font(SunnyFonts.caption(12))
+            .foregroundStyle(SunnyColors.forestDeep)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(SunnyColors.leafFresh.opacity(0.18)))
     }
 }
 
@@ -420,7 +620,7 @@ private struct SampleAlarmCard: View {
     let sample = Alarm(label: "上學囉", hour: 7, minute: 30)
     let sample2 = Alarm(label: "午睡起床", hour: 13, minute: 0)
     sample2.isEnabled = false
-    return AlarmListView(alarms: [sample, sample2])
+    return AlarmListView(alarms: [sample, sample2], layout: .daypart)
         .modelContainer(container)
         .background(SunnyColors.skyBlue)
 }

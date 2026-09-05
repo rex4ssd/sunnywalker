@@ -20,11 +20,11 @@ final class VoiceClip {
     }
 
     var recordingsURL: URL {
-        FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings")
-            .appendingPathComponent(fileName)
+        AppPaths.recordingsDirectory.appendingPathComponent(fileName)
     }
+
+    /// `fileName` 去掉副檔名（錄音／匯出流程都以這個 base 為鍵）。
+    var baseName: String { (fileName as NSString).deletingPathExtension }
 
     var fileSizeBytes: Int64 {
         let values = try? recordingsURL.resourceValues(forKeys: [.fileSizeKey])

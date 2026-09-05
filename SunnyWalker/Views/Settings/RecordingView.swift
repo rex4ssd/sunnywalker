@@ -101,7 +101,7 @@ struct RecordingView: View {
 
     /// 量 `Recordings/<name>.m4a` 的實際長度（與 VoiceLibraryView 同一套 length/sampleRate 量法）。
     static func measureSeconds(recordingNamed name: String) -> Double? {
-        let url = AudioRecorder.recordingsDirectory.appendingPathComponent("\(name).m4a")
+        let url = AppPaths.recordingURL(named: name)
         guard let file = try? AVAudioFile(forReading: url) else { return nil }
         let sr = file.processingFormat.sampleRate
         return sr > 0 ? Double(file.length) / sr : nil
@@ -242,7 +242,11 @@ struct RecordingView: View {
             // rings the parent's custom recording immediately — instead of the bundled default
             // tone that only switched to the recording after the app was opened.
             // (Re-scheduling happens in AlarmEditorView.saveAlarm, which reads soundFileName.)
-            if let caf = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: recordingStorageName) {
+            // 匯出走背景執行緒：3 分鐘的錄音要整段讀進記憶體再寫 CAF，放 main 會讓畫面卡一下。
+            let name = recordingStorageName
+            if let caf = await Task.detached(priority: .userInitiated, operation: {
+                AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: name)
+            }).value {
                 alarm.soundFileName = caf
             }
         }
@@ -252,11 +256,8 @@ struct RecordingView: View {
         let name = alarm.recordingName.isEmpty
             ? (audioRecorder.currentURL?.deletingPathExtension().lastPathComponent ?? "")
             : alarm.recordingName
-        guard !name.isEmpty else { return }
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let url = docs.appendingPathComponent("Recordings/\(name).m4a")
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        audioPlayer.play(url: url, loop: false)
+        guard AppPaths.recordingExists(named: name) else { return }
+        audioPlayer.play(url: AppPaths.recordingURL(named: name), loop: false)
     }
 }
 

@@ -115,6 +115,7 @@ struct VoiceLibraryView: View {
                 }
             }
         }
+        .countsAsPresentedSheet()
         // Clear the row highlight when playback truly ends — but NOT on pause (isPaused keeps the
         // clip "loaded" so the same row can resume).
         .onReceive(player.$isPlaying) { playing in
@@ -174,9 +175,13 @@ struct VoiceLibraryView: View {
         }
     }
 
+    /// 已被 modelContext.delete、@Query 尚未刷新的物件不能再取值（SwiftData 對已刪物件取值會炸）——
+    /// 刪除當下 sheet 收合動畫還在畫那一列，就是「刪錄音偶爾 crash」的情境。
+    private var liveClips: [VoiceClip] { clips.filter { !$0.isDeleted } }
+
     private var clipList: some View {
         List {
-            ForEach(clips) { clip in
+            ForEach(liveClips) { clip in
                 VoiceClipRow(
                     clip: clip,
                     isPlaying: playingID == clip.id && player.isPlaying,
@@ -305,6 +310,8 @@ struct VoiceLibraryView: View {
 
     private func deleteClip(_ clip: VoiceClip) {
         if playingID == clip.id { player.stop(); playingID = nil }
+        // 先把詳情 sheet 的參照放掉再刪：sheet 收合動畫期間還會讀 clip.name。
+        if selectedClip?.id == clip.id { selectedClip = nil }
         try? FileManager.default.removeItem(at: clip.recordingsURL)
         modelContext.delete(clip)
     }
@@ -313,18 +320,24 @@ struct VoiceLibraryView: View {
 
     private func isClipSelected(_ clip: VoiceClip) -> Bool {
         // The alarm stores a CAF filename derived from the clip's base name.
-        let base = String(clip.fileName.dropLast(4))  // strip ".m4a"
-        return currentFileName.hasPrefix("alarm_\(base)_")
+        currentFileName.hasPrefix("alarm_\(clip.baseName)_")
     }
 
     private func selectClip(_ clip: VoiceClip) {
         player.stop()
         playingID = nil
-        let base = String(clip.fileName.dropLast(4))
-        if let cafName = AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base) {
-            onSelect?(cafName, SelectedRecordingInfo(baseName: base, displayName: clip.name))
+        let base = clip.baseName
+        let name = clip.name
+        // 匯出 CAF（整段讀進記憶體再寫檔）走背景執行緒——放 main 會讓點選當下卡一拍。
+        Task {
+            let cafName = await Task.detached(priority: .userInitiated) {
+                AlarmSoundExporter.exportLockScreenCAF(fromRecordingNamed: base)
+            }.value
+            if let cafName {
+                onSelect?(cafName, SelectedRecordingInfo(baseName: base, displayName: name))
+            }
+            dismiss()
         }
-        dismiss()
     }
 }
 
@@ -339,6 +352,9 @@ private struct VoiceClipRow: View {
     let onDelete: () -> Void
     var isSelected: Bool = false       // true = this clip is the alarm's current ringtone
     var onPickToUse: (() -> Void)? = nil  // non-nil → selection mode; tap to choose & dismiss
+    /// 檔案大小是磁碟 I/O：以前每次 body 重算（捲動、播放狀態變化）都 stat 一次，
+    /// 五顆錄音就五次同步讀檔——這是清單捲動頓的來源之一。改成進列時讀一次。
+    @State private var fileSizeText = ""
 
     var body: some View {
         HStack(spacing: 14) {
@@ -366,15 +382,24 @@ private struct VoiceClipRow: View {
                         Label(clip.formattedDuration, systemImage: "clock")
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.sunnyGray)
-                        Label(clip.formattedFileSize, systemImage: "externaldrive")
-                            .font(SunnyFonts.caption(12))
-                            .foregroundStyle(SunnyColors.sunnyGray.opacity(0.78))
+                        if !fileSizeText.isEmpty {
+                            Label(fileSizeText, systemImage: "externaldrive")
+                                .font(SunnyFonts.caption(12))
+                                .foregroundStyle(SunnyColors.sunnyGray.opacity(0.78))
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .task(id: clip.fileName) {
+                let url = clip.recordingsURL
+                fileSizeText = await Task.detached(priority: .utility) {
+                    let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+                    return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+                }.value
+            }
 
             Spacer()
 

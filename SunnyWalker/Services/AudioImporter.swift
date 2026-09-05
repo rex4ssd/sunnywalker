@@ -61,11 +61,9 @@ enum AudioImporter {
         }
 
         // 3. Convert + trim to m4a in Documents/Recordings/<base>.m4a (same dir/format as recordings).
-        let recordingsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Recordings", isDirectory: true)
-        try? fm.createDirectory(at: recordingsDir, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: AppPaths.recordingsDirectory, withIntermediateDirectories: true)
         let base = UUID().uuidString
-        let outURL = recordingsDir.appendingPathComponent("\(base).m4a")
+        let outURL = AppPaths.recordingURL(named: base)
 
         guard let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
             throw AudioImportError.unsupported
