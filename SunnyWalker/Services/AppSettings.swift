@@ -49,12 +49,20 @@ enum FeatureLimits {
 // MARK: - Home list layout
 
 /// 首頁鬧鐘清單的排列方式。
+///
+/// 2026-09-13（Rex 給的兩張示意圖）：
+///   • 方案 A `merged`「重複週期合併」——同時間、同名稱、同種類的鬧鐘合成一張卡（星期取聯集），
+///     清單頂端有「一～日」與「全部／平日／週末／自訂」篩選列。鬧鐘多的家庭最省捲動。
+///   • 方案 B `weekday`「依星期」改成每一天可收合／展開（預設只展開今天）。
+///   • 首頁點吉祥物＝依 `allCases` 順序循環切換排列（見 `next`），家長也仍可在設定頁直接選。
 enum HomeListLayout: String, CaseIterable, Identifiable {
     /// 一條清單依時間排序（原本的預設）。
     case time
+    /// 重複週期合併：同時間／同名／同種類的鬧鐘合成一張卡，加頂部星期篩選（方案 A）。
+    case merged
     /// 依時段分節：早上 / 上午 / 下午 / 晚上——大人設一堆鬧鐘時最好掃（起床、出門、放學、睡前各一區）。
     case daypart
-    /// 依星期分節（同一顆鬧鐘出現在它的每個響鈴日底下）。
+    /// 依星期分節（同一顆鬧鐘出現在它的每個響鈴日底下），每一天可收合／展開（方案 B）。
     case weekday
 
     var id: String { rawValue }
@@ -63,6 +71,7 @@ enum HomeListLayout: String, CaseIterable, Identifiable {
     var labelKey: String {
         switch self {
         case .time:    return "home_layout_time"
+        case .merged:  return "home_layout_merged"
         case .daypart: return "home_layout_daypart"
         case .weekday: return "home_layout_weekday"
         }
@@ -71,9 +80,17 @@ enum HomeListLayout: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .time:    return "list.bullet"
+        case .merged:  return "rectangle.compress.vertical"
         case .daypart: return "sun.horizon.fill"
         case .weekday: return "calendar"
         }
+    }
+
+    /// 首頁點吉祥物用：依 `allCases` 順序輪到下一種，最後一種接回第一種。
+    var next: HomeListLayout {
+        let all = Self.allCases
+        let i = all.firstIndex(of: self) ?? 0
+        return all[(i + 1) % all.count]
     }
 }
 

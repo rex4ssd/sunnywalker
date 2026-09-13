@@ -6849,7 +6849,223 @@
         }
       }
     },
-    "🎵": {}
+    "🎵": {},
+    "home_layout_merged": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重複週期合併"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merge repeats"
+          }
+        }
+      }
+    },
+    "home_layout_merged_footer": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同時間、同名稱的鬧鐘合成一張卡，上方可依星期篩選；鬧鐘多的家庭最省捲動。首頁點吉祥物也會輪流切換排列。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alarms with the same time and name collapse into one card, with day filters on top. Least scrolling for busy families. Tapping the mascot on the home screen also cycles layouts."
+          }
+        }
+      }
+    },
+    "home_layout_weekday_footer": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "依星期一到星期日分組，每一天可點標題收合／展開（預設只展開今天）；同一顆鬧鐘會出現在它的每個響鈴日底下。"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grouped Monday to Sunday; tap a day title to collapse or expand it (only today starts expanded). An alarm appears under each day it rings."
+          }
+        }
+      }
+    },
+    "filter_all": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        }
+      }
+    },
+    "filter_custom": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        }
+      }
+    },
+    "filter_days_label": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "依星期篩選"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter by day"
+          }
+        }
+      }
+    },
+    "filter_no_match": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這幾天沒有鬧鐘"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No alarms on these days"
+          }
+        }
+      }
+    },
+    "alarm_count %lld": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個鬧鐘"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld alarm"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld alarms"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "merged_count %lld": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "合併 %lld 顆"
+          }
+        },
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld merged"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld merged"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "section_expanded": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已展開"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanded"
+          }
+        }
+      }
+    },
+    "section_collapsed": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已收合"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapsed"
+          }
+        }
+      }
+    },
+    "mascot_tap_hint_home": {
+      "localizations": {
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下切換鬧鐘排列方式，吉祥物也會打招呼"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to switch the alarm layout; the mascot says hello too"
+          }
+        }
+      }
+    }
   },
   "version": "1.0"
 }

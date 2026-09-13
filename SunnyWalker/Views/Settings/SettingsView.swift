@@ -149,7 +149,8 @@ struct SettingsView: View {
         }
     }
 
-    /// 首頁清單排列：依時間（單一清單）／依時段（早上・上午・下午・晚上）／依星期。
+    /// 首頁清單排列：依時間（單一清單）／重複週期合併／依時段（早上・上午・下午・晚上）／依星期（可收合）。
+    /// 首頁點吉祥物也會輪流切換這個值，這裡是家長直接選的入口。
     private var homeListSection: some View {
         Section(
             header: Text("首頁清單"),
@@ -174,8 +175,9 @@ struct SettingsView: View {
     private var homeLayoutFooter: LocalizedStringKey {
         switch settings.homeListLayout {
         case .time:    return "home_layout_time_footer"
+        case .merged:  return "home_layout_merged_footer"
         case .daypart: return "home_layout_daypart_footer"
-        case .weekday: return "開啟後，首頁鬧鐘依星期一到星期日分組；同一顆鬧鐘會出現在它的每個響鈴日底下。"
+        case .weekday: return "home_layout_weekday_footer"
         }
     }
 

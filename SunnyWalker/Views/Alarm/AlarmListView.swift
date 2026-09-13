@@ -8,6 +8,13 @@
 //   • 「下一個」：今天接下來最先響的那顆加一條橘色標籤，孩子睡前家長掃一眼就知道明早哪顆先響。
 //   • 排列三選一（設定 › 首頁清單）：依時間（原本）／依時段（早上・上午・下午・晚上）／依星期。
 //     「依時段」是給設很多鬧鐘的家庭的：起床、出門、放學、睡前天然各一區，不會像依星期那樣一顆重複七次。
+//
+// 2026-09-13 兩種新排版（Rex 的示意圖「方案 A／方案 B」）＋首頁吉祥物點一下輪流切換：
+//   • 方案 A「重複週期合併」（.merged）：同時間、同名、同種類的鬧鐘合成一張卡（星期取聯集、
+//     開關一起動），卡上標「合併 N 顆」，點卡片展開看成員。清單頂端有「一～日」星期篩選列＋
+//     「全部／平日／週末／自訂」快捷列——兩列操作同一個 filterDays 集合，快捷列的亮起是從集合推回來的。
+//   • 方案 B「依星期」（.weekday）改成每一天可收合／展開：預設只展開今天，其他日子只剩一列標題
+//     「星期二（3 個鬧鐘）」，七天重複的鬧鐘不再把清單拉成七倍長。
 
 import SwiftUI
 import SwiftData
@@ -125,6 +132,12 @@ struct AlarmListView: View {
     @Environment(\.modelContext) private var modelContext
     /// 長按左側圖示試聽——整份清單共用一個播放器（見 AlarmPreviewPlayer）。
     @StateObject private var previewPlayer = AlarmPreviewPlayer()
+    /// 方案 A 的星期篩選（1=日 … 7=六）；空集合＝全部。每次進首頁重設為全部（不持久化）。
+    @State private var filterDays: Set<Int> = []
+    /// 方案 A：哪些合併卡正展開顯示成員（key 見 MergedAlarmGroup.id）。
+    @State private var expandedMerged: Set<String> = []
+    /// 方案 B：哪些星期節正展開（0＝單次鬧鐘節）。預設只展開今天。
+    @State private var expandedDays: Set<Int> = [Calendar.current.component(.weekday, from: Date())]
 
     /// 已被 modelContext.delete 但 @Query 還沒刷新的物件不能再碰（SwiftData 對已刪物件取值會炸）。
     private var liveAlarms: [Alarm] { alarms.filter { !$0.isDeleted } }
@@ -154,6 +167,38 @@ struct AlarmListView: View {
                 switch layout {
                 case .time:
                     ForEach(liveAlarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
+                case .merged:
+                    AlarmFilterBar(days: $filterDays)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 8, trailing: 20))
+                    if mergedGroups.isEmpty {
+                        filterEmptyRow
+                    }
+                    ForEach(mergedGroups) { group in
+                        if group.alarms.count == 1 {
+                            alarmRow(group.primary, isNext: group.primary.id == nextID)
+                        } else {
+                            let expanded = expandedMerged.contains(group.id)
+                            MergedAlarmCard(group: group,
+                                            isNext: group.alarms.contains { $0.id == nextID },
+                                            expanded: expanded,
+                                            onTap: { toggleMerged(group.id) },
+                                            preview: previewPlayer)
+                                .grayscale(dimmed ? 1 : 0)
+                                .opacity(dimmed ? 0.5 : 1)
+                                .allowsHitTesting(!dimmed)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                            if expanded {
+                                ForEach(group.alarms) { alarm in
+                                    alarmRow(alarm, isNext: alarm.id == nextID)
+                                        .listRowInsets(EdgeInsets(top: 2, leading: 36, bottom: 2, trailing: 20))
+                                }
+                            }
+                        }
+                    }
                 case .daypart:
                     ForEach(daypartSections, id: \.part) { section in
                         Section {
@@ -164,11 +209,18 @@ struct AlarmListView: View {
                         }
                     }
                 case .weekday:
-                    ForEach(weekdaySections, id: \.title) { section in
+                    ForEach(weekdaySections, id: \.day) { section in
+                        let expanded = expandedDays.contains(section.day)
                         Section {
-                            ForEach(section.alarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
+                            if expanded {
+                                ForEach(section.alarms) { alarm in alarmRow(alarm, isNext: alarm.id == nextID) }
+                            }
                         } header: {
-                            sectionHeader(Text(LocalizedStringKey(section.title)), systemImage: nil)
+                            CollapsibleDayHeader(title: Text(LocalizedStringKey(section.title)),
+                                                 count: section.alarms.count,
+                                                 expanded: expanded,
+                                                 onTap: { toggleDay(section.day) })
+                                .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 2, trailing: 20))
                         }
                     }
                 }
@@ -176,6 +228,8 @@ struct AlarmListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollIndicators(.hidden)   // 像 iPhone 內建鬧鐘：一條長清單、不顯示 scroll bar
+            // 方案 B 收合後一節只剩一列標題，List 預設的節距會把七列標題拉得很鬆（模擬器實測每列之間 ~40pt 空白）。
+            .listSectionSpacing(4)
             // 底部 FAB（語言/設定/新增）浮在清單之上（是 ZStack 的 sibling，不在 List 內）。
             // 用 safeAreaInset 在清單底保留空間，捲到底時最後一張卡落在 FAB 上方。
             .safeAreaInset(edge: .bottom) {
@@ -208,6 +262,49 @@ struct AlarmListView: View {
         .foregroundStyle(SunnyColors.cloudWhite.opacity(0.92))
         .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
         .listRowInsets(EdgeInsets(top: 10, leading: 28, bottom: 2, trailing: 20))
+    }
+
+    // MARK: - 方案 A／B 的展開狀態
+
+    private func toggleMerged(_ key: String) {
+        withAnimation(.snappy) {
+            if expandedMerged.contains(key) { expandedMerged.remove(key) } else { expandedMerged.insert(key) }
+        }
+    }
+
+    private func toggleDay(_ day: Int) {
+        withAnimation(.snappy) {
+            if expandedDays.contains(day) { expandedDays.remove(day) } else { expandedDays.insert(day) }
+        }
+    }
+
+    /// 篩選後一顆都不剩（例：只勾週末、但鬧鐘全是平日）→ 給一行提示，別讓清單空得像壞掉。
+    private var filterEmptyRow: some View {
+        Text("filter_no_match")
+            .font(SunnyFonts.caption())
+            .foregroundStyle(SunnyColors.cloudWhite.opacity(0.9))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
+    // MARK: - 方案 A：重複週期合併
+
+    /// 先套星期篩選（空集合＝全部；有勾＝該鬧鐘至少在其中一天會響），再依合併鍵分組。
+    /// alarms 已依 (hour, minute) 排序，分組後順序＝第一個成員出現的順序，所以仍是時間序。
+    private var mergedGroups: [MergedAlarmGroup] {
+        let visible = liveAlarms.filter { a in
+            filterDays.isEmpty || !Set(a.weekdays).isDisjoint(with: filterDays)
+        }
+        var order: [String] = []
+        var buckets: [String: [Alarm]] = [:]
+        for a in visible {
+            let key = MergedAlarmGroup.key(for: a)
+            if buckets[key] == nil { order.append(key) }
+            buckets[key, default: []].append(a)
+        }
+        return order.map { MergedAlarmGroup(id: $0, alarms: buckets[$0]!) }
     }
 
     // MARK: - 「下一個」
@@ -245,6 +342,7 @@ struct AlarmListView: View {
     // MARK: - 依星期分組
 
     private struct WeekdaySection {
+        let day: Int             // 1=日 … 7=六；0＝單次鬧鐘（收合狀態的 key）
         let title: String        // Localizable key（星期一…／單次鬧鐘）
         let alarms: [Alarm]
     }
@@ -256,11 +354,11 @@ struct AlarmListView: View {
                       5: "星期四", 6: "星期五", 7: "星期六"]
         var sections: [WeekdaySection] = [2, 3, 4, 5, 6, 7, 1].compactMap { day in
             let dayAlarms = liveAlarms.filter { $0.weekdays.contains(day) }
-            return dayAlarms.isEmpty ? nil : WeekdaySection(title: titles[day]!, alarms: dayAlarms)
+            return dayAlarms.isEmpty ? nil : WeekdaySection(day: day, title: titles[day]!, alarms: dayAlarms)
         }
         let oneShots = liveAlarms.filter { $0.weekdays.isEmpty }
         if !oneShots.isEmpty {
-            sections.append(WeekdaySection(title: "單次鬧鐘", alarms: oneShots))
+            sections.append(WeekdaySection(day: 0, title: "單次鬧鐘", alarms: oneShots))
         }
         return sections
     }
@@ -583,6 +681,241 @@ private struct WeekdayDots: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 1)
             .background(Capsule().fill(SunnyColors.leafFresh.opacity(0.18)))
+    }
+}
+
+// MARK: - 方案 A：合併群組 + 篩選列 + 合併卡
+
+/// 同時間、同名、同種類（區間報時再比迄時刻與間隔）的鬧鐘視為「重複週期」，合成一張卡。
+struct MergedAlarmGroup: Identifiable {
+    let id: String
+    let alarms: [Alarm]
+
+    var primary: Alarm { alarms[0] }
+    /// 所有成員響鈴日的聯集。
+    var weekdays: [Int] { Array(Set(alarms.flatMap(\.weekdays))).sorted() }
+    /// 任一成員開著就算開（開關動作則是整組一起）。
+    var isEnabled: Bool { alarms.contains { $0.isEnabled } }
+
+    static func key(for a: Alarm) -> String {
+        var k = "\(a.hour):\(a.minute)|\(a.label)|\(a.kind)"
+        if a.kind == .chime, a.isIntervalChime {
+            k += "|\(a.chimeEndHour ?? -1):\(a.chimeEndMinute ?? -1)/\(a.chimeIntervalMinutes ?? 0)"
+        }
+        return k
+    }
+}
+
+/// 方案 A 頂部兩列：星期「一～日」多選 + 「全部／平日／週末／自訂」快捷。
+/// 只有一個狀態 `days`：快捷列的亮起由集合推回來（空＝全部、＝平日集合＝平日、＝週末集合＝週末、其餘＝自訂）。
+private struct AlarmFilterBar: View {
+    @Binding var days: Set<Int>
+
+    private static let workdays: Set<Int> = [2, 3, 4, 5, 6]
+    private static let weekend: Set<Int> = [1, 7]
+    private static let symbols = ["日", "一", "二", "三", "四", "五", "六"]
+
+    private enum Preset: CaseIterable { case all, workdays, weekend, custom }
+
+    private var activePreset: Preset {
+        if days.isEmpty { return .all }
+        if days == Self.workdays { return .workdays }
+        if days == Self.weekend { return .weekend }
+        return .custom
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                ForEach([2, 3, 4, 5, 6, 7, 1], id: \.self) { d in
+                    let on = days.contains(d)
+                    chip(Text(LocalizedStringKey(Self.symbols[d - 1])), on: on, compact: true) {
+                        withAnimation(.snappy) {
+                            if on { days.remove(d) } else { days.insert(d) }
+                        }
+                    }
+                    .accessibilityLabel(Text(LocalizedStringKey("星期" + Self.symbols[d - 1])))
+                    .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+                }
+            }
+            HStack(spacing: 6) {
+                presetChip(.all, "filter_all")
+                presetChip(.workdays, "days_weekdays")
+                presetChip(.weekend, "days_weekend")
+                presetChip(.custom, "filter_custom")
+                Spacer(minLength: 0)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("filter_days_label"))
+    }
+
+    private func presetChip(_ preset: Preset, _ key: String) -> some View {
+        let on = activePreset == preset
+        return chip(Text(LocalizedStringKey(key)), on: on, compact: false) {
+            withAnimation(.snappy) {
+                switch preset {
+                case .all:      days = []
+                case .workdays: days = Self.workdays
+                case .weekend:  days = Self.weekend
+                case .custom:
+                    // 「自訂」不是一個固定集合——它代表「上面那排自己勾」。從別的快捷點過來時
+                    // 先只留今天，讓上排有個看得出來的起點，家長再自己增減。
+                    if activePreset != .custom {
+                        days = [Calendar.current.component(.weekday, from: Date())]
+                    }
+                }
+            }
+        }
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private func chip(_ label: Text, on: Bool, compact: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            label
+                .font(compact ? SunnyFonts.caption(15) : SunnyFonts.caption(13))
+                .fontWeight(on ? .bold : .regular)
+                .foregroundStyle(on ? SunnyColors.nightIndigo : SunnyColors.cloudWhite)
+                .frame(maxWidth: compact ? .infinity : nil)
+                .padding(.horizontal, compact ? 0 : 10)
+                .padding(.vertical, compact ? 7 : 5)
+                .background(
+                    Capsule().fill(on ? SunnyColors.cloudWhite.opacity(0.95) : Color.white.opacity(0.22))
+                )
+                .overlay(Capsule().strokeBorder(Color.white.opacity(on ? 0 : 0.35), lineWidth: 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 方案 A 的合併卡：時間 + 名稱 + 聯集星期 + 「合併 N 顆」標籤；點卡片展開／收合成員，
+/// 右側開關整組一起開關。刻意沒有 swipe 刪除——要刪請展開後對成員操作，避免一滑刪掉一整組。
+private struct MergedAlarmCard: View {
+    let group: MergedAlarmGroup
+    var isNext: Bool = false
+    var expanded: Bool = false
+    var onTap: () -> Void = {}
+    @ObservedObject var preview: AlarmPreviewPlayer
+    @ObservedObject private var settings = AppSettings.shared
+
+    private var enabledBinding: Binding<Bool> {
+        Binding(
+            get: { group.isEnabled },
+            set: { on in
+                for a in group.alarms where a.isEnabled != on {
+                    a.isEnabled = on
+                    // 成員卡沒在畫面上（收合時）就不會有 AlarmCard 的 onChange 幫忙同步通知，
+                    // 這裡自己補。AlarmKit 一樣交給 HomeView 的前景/背景切換集中管理。
+                    Task { try? await AlarmScheduler.shared.syncWithModel(alarm: a) }
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        let color = group.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
+        WatercolorCard {
+            HStack(alignment: .center, spacing: 0) {
+                AlarmKindIcon(alarm: group.primary, isPlaying: preview.playingID.map { id in group.alarms.contains { $0.id == id } } ?? false)
+                    .padding(.leading, 14)
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 10)
+
+                Button(action: onTap) {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(group.primary.formattedTime(use24h: settings.use24HourClock))
+                                .font(SunnyFonts.clock(30))
+                                .foregroundStyle(color)
+                            HStack(spacing: 6) {
+                                Text(LocalizedStringKey(group.primary.label))
+                                    .font(SunnyFonts.caption())
+                                    .foregroundStyle(SunnyColors.sunnyGray)
+                                    .lineLimit(1)
+                                WeekdayDots(weekdays: group.weekdays)
+                            }
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                                Text(L("merged_count %lld", group.alarms.count))
+                            }
+                            .font(SunnyFonts.caption(11))
+                            .foregroundStyle(SunnyColors.forestDeep)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(SunnyColors.leafFresh.opacity(0.18)))
+                        }
+                        Spacer()
+                    }
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel(Text(L("merged_count %lld", group.alarms.count)))
+                .accessibilityValue(Text(expanded ? LocalizedStringKey("section_expanded") : LocalizedStringKey("section_collapsed")))
+
+                Toggle("", isOn: enabledBinding)
+                    .tint(SunnyColors.leafFresh)
+                    .labelsHidden()
+                    .accessibilityLabel(Text(group.isEnabled
+                                             ? LocalizedStringKey("關閉鬧鐘")
+                                             : LocalizedStringKey("開啟鬧鐘")))
+                    .padding(.trailing, 20)
+                    .padding(.vertical, 10)
+            }
+        }
+        .overlay {
+            if isNext && group.isEnabled {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(SunnyColors.lanternOrange.opacity(0.75), lineWidth: 1.5)
+                    .allowsHitTesting(false)
+            }
+        }
+        .opacity(group.isEnabled ? 1.0 : 0.6)
+        .animation(.easeInOut(duration: 0.2), value: group.isEnabled)
+        .animation(.easeInOut(duration: 0.2), value: expanded)
+    }
+}
+
+// MARK: - 方案 B：可收合的星期節標題
+
+/// 「▶ 星期二（3 個鬧鐘）」整列可點；展開時箭頭轉下。
+private struct CollapsibleDayHeader: View {
+    let title: Text
+    let count: Int
+    let expanded: Bool
+    var onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .frame(width: 14)
+                title.font(SunnyFonts.caption(16)).fontWeight(.semibold)
+                Text(L("alarm_count %lld", count))
+                    .font(SunnyFonts.caption(13))
+                    .opacity(0.85)
+                Spacer()
+            }
+            .foregroundStyle(SunnyColors.nightIndigo)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(SunnyColors.cloudWhite.opacity(expanded ? 0.55 : 0.38))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .animation(.snappy, value: expanded)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(Text(expanded ? LocalizedStringKey("section_expanded") : LocalizedStringKey("section_collapsed")))
     }
 }
 

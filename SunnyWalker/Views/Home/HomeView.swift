@@ -35,6 +35,11 @@ struct HomeView: View {
     // Notification-driven / long-press alarm ring
     @State private var firingAlarm: Alarm?
 
+    // 點吉祥物＝輪流切換首頁排列（依時間 → 重複週期合併 → 依時段 → 依星期 → …）。
+    // 切完在吉祥物上方浮一顆膠囊寫出新排列的名字，1.6s 後自動收掉（同 FabHint 的節奏）。
+    @State private var layoutToastVisible = false
+    @State private var layoutToastWork: DispatchWorkItem? = nil
+
     // Multi-person alarm groups: which group page the home list is currently showing.
     // 0 = group A. Clamped whenever the parent lowers the group count / disables grouping.
     @State private var homeGroupSelection = 0
@@ -111,12 +116,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 52, textColor: scene.clockTextColor)
                                     .padding(.top, 32)
                                     .padding(.bottom, 8)
-                                MascotView(tappable: true, animated: !sheets.isCovered, scene: scene,
-                                           themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
-                                    .overlay(alignment: .topTrailing) {
-                                        TodoBadgesView(group: settings.groupEnabled ? homeGroupSelection : nil)
-                                            .offset(x: 14, y: 6)
-                                    }
+                                homeMascot(group: settings.groupEnabled ? homeGroupSelection : nil)
                                     .scaleEffect(0.75)
                                 Spacer()
                             }
@@ -131,12 +131,7 @@ struct HomeView: View {
                                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                                     .padding(.top, 56)
                                     .padding(.bottom, 16)
-                                MascotView(tappable: true, animated: !sheets.isCovered, scene: scene,
-                                           themeOverride: settings.groupEnabled ? settings.groupMascot(homeGroupSelection) : nil)
-                                    .overlay(alignment: .topTrailing) {
-                                        TodoBadgesView(group: settings.groupEnabled ? homeGroupSelection : nil)
-                                            .offset(x: 14, y: 6)
-                                    }
+                                homeMascot(group: settings.groupEnabled ? homeGroupSelection : nil)
                                 Spacer()
                             }
                             .frame(maxWidth: .infinity)
@@ -661,6 +656,55 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Mascot（點一下輪流切換排列）
+
+    /// 首頁吉祥物：三個版位（iPhone header／iPad 直橫）共用。點一下＝打招呼＋切到下一種排列，
+    /// 待辦徽章掛右上，排列名稱膠囊浮在上方。
+    private func homeMascot(group: Int?) -> some View {
+        MascotView(tappable: true, animated: !sheets.isCovered, scene: scene,
+                   themeOverride: group.map { settings.groupMascot($0) },
+                   onTap: cycleHomeLayout,
+                   tapHint: "mascot_tap_hint_home")
+            .overlay(alignment: .topTrailing) {
+                TodoBadgesView(group: group)
+                    .offset(x: 14, y: 6)
+            }
+            .overlay(alignment: .top) {
+                if layoutToastVisible {
+                    HStack(spacing: 6) {
+                        Image(systemName: settings.homeListLayout.systemImage)
+                        Text(LocalizedStringKey(settings.homeListLayout.labelKey))
+                    }
+                    .font(SunnyFonts.caption(14))
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                    .lineLimit(1)
+                    .fixedSize()   // 吉祥物本體只有 132pt 寬，不 fixedSize 會被擠成兩行（模擬器實測「Time of day」折行）
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(SunnyColors.cloudWhite.opacity(0.95)))
+                    .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                    .offset(y: -34)
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)   // 切換結果由設定值本身（VoiceOver 讀清單）呈現
+                }
+            }
+    }
+
+    /// 依 HomeListLayout.allCases 順序切到下一種，並浮出名稱膠囊 1.6s。
+    private func cycleHomeLayout() {
+        withAnimation(.snappy) {
+            settings.homeListLayout = settings.homeListLayout.next
+            layoutToastVisible = true
+        }
+        layoutToastWork?.cancel()
+        let work = DispatchWorkItem {
+            withAnimation(.easeOut(duration: 0.25)) { layoutToastVisible = false }
+        }
+        layoutToastWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6, execute: work)
+    }
+
     // MARK: - Grouped alarm list (multi-person alarms)
 
     /// iPhone clock + mascot header. When `group` is non-nil a group-name banner is appended so the
@@ -671,12 +715,7 @@ struct HomeView: View {
                 ClockHeaderView(fontSize: 76, textColor: scene.clockTextColor)
                     .padding(.top, 56)
                     .padding(.bottom, 12)
-                MascotView(tappable: true, animated: !sheets.isCovered, scene: scene,
-                           themeOverride: group.map { settings.groupMascot($0) })
-                    .overlay(alignment: .topTrailing) {
-                        TodoBadgesView(group: group)
-                            .offset(x: 14, y: 6)
-                    }
+                homeMascot(group: group)
                     .padding(.bottom, 8)
                 if showBanner, let g = group {
                     GroupBanner(

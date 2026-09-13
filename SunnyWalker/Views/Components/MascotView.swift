@@ -13,6 +13,10 @@ struct MascotView: View {
     var scene: DaytimeScene? = nil
     /// 多人鬧鐘：覆寫要顯示的吉祥物（首頁每個群組各自的吉祥物）。nil → 用全域 settings.mascotTheme。
     var themeOverride: MascotTheme? = nil
+    /// 點一下除了打招呼＋彈跳，還要做的事（首頁：輪流切換鬧鐘排列方式）。只在 tappable 時有效。
+    var onTap: (() -> Void)? = nil
+    /// VoiceOver 的點按提示；首頁改成「切換排列＋打招呼」，其他頁維持預設。
+    var tapHint: LocalizedStringKey = "點一下，吉祥物會跟你打招呼"
 
     @ObservedObject private var settings = AppSettings.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,9 +31,12 @@ struct MascotView: View {
                 .scaleEffect(bounce ? 1.08 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.5), value: bounce)
                 .contentShape(Rectangle())
-                .onTapGesture { greet() }
+                .onTapGesture {
+                    greet()
+                    onTap?()
+                }
                 .accessibilityAddTraits(.isButton)
-                .accessibilityHint(Text("點一下，吉祥物會跟你打招呼"))
+                .accessibilityHint(Text(tapHint))
         } else {
             livingAvatar
         }
