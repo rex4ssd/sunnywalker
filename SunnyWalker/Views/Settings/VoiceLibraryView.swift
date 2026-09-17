@@ -109,7 +109,7 @@ struct VoiceLibraryView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     // Stop player before dismissing — prevents audio tail when sheet closes.
-                    Button(isSelectionMode ? String(localized: "取消") : String(localized: "完成")) { player.stop(); dismiss() }
+                    Button(isSelectionMode ? LocalizedStringKey("取消") : LocalizedStringKey("完成")) { player.stop(); dismiss() }
                         .font(SunnyFonts.caption())
                         .foregroundStyle(isSelectionMode ? SunnyColors.sunnyGray : SunnyColors.forestDeep)
                 }
@@ -367,7 +367,7 @@ private struct VoiceClipRow: View {
                 .contentShape(Circle())
                 .onTapGesture { onPlayPause() }
                 .onLongPressGesture(minimumDuration: 0.45) { onStop() }
-                .accessibilityLabel(Text(isPlaying ? String(localized: "暫停") : String(localized: "播放")))
+                .accessibilityLabel(Text(isPlaying ? LocalizedStringKey("暫停") : LocalizedStringKey("播放")))
                 .accessibilityHint(Text("長按停止"))
 
             // Name + meta
@@ -667,7 +667,7 @@ struct VoiceClipRecorderSheet: View {
                 }
             } label: {
                 Label(
-                    player.isPlaying ? String(localized: "停止") : String(localized: "試聽"),
+                    player.isPlaying ? LocalizedStringKey("停止") : LocalizedStringKey("試聽"),
                     systemImage: player.isPlaying ? "pause.fill" : "play.fill"
                 )
                 .font(SunnyFonts.caption())
@@ -968,7 +968,7 @@ private struct VoiceClipDetailSheet: View {
                                         player.play(url: clip.recordingsURL, loop: false)
                                     }
                                 } label: {
-                                    Label(player.isPlaying ? String(localized: "停止試聽") : String(localized: "播放錄音"), systemImage: player.isPlaying ? "pause.fill" : "play.fill")
+                                    Label(player.isPlaying ? LocalizedStringKey("停止試聽") : LocalizedStringKey("播放錄音"), systemImage: player.isPlaying ? "pause.fill" : "play.fill")
                                         .font(SunnyFonts.caption())
                                         .foregroundStyle(.white)
                                         .frame(maxWidth: .infinity)
@@ -1172,7 +1172,7 @@ private struct VoiceClipTrimSheet: View {
                             playSelectionPreview()
                         }
                     } label: {
-                        Label(isPreviewingSelection ? String(localized: "停止預聽") : String(localized: "重播保留片段"), systemImage: isPreviewingSelection ? "stop.fill" : "play.fill")
+                        Label(isPreviewingSelection ? LocalizedStringKey("停止預聽") : LocalizedStringKey("重播保留片段"), systemImage: isPreviewingSelection ? "stop.fill" : "play.fill")
                             .font(SunnyFonts.caption())
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
@@ -1188,7 +1188,7 @@ private struct VoiceClipTrimSheet: View {
                     } label: {
                         HStack {
                             if isSaving { ProgressView() }
-                            Text(isSaving ? String(localized: "存檔中…") : String(localized: "儲存裁剪結果"))
+                            Text(isSaving ? LocalizedStringKey("存檔中…") : LocalizedStringKey("儲存裁剪結果"))
                         }
                         .font(SunnyFonts.caption())
                         .foregroundStyle(.white)

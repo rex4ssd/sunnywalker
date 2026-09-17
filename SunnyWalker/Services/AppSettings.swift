@@ -442,12 +442,17 @@ final class AppSettings: ObservableObject {
     /// 目前實際生效的群組數：未啟用分組時固定為 1（只有群組 A）。
     var effectiveGroupCount: Int { groupEnabled ? min(max(groupCount, 1), Self.maxGroups) : 1 }
 
+    /// 家長自己取的群組名稱（去頭尾空白）；沒取名 → nil。
+    func groupCustomName(_ index: Int) -> String? {
+        guard index >= 0, index < groupNames.count else { return nil }
+        let custom = groupNames[index].trimmingCharacters(in: .whitespacesAndNewlines)
+        return custom.isEmpty ? nil : custom
+    }
+
     /// 群組顯示名稱：使用者改過名 → 用自訂名；否則回在地化預設「群組 A」/「Group A」。
     func groupDisplayName(_ index: Int) -> String {
         guard index >= 0, index < Self.maxGroups else { return "" }
-        let custom = (index < groupNames.count ? groupNames[index] : "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !custom.isEmpty { return custom }
+        if let custom = groupCustomName(index) { return custom }
         let letter = String(Character(UnicodeScalar(UInt8(65 + index))))   // A, B, C, D, E
         return L("group_default_prefix") + " " + letter         // 群組 A / Group A
     }

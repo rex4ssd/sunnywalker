@@ -60,6 +60,12 @@
 - 順手修：中文介面下吉祥物名稱顯示成英文（`String(localized:)` 跟的是系統語言不是 App 語言）
   → `MascotTheme.displayName` 改回傳 `LocalizedStringKey`，跟著 App 語言即時切換。
 
+### done-20260918_0000 編輯器的群組選擇：預設簡約字母圓球
+- 沒取名的群組只畫一顆圓球（A／B／C…），五組也排得進一列；家長取了名字那一顆才展開成「字母＋名稱」膠囊，
+  名字太長橫向捲動並顯示捲軸。VoiceOver 念完整名稱。
+- 順手修：中文介面下「Edit Alarm／Save」等 18 處英文漏字——三元運算包的 `String(localized:)` 跟系統語言，
+  全改 `LocalizedStringKey`（編輯器、錄音管理）。
+
 ## 原始需求（已全部完成，保留原文）
 
 #幫我重新思考，這鬧鐘有三個功能

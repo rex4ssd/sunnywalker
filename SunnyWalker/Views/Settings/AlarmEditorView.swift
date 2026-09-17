@@ -333,7 +333,10 @@ struct AlarmEditorView: View {
                 Text("todo_needs_recording_msg")
             }
             .onDisappear { previewPlayer.stop() }
-            .navigationTitle(isEditing ? String(localized: "編輯鬧鐘") : String(localized: "新增鬧鐘"))
+            // ⚠️ 三元運算的兩邊要明確標 LocalizedStringKey：直接餵字面值會被推成 String（verbatim 不查表），
+            //    而 String(localized:) 跟的是【系統語言】不是 App 語言——裝置英文＋App 中文時會漏出英文
+            //    （"Edit Alarm"／"Save"）。LocalizedStringKey 由 SwiftUI 依 App 注入的 \.locale 查表。
+            .navigationTitle(isEditing ? LocalizedStringKey("編輯鬧鐘") : LocalizedStringKey("新增鬧鐘"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -344,7 +347,7 @@ struct AlarmEditorView: View {
                 }
                 // Save lives in the top-right corner (opposite Cancel), iOS-standard sheet layout.
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? String(localized: "儲存修改") : String(localized: "儲存鬧鐘")) { saveAlarm() }
+                    Button(isEditing ? LocalizedStringKey("儲存修改") : LocalizedStringKey("儲存鬧鐘")) { saveAlarm() }
                         .font(SunnyFonts.caption())
                         .fontWeight(.semibold)
                         .foregroundStyle(SunnyColors.lanternOrange)
@@ -362,7 +365,7 @@ struct AlarmEditorView: View {
                 isPresented: $showingUnsavedPrompt,
                 titleVisibility: .visible
             ) {
-                Button(isEditing ? String(localized: "儲存修改") : String(localized: "儲存鬧鐘")) {
+                Button(isEditing ? LocalizedStringKey("儲存修改") : LocalizedStringKey("儲存鬧鐘")) {
                     saveAlarm()
                 }
                 Button("放棄變更", role: .destructive) { discardAndDismiss() }
@@ -476,12 +479,16 @@ struct AlarmEditorView: View {
                     .font(SunnyFonts.caption())
                     .foregroundStyle(SunnyColors.sunnyGray)
 
-                ScrollView(.horizontal, showsIndicators: false) {
+                // 預設簡約：沒取名的群組只畫一顆字母圓球（A／B／C…），五組也排得進一列。
+                // 家長取了名字才展開成「字母＋名稱」膠囊；名字長到排不下就橫向捲動，
+                // 捲軸照常顯示（底下留一點空間給它，不要壓到圓球）。
+                ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 10) {
                         ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
                             GroupChip(
                                 letter: String(Character(UnicodeScalar(UInt8(65 + i)))),
-                                title: settings.groupDisplayName(i),
+                                customName: settings.groupCustomName(i),
+                                accessibilityName: settings.groupDisplayName(i),
                                 isSelected: selectedGroupIndex == i
                             ) {
                                 selectedGroupIndex = i
@@ -489,7 +496,8 @@ struct AlarmEditorView: View {
                         }
                     }
                     .padding(.horizontal, 2)
-                    .padding(.vertical, 2)
+                    .padding(.top, 2)
+                    .padding(.bottom, 10)
                 }
             }
             .padding(.horizontal, 20)
@@ -1267,36 +1275,51 @@ private struct WeekdayChip: View {
 
 private struct GroupChip: View {
     let letter: String
-    let title: String
+    /// 家長取的名字；nil＝沒取名 → 只畫字母圓球。
+    let customName: String?
+    /// VoiceOver 念的完整名稱（「群組 A」或自訂名）——圓球上只有一個字母，不能只念「A」。
+    let accessibilityName: String
     let isSelected: Bool
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 7) {
+            if let customName {
+                // 有名字：字母小圓 + 名稱的膠囊。
+                HStack(spacing: 7) {
+                    Text(verbatim: letter)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(isSelected ? .white : SunnyColors.forestDeep)
+                        .frame(width: 22, height: 22)
+                        .background(
+                            Circle().fill(isSelected
+                                          ? Color.white.opacity(0.28)
+                                          : SunnyColors.leafFresh.opacity(0.18))
+                        )
+                    Text(verbatim: customName)
+                        .font(SunnyFonts.caption(15))
+                        .foregroundStyle(isSelected ? .white : SunnyColors.nightIndigo)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 44)
+                .background(Capsule().fill(fill))
+            } else {
+                // 沒名字：一顆 44pt 圓球，中間一個字母。
                 Text(verbatim: letter)
-                    .font(.caption.weight(.bold))
+                    .font(SunnyFonts.caption(17).weight(.bold))
                     .foregroundStyle(isSelected ? .white : SunnyColors.forestDeep)
-                    .frame(width: 22, height: 22)
-                    .background(
-                        Circle().fill(isSelected
-                                      ? Color.white.opacity(0.28)
-                                      : SunnyColors.leafFresh.opacity(0.18))
-                    )
-                Text(verbatim: title)
-                    .font(SunnyFonts.caption(15))
-                    .foregroundStyle(isSelected ? .white : SunnyColors.nightIndigo)
-                    .lineLimit(1)
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(fill))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(
-                Capsule().fill(isSelected
-                               ? SunnyColors.leafFresh
-                               : SunnyColors.sunnyGray.opacity(0.12))
-            )
         }
         .sunnyButtonStyle()
+        .accessibilityLabel(Text(verbatim: accessibilityName))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var fill: Color {
+        isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12)
     }
 }
 
