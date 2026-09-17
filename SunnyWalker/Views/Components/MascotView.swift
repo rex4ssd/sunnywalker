@@ -234,7 +234,7 @@ struct MascotThumb: View {
             }
         }
         .frame(width: size, height: size)
-        .accessibilityLabel(Text(LocalizedStringKey(theme.displayName)))
+        .accessibilityLabel(Text(theme.displayName))
     }
 }
 

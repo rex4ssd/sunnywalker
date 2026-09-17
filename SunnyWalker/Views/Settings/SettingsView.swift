@@ -44,10 +44,8 @@ struct SettingsView: View {
     @State private var showingTodoHistory = false
     /// 「進階設定」展開狀態（每次進頁預設收起）。
     @State private var showAdvanced = false
-    /// 長按某組的「報時」鈴鐺時，在那一列下方顯示使用提示（再長按別組會切換、放開不自動收）。
-    @State private var chimeHintGroup: Int? = nil
-    /// 長按某組的「待辦」圖示時，在那一列下方顯示使用提示。
-    @State private var todoHintGroup: Int? = nil
+    /// 點（或長按）某組的報時／待辦圖示後，在那一列下方顯示「剛剛開了／關了什麼」的說明。
+    @State private var groupNote: GroupNote? = nil
 
     private var theme: KidsTheme {
         KidsTheme(accent: SunnyColors.lanternOrange, background: SunnyColors.cloudWhite, scheme: .light)
@@ -187,7 +185,7 @@ struct SettingsView: View {
                 ForEach(MascotTheme.allCases) { theme in
                     // Use LocalizedStringKey so xcstrings translates the display name
                     Label {
-                        Text(LocalizedStringKey(theme.displayName))
+                        Text(theme.displayName)
                     } icon: {
                         Image(systemName: theme.icon)
                     }
@@ -287,7 +285,7 @@ struct SettingsView: View {
                     )) {
                         ForEach(MascotTheme.allCases) { theme in
                             Label {
-                                Text(LocalizedStringKey(theme.displayName))
+                                Text(theme.displayName)
                             } icon: {
                                 Image(systemName: theme.icon)
                             }
@@ -308,63 +306,55 @@ struct SettingsView: View {
                     )
                 }
 
-                // 報時開關（鈴鐺）。on＝這組變成報時鬧鐘；長按顯示使用提示。報時 / 待辦互斥。
-                Button {
-                    settings.setGroupChimeEnabled(i, !settings.isGroupChimeEnabled(i))
-                } label: {
-                    Image(systemName: settings.isGroupChimeEnabled(i)
-                          ? "bell.badge.fill" : "bell.slash")
-                        .font(.title3)
-                        .foregroundStyle(settings.isGroupChimeEnabled(i)
-                                         ? SunnyColors.lanternOrange
-                                         : SunnyColors.sunnyGray.opacity(0.6))
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-                .simultaneousGesture(
-                    LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                        withAnimation(.spring(duration: 0.2)) {
-                            chimeHintGroup = (chimeHintGroup == i) ? nil : i
-                            todoHintGroup = nil
-                        }
-                    }
-                )
-
-                // 待辦開關（氣球）。on＝這組變成待辦語音提醒；長按顯示使用提示。
-                Button {
-                    settings.setGroupTodoEnabled(i, !settings.isGroupTodoEnabled(i))
-                } label: {
-                    Image(systemName: settings.isGroupTodoEnabled(i)
-                          ? "balloon.fill" : "balloon")
-                        .font(.title3)
-                        .foregroundStyle(settings.isGroupTodoEnabled(i)
-                                         ? SunnyColors.leafFresh
-                                         : SunnyColors.sunnyGray.opacity(0.6))
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-                .simultaneousGesture(
-                    LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                        withAnimation(.spring(duration: 0.2)) {
-                            todoHintGroup = (todoHintGroup == i) ? nil : i
-                            chimeHintGroup = nil
-                        }
-                    }
-                )
+                // 報時開關（鈴鐺）／待辦開關（氣球）。兩者互斥。
+                // 點一下＝切換，**同時**在這一列下面說明剛剛開了／關了什麼（以前只有長按才看得到說明，
+                // 家長點了只看到 icon 變色，不知道啟用了什麼）。長按＝只看說明、不切換。
+                groupModeButton(i, mode: .chime)
+                groupModeButton(i, mode: .todo)
             }
 
-            if chimeHintGroup == i {
-                Text("chime_toggle_hint")
-                    .font(.caption)
-                    .foregroundStyle(SunnyColors.lanternOrange.opacity(0.9))
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+            if let note = groupNote, note.group == i {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(LocalizedStringKey(note.mode.noteKey(isOn: note.isOn)))
+                        .font(.caption)
+                        .foregroundStyle(note.isOn ? note.mode.noteColor : SunnyColors.sunnyGray)
+                    Text("group_mode_existing_note")
+                        .font(.caption2)
+                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .accessibilityElement(children: .combine)
             }
-            if todoHintGroup == i {
-                Text("todo_toggle_hint")
-                    .font(.caption)
-                    .foregroundStyle(SunnyColors.leafFresh.opacity(0.95))
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
+        }
+    }
+
+    /// 群組列右側的功能鈕（報時／待辦）。
+    private func groupModeButton(_ i: Int, mode: GroupMode) -> some View {
+        let isOn = mode.isOn(settings, i)
+        return Button {
+            mode.set(settings, i, !isOn)
+            showGroupNote(i, mode)
+        } label: {
+            Image(systemName: isOn ? mode.onImage : mode.offImage)
+                .font(.title3)
+                .foregroundStyle(isOn ? mode.tint : SunnyColors.sunnyGray.opacity(0.6))
+                .frame(width: 32, height: 32)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.45).onEnded { _ in showGroupNote(i, mode) }
+        )
+        .accessibilityLabel(Text(LocalizedStringKey(mode.titleKey)))
+        .accessibilityValue(Text(isOn ? "group_on_badge" : "group_off_badge"))
+        .accessibilityHint(Text(LocalizedStringKey(mode.noteKey(isOn: true))))
+    }
+
+    /// 顯示（或更新）某組某功能的說明；狀態取「現在」的值，所以點完切換後念的是新狀態。
+    /// 開待辦會連動關掉報時（互斥），說明跟著最後點的那顆走。
+    private func showGroupNote(_ i: Int, _ mode: GroupMode) {
+        withAnimation(.spring(duration: 0.2)) {
+            groupNote = GroupNote(group: i, mode: mode, isOn: mode.isOn(settings, i))
         }
     }
 
@@ -498,6 +488,44 @@ struct SettingsView: View {
             }
         }
     }
+}
+
+// MARK: - 群組功能鈕（報時／待辦）
+
+/// 群組列右側兩顆功能鈕的共同描述：圖示、顏色、讀寫 AppSettings、說明文字 key。
+private enum GroupMode {
+    case chime, todo
+
+    var onImage: String  { self == .chime ? "bell.badge.fill" : "balloon.fill" }
+    var offImage: String { self == .chime ? "bell.slash" : "balloon" }
+    var tint: Color      { self == .chime ? SunnyColors.lanternOrange : SunnyColors.leafFresh }
+    var titleKey: String { self == .chime ? "chime_card_title" : "todo_card_title" }
+    /// 說明文字的顏色：圖示的嫩綠（leafFresh）在白底上當內文太淡，待辦改用深綠。
+    var noteColor: Color { self == .chime ? SunnyColors.lanternOrange : SunnyColors.forestDeep }
+
+    @MainActor func isOn(_ s: AppSettings, _ i: Int) -> Bool {
+        self == .chime ? s.isGroupChimeEnabled(i) : s.isGroupTodoEnabled(i)
+    }
+
+    @MainActor func set(_ s: AppSettings, _ i: Int, _ on: Bool) {
+        if self == .chime { s.setGroupChimeEnabled(i, on) } else { s.setGroupTodoEnabled(i, on) }
+    }
+
+    /// Localizable.xcstrings key：開啟／關閉各一句「這個功能做什麼」。
+    func noteKey(isOn: Bool) -> String {
+        switch (self, isOn) {
+        case (.chime, true):  return "group_chime_on_note"
+        case (.chime, false): return "group_chime_off_note"
+        case (.todo, true):   return "group_todo_on_note"
+        case (.todo, false):  return "group_todo_off_note"
+        }
+    }
+}
+
+private struct GroupNote: Equatable {
+    let group: Int
+    let mode: GroupMode
+    let isOn: Bool
 }
 
 #Preview("Settings") {

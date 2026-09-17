@@ -588,22 +588,6 @@
         }
       }
     },
-    "chime_toggle_hint": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Long-press to turn time chime on or off. When on, this group's alarms announce the time aloud."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "長按可開關報時；開啟後這組的鬧鐘到點會用語音報時。"
-          }
-        }
-      }
-    },
     "chime_voice_female": {
       "localizations": {
         "en": {
@@ -2587,22 +2571,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "錄製待辦語音"
-          }
-        }
-      }
-    },
-    "todo_toggle_hint": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Long-press to toggle to-do. When on, this group's alarms become voice reminders (mutually exclusive with chime)."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "長按可開關待辦；開啟後這組的鬧鐘變成待辦語音提醒（與報時互斥）。"
           }
         }
       }
@@ -7126,6 +7094,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "倒數"
+          }
+        }
+      }
+    },
+    "group_chime_on_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time chime is ON. Alarms in this group read the time aloud instead of ringing (you can repeat every few minutes or count down), then stop on their own."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「報時」已開啟：這一組的鬧鐘不響鈴聲，改用語音念出時間（可設每幾分鐘報一次、倒數），念完自動停。"
+          }
+        }
+      }
+    },
+    "group_chime_off_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time chime is OFF. This group rings like a normal alarm again."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「報時」已關閉：這一組回到一般鬧鐘（響鈴聲、要按掉）。"
+          }
+        }
+      }
+    },
+    "group_todo_on_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To-do reminders are ON. This group doesn't ring: at the set time a badge appears by the mascot, your child taps it to hear your recording, then long-presses to confirm. It can't be combined with time chime."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「待辦提醒」已開啟：這一組不會響；時間到時主頁吉祥物旁會冒出小圖示，孩子點一下聽你錄的提醒、長按確認。和報時只能二選一。"
+          }
+        }
+      }
+    },
+    "group_todo_off_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To-do reminders are OFF. This group rings like a normal alarm again."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「待辦提醒」已關閉：這一組回到一般鬧鐘（響鈴聲、要按掉）。"
+          }
+        }
+      }
+    },
+    "group_mode_existing_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alarms already in this group change only after you open and save them again."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這一組原有的鬧鐘，要打開再按一次「儲存」才會套用。"
           }
         }
       }

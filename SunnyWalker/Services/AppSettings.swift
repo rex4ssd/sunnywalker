@@ -107,15 +107,20 @@ enum MascotTheme: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
-        // String(localized:)：純字面值 return 不查 Catalog，英文介面會漏出中文。
+    /// 顯示名稱。回傳 `LocalizedStringKey`（key＝中文原文）讓 SwiftUI 依【App 語言】
+    /// （SunnyWalkerApp 注入的 `\.locale`）查 String Catalog，切語言即時跟著變。
+    ///
+    /// ⚠️ 以前這裡是 `String(localized:)`——它跟的是【系統語言】不是 App 語言：裝置英文、App 選中文時
+    /// 會先被翻成 "Sunny (Forest Spirit)"，呼叫端再包一層 `LocalizedStringKey(...)` 去查表時，
+    /// 拿英文當 key 查不到 → 中文介面漏出英文。也不能回純 String 中文字面值（英文介面會漏中文）。
+    var displayName: LocalizedStringKey {
         switch self {
-        case .sunnyAlarm: return String(localized: "小鬧晴")
-        case .sunny:   return String(localized: "小晴（灰色精靈）")
-        case .giraffe: return String(localized: "長頸鹿")
-        case .bunny:   return String(localized: "小兔子")
-        case .bear:    return String(localized: "小熊")
-        case .flower:  return String(localized: "向日葵（自訂照片）")
+        case .sunnyAlarm: return "小鬧晴"
+        case .sunny:   return "小晴（灰色精靈）"
+        case .giraffe: return "長頸鹿"
+        case .bunny:   return "小兔子"
+        case .bear:    return "小熊"
+        case .flower:  return "向日葵（自訂照片）"
         }
     }
 
