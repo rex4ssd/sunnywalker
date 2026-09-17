@@ -140,6 +140,10 @@ final class Alarm {
     /// 區間報時的間隔（分鐘）。nil / 0 → 單一時刻。讀取請用 `chimeSlotTimes`（已算好每個報時時刻）。
     var chimeIntervalMinutes: Int? = nil
 
+    /// 區間報時的「倒數」模式：不念幾點幾分，改念「剩 30 分鐘、剩 20 分鐘…」（距離迄時刻還剩多久）。
+    /// nil（舊資料）→ false。只有區間報時才有意義，讀取請用 `effectiveChimeCountdown` / `chimeSlotRemaining`。
+    var chimeCountdown: Bool? = nil
+
     /// 報時人聲性別（ChimeVoiceGender rawValue）。nil → 女聲（跟以前一樣）。讀取請用 `effectiveChimeVoice`。
     var chimeVoice: String? = nil
 
@@ -250,6 +254,22 @@ final class Alarm {
             t += interval
         }
         return out
+    }
+
+    /// 倒數模式是否生效：要開了倒數、而且真的是區間報時（單一時刻沒有「迄」可以倒數）。
+    var effectiveChimeCountdown: Bool { (chimeCountdown ?? false) && isIntervalChime }
+
+    /// 倒數模式下每個時刻要念的「剩幾分鐘」（與 `chimeSlotTimes` 對齊）；不是倒數模式 → nil。
+    var chimeSlotRemaining: [Int]? {
+        guard effectiveChimeCountdown, let eh = chimeEndHour, let em = chimeEndMinute else { return nil }
+        return Self.chimeRemainingMinutes(slots: chimeSlotTimes, endHour: eh, endMinute: em)
+    }
+
+    /// 起 07:00、迄 07:30、間隔 10 → 時刻 07:00/07:10/07:20 → 剩 30/20/10 分鐘。
+    static func chimeRemainingMinutes(slots: [(hour: Int, minute: Int)],
+                                      endHour: Int, endMinute: Int) -> [Int] {
+        let end = endHour * 60 + endMinute
+        return slots.map { max(0, end - ($0.hour * 60 + $0.minute)) }
     }
 
     /// 每個報時時刻對應的 CAF 檔名（與 `chimeSlotTimes` 對齊）。

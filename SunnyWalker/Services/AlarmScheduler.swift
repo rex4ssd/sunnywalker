@@ -286,16 +286,28 @@ final class AlarmScheduler {
         let slots = alarm.chimeSlotTimes
         let locale = SunnyLocalization.locale
         let voice = alarm.effectiveChimeVoice
+        // 倒數模式：每個時刻念「剩 N 分鐘」而不是時刻（nil＝一般報時）。
+        let remaining = alarm.chimeSlotRemaining
 
         // 1. 語音檔：與時刻數對齊且檔案都在 → 直接用；否則重新合成（舊格式單檔、改過時間/人聲、檔案遺失）。
         var files = alarm.alignedChimeSlotFiles
         if let f = files, f.contains(where: { !FileManager.default.fileExists(atPath: AppPaths.soundURL(named: $0).path) }) {
             files = nil
         }
+        // App 語言換了（中 ↔ 英）：檔名帶語言標籤 _zh_ / _en_，不符就重新合成——
+        // 不然介面是英文、報時還在念中文（反之亦然）。
+        let langTag = "_\(ChimeSoundComposer.languageTag(for: locale))_"
+        if let f = files, f.contains(where: { !$0.contains(langTag) }) {
+            files = nil
+        }
+        // 倒數開關被切過但檔案還是另一種內容（檔名指紋 cdNNN＝倒數、HHMM＝時刻）→ 重新合成。
+        if let f = files, f.contains(where: { $0.hasPrefix("\(Alarm.chimeFilePrefix)cd") != (remaining != nil) }) {
+            files = nil
+        }
         if files == nil {
             let old = Set((alarm.chimeSlotSoundFiles ?? []) + [alarm.soundFileName])
             let composed = await Task.detached(priority: .userInitiated) {
-                ChimeSoundComposer.composeSlots(slots, locale: locale, voice: voice)
+                ChimeSoundComposer.composeSlots(slots, locale: locale, voice: voice, remaining: remaining)
             }.value
             if let composed, let first = composed.first {
                 alarm.chimeSlotSoundFiles = composed
@@ -328,7 +340,7 @@ final class AlarmScheduler {
         for (s, slot) in slots.enumerated() {
             let file = files[s]
             let content = makeChimeContent(alarm: alarm, hour: slot.hour, minute: slot.minute,
-                                           soundFile: file, locale: locale,
+                                           soundFile: file, locale: locale, remainingMinutes: remaining?[s],
                                            timeSensitiveEnabled: timeSensitiveEnabled)
             var secs: Double = 3
             if let caf = try? AVAudioFile(forReading: AppPaths.soundURL(named: file)) {
@@ -376,7 +388,7 @@ final class AlarmScheduler {
             // 兩句報時之間的間距（秒）＝一句長度 + ~1s 喘息，至少 2 秒；slot 秒位須 < 60 留在同一分鐘內。
             let period = max(2, Int(ceil(slotSeconds[s])) + 1)
             let content = makeChimeContent(alarm: alarm, hour: slot.hour, minute: slot.minute,
-                                           soundFile: files[s], locale: locale,
+                                           soundFile: files[s], locale: locale, remainingMinutes: remaining?[s],
                                            timeSensitiveEnabled: timeSensitiveEnabled)
             for k in 2...count {
                 let off = period * (k - 1)
@@ -393,11 +405,13 @@ final class AlarmScheduler {
 
     /// 報時橫幅：標題＝鬧鐘標籤（沒有就「報時」），內文＝跟語音念的一模一樣（早上七點零五分）。
     private func makeChimeContent(alarm: Alarm, hour: Int, minute: Int, soundFile: String,
-                                  locale: Locale, timeSensitiveEnabled: Bool) -> UNMutableNotificationContent {
+                                  locale: Locale, remainingMinutes: Int? = nil,
+                                  timeSensitiveEnabled: Bool) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         let label = alarm.label.trimmingCharacters(in: .whitespaces)
         content.title = label.isEmpty ? L("chime_notification_title") : label
-        content.body = ChimeSoundComposer.phrase(hour: hour, minute: minute, locale: locale)
+        content.body = ChimeSoundComposer.phrase(hour: hour, minute: minute, locale: locale,
+                                                 remainingMinutes: remainingMinutes)
         content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundFile))
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
         content.threadIdentifier = alarm.id.uuidString

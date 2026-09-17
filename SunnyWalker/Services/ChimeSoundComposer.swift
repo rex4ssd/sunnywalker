@@ -34,26 +34,34 @@ enum ChimeSoundComposer {
     /// ⚠️ 為什麼只合成「一次」：報時走通知模式，iOS 對「過長」的自訂通知音會悄悄退成預設音
     ///    （真機只驗到 ~4.6s 安全）。連報 N 次塞進同一個檔會超過上限 → 報時整個不出聲。
     ///    所以單句檔保持短（~2-3s），「連報 N 次」由 AlarmScheduler 排 N 顆秒級錯開的通知達成。
+    /// - Parameter remainingMinutes: 倒數模式——非 nil 時不念時刻，改念「剩 N 分鐘」。
     static func compose(hour: Int, minute: Int, locale: Locale,
-                        voice: ChimeVoiceGender = .female) -> String? {
+                        voice: ChimeVoiceGender = .female,
+                        remainingMinutes: Int? = nil) -> String? {
         let h = min(max(hour, 0), 23)
         let m = min(max(minute, 0), 59)
         let isChinese = isChineseLocale(locale)
+        // 內容指紋：一般＝HHMM；倒數＝cdNNN（同一時刻切換倒數／改迄時刻，念的字不同 → 檔名也要不同）。
+        let fingerprint = remainingMinutes.map { String(format: "cd%03d", $0) } ?? String(format: "%02d%02d", h, m)
         // 檔名帶內容指紋（時刻+語言+人聲）＋ epoch：系統音伺服器會用「檔名」快取 CAF，重用同名會放到舊內容；
         // 改時間 / 語言 / 人聲都會換檔名，確保放到最新報時。前綴 chime_ ＝ Alarm.isChimeAlarm 判斷依據。
-        let cafName = "\(Alarm.chimeFilePrefix)\(String(format: "%02d%02d", h, m))_\(isChinese ? "zh" : "en")_\(voice == .male ? "m" : "f")_\(Int(Date().timeIntervalSince1970)).caf"
+        let cafName = "\(Alarm.chimeFilePrefix)\(fingerprint)_\(isChinese ? "zh" : "en")_\(voice == .male ? "m" : "f")_\(Int(Date().timeIntervalSince1970)).caf"
         let cafURL = AppPaths.ensureSoundsDirectory().appendingPathComponent(cafName)
-        guard render(hour: h, minute: m, locale: locale, voice: voice, to: cafURL) else { return nil }
+        guard render(hour: h, minute: m, locale: locale, voice: voice,
+                     remainingMinutes: remainingMinutes, to: cafURL) else { return nil }
         return cafName
     }
 
     /// 區間報時：每個時刻各合成一個檔，**全部成功才回傳**（任一失敗就把已寫的清掉、回 nil）。
     /// 回傳陣列與 `slots` 索引對齊。
+    /// - Parameter remaining: 倒數模式每個時刻的「剩幾分鐘」（與 slots 對齊）；nil＝念時刻。
     static func composeSlots(_ slots: [(hour: Int, minute: Int)], locale: Locale,
-                             voice: ChimeVoiceGender) -> [String]? {
+                             voice: ChimeVoiceGender, remaining: [Int]? = nil) -> [String]? {
         var out: [String] = []
-        for slot in slots {
-            guard let name = compose(hour: slot.hour, minute: slot.minute, locale: locale, voice: voice) else {
+        for (i, slot) in slots.enumerated() {
+            let left = remaining.flatMap { i < $0.count ? $0[i] : nil }
+            guard let name = compose(hour: slot.hour, minute: slot.minute, locale: locale,
+                                     voice: voice, remainingMinutes: left) else {
                 for n in out { removeChimeFile(named: n) }
                 print("🔔 ChimeSoundComposer.composeSlots: slot \(slot.hour):\(slot.minute) FAILED — rolled back \(out.count) file(s)")
                 return nil
@@ -65,10 +73,11 @@ enum ChimeSoundComposer {
 
     /// 編輯器「試聽」用：寫到 tmp（不進 Library/Sounds、不留垃圾），每次覆蓋同一個檔。
     static func composePreview(hour: Int, minute: Int, locale: Locale,
-                               voice: ChimeVoiceGender) -> URL? {
+                               voice: ChimeVoiceGender, remainingMinutes: Int? = nil) -> URL? {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("chime_preview.caf")
         try? FileManager.default.removeItem(at: url)
-        return render(hour: hour, minute: minute, locale: locale, voice: voice, to: url) ? url : nil
+        return render(hour: hour, minute: minute, locale: locale, voice: voice,
+                      remainingMinutes: remainingMinutes, to: url) ? url : nil
     }
 
     /// 刪掉某個舊報時檔（呼叫端在「換掉某顆鬧鐘的報時檔」時用，避免 Library/Sounds 累積）。
@@ -78,8 +87,11 @@ enum ChimeSoundComposer {
         try? FileManager.default.removeItem(at: AppPaths.soundURL(named: name))
     }
 
-    /// 通知橫幅的文字：跟語音念的一模一樣（例：早上七點零五分）。
-    static func phrase(hour: Int, minute: Int, locale: Locale) -> String {
+    /// 通知橫幅的文字：跟語音念的一模一樣（例：早上七點零五分；倒數模式：剩三十分鐘）。
+    static func phrase(hour: Int, minute: Int, locale: Locale, remainingMinutes: Int? = nil) -> String {
+        if let left = remainingMinutes {
+            return isChineseLocale(locale) ? chineseRemainingPhrase(left) : englishRemainingPhrase(left)
+        }
         let h = min(max(hour, 0), 23), m = min(max(minute, 0), 59)
         return isChineseLocale(locale) ? chinesePhrase(hour: h, minute: m) : englishPhrase(hour: h, minute: m)
     }
@@ -110,6 +122,9 @@ enum ChimeSoundComposer {
         return AVSpeechSynthesisVoice(language: language) ?? AVSpeechSynthesisVoice(language: "en-US")
     }
 
+    /// 檔名裡的語言標籤（zh / en）——AlarmScheduler 用它判斷「App 語言換了，語音檔要重合成」。
+    static func languageTag(for locale: Locale) -> String { isChineseLocale(locale) ? "zh" : "en" }
+
     private static func isChineseLocale(_ locale: Locale) -> Bool {
         locale.identifier.lowercased().hasPrefix("zh")
     }
@@ -122,8 +137,8 @@ enum ChimeSoundComposer {
 
     /// 一句報時 → 前後各留 0.15s 靜音 → 16-bit PCM CAF 寫到 `url`。成功回 true。
     private static func render(hour: Int, minute: Int, locale: Locale,
-                               voice: ChimeVoiceGender, to url: URL) -> Bool {
-        let phrase = phrase(hour: hour, minute: minute, locale: locale)
+                               voice: ChimeVoiceGender, remainingMinutes: Int? = nil, to url: URL) -> Bool {
+        let phrase = phrase(hour: hour, minute: minute, locale: locale, remainingMinutes: remainingMinutes)
         let lang = voiceLanguage(for: locale)
 
         guard let speech = renderPhrase(phrase, voice: selectVoice(language: lang, gender: voice)),
@@ -250,6 +265,30 @@ enum ChimeSoundComposer {
             minutePart = cnNumber(minute) + "分"
         }
         return period + cnNumber(h12) + "點" + minutePart
+    }
+
+    /// 倒數（中文）：剩三十分鐘 / 剩一小時 / 剩一小時三十分鐘 / 時間到了（0）。
+    static func chineseRemainingPhrase(_ minutes: Int) -> String {
+        let total = max(0, minutes)
+        if total == 0 { return "時間到了" }
+        let h = total / 60, m = total % 60
+        var s = "剩"
+        if h > 0 { s += (h == 2 ? "兩" : cnNumber(h)) + "小時" }
+        if m > 0 { s += cnNumber(m) + "分鐘" }
+        return s
+    }
+
+    /// 倒數（英文）：30 minutes left / 1 hour left / 1 hour 30 minutes left / Time's up.
+    static func englishRemainingPhrase(_ minutes: Int) -> String {
+        let total = max(0, minutes)
+        if total == 0 { return "Time's up." }
+        let h = total / 60, m = total % 60
+        var parts: [String] = []
+        if h > 0 { parts.append("\(spellOut(h)) \(h == 1 ? "hour" : "hours")") }
+        if m > 0 { parts.append("\(spellOut(m)) \(m == 1 ? "minute" : "minutes")") }
+        // 句首大寫：這句同時是通知橫幅的文字。
+        let s = parts.joined(separator: " ") + " left."
+        return s.prefix(1).uppercased() + s.dropFirst()
     }
 
     /// 0...59 的中文數字（時用 1...12，分用 0...59）。

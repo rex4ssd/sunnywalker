@@ -3,6 +3,9 @@
 // 報時群組的鬧鐘不選鈴聲，改設：
 //   • 區間報時：從鬧鐘時間（起）開始，每隔 N 分報一次，直到「迄」時刻（迄本身不報）。
 //     Rex 的情境：早上 7:00–7:30 用餐出門常拖延，「7:00 囉、7:05 囉 … 7:25 囉」催小孩。
+//   • 倒數（2026-09-17）：區間報時的時刻不變，但不念幾點幾分，改念離「迄」還剩多久——
+//     「剩 30 分鐘、剩 20 分鐘、剩 10 分鐘」。下方那行預覽列的就是孩子會聽到的話。
+//     語音與橫幅跟 App 語言走（中／英），切語言會自動重新合成（見 AlarmScheduler.scheduleChime）。
 //   • 人聲：iOS 內建語音，女聲／男聲（該語言沒裝男聲就只給女聲並說明怎麼下載）。
 //   • 報時次數：每個時刻連報幾次（原本就有）。
 //   • 試聽：用目前的起時刻 + 人聲合成一句播放。
@@ -18,6 +21,8 @@ struct ChimeCardView: View {
     @Binding var intervalOn: Bool
     @Binding var endTime: Date
     @Binding var intervalMinutes: Int
+    /// 倒數：不念時刻，改念「剩 30 分鐘、剩 20 分鐘…」。
+    @Binding var countdown: Bool
     @Binding var voice: ChimeVoiceGender
     let isPreviewing: Bool
     let onPreview: () -> Void
@@ -56,9 +61,17 @@ struct ChimeCardView: View {
     }
 
     /// 「07:00、07:05 … 07:25」——最多列前 3 個 + 最後 1 個，中間用 …。
+    /// 倒數模式列的是孩子會聽到的話：「剩 30 分、剩 20 分、剩 10 分」。
     private var scheduleSummary: String {
         let use24 = settings.use24HourClock
-        let strs = slots.map { Alarm.timeString(hour: $0.hour, minute: $0.minute, use24h: use24) }
+        let strs: [String]
+        if countdown {
+            let (eh, em) = endHM
+            strs = Alarm.chimeRemainingMinutes(slots: slots, endHour: eh, endMinute: em)
+                .map { L("chime_remaining_short %lld", $0) }
+        } else {
+            strs = slots.map { Alarm.timeString(hour: $0.hour, minute: $0.minute, use24h: use24) }
+        }
         let sep = L("、")
         if strs.count <= 4 { return strs.joined(separator: sep) }
         return strs.prefix(3).joined(separator: sep) + " … " + strs.last!
@@ -187,6 +200,19 @@ struct ChimeCardView: View {
             }
         }
 
+        // 倒數：同樣的時刻，但念「剩 N 分鐘」
+        Toggle(isOn: $countdown) {
+            VStack(alignment: .leading, spacing: 3) {
+                Label("chime_countdown_toggle", systemImage: "hourglass")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                Text("chime_countdown_footer")
+                    .font(SunnyFonts.caption(13))
+                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
+            }
+        }
+        .tint(SunnyColors.lanternOrange)
+
         // 會報哪些時刻——所見即所得，家長不用猜「迄」有沒有算進去。
         if endIsBeforeStart {
             Label("chime_end_before_start", systemImage: "exclamationmark.triangle.fill")
@@ -239,7 +265,8 @@ struct ChimeCardView: View {
             chimeCount: .constant(2),
             intervalOn: .constant(true),
             endTime: .constant(Date().addingTimeInterval(1800)),
-            intervalMinutes: .constant(5),
+            intervalMinutes: .constant(10),
+            countdown: .constant(true),
             voice: .constant(.female),
             isPreviewing: false,
             onPreview: {},

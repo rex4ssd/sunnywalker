@@ -192,3 +192,54 @@ final class NextUpcomingAlarmTests: XCTestCase {
         XCTAssertNil(AlarmListView.nextUpcomingAlarmID(in: [a], now: now))
     }
 }
+
+// MARK: - 倒數報時
+
+final class ChimeCountdownTests: XCTestCase {
+
+    /// Rex 的需求：7:00–7:30 每 10 分 → 「剩 30 分鐘、剩 20 分鐘、剩 10 分鐘」。
+    func testRemainingMinutesPerSlot() {
+        let slots = Alarm.chimeSlotTimes(startHour: 7, startMinute: 0, endHour: 7, endMinute: 30, intervalMinutes: 10)
+        XCTAssertEqual(Alarm.chimeRemainingMinutes(slots: slots, endHour: 7, endMinute: 30), [30, 20, 10])
+    }
+
+    func testCountdownOnlyAppliesToIntervalChimes() {
+        let a = Alarm(label: "出門", hour: 7, minute: 0)
+        a.chimeCountdown = true
+        XCTAssertFalse(a.effectiveChimeCountdown)      // 沒有迄／間隔 → 沒東西可倒數
+        XCTAssertNil(a.chimeSlotRemaining)
+        a.chimeEndHour = 7; a.chimeEndMinute = 30; a.chimeIntervalMinutes = 10
+        XCTAssertTrue(a.effectiveChimeCountdown)
+        XCTAssertEqual(a.chimeSlotRemaining ?? [], [30, 20, 10])
+        a.chimeCountdown = nil                          // 舊資料
+        XCTAssertNil(a.chimeSlotRemaining)
+    }
+
+    func testChinesePhrases() {
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(30), "剩三十分鐘")
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(5), "剩五分鐘")
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(60), "剩一小時")
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(90), "剩一小時三十分鐘")
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(120), "剩兩小時")
+        XCTAssertEqual(ChimeSoundComposer.chineseRemainingPhrase(0), "時間到了")
+    }
+
+    func testEnglishPhrases() {
+        XCTAssertEqual(ChimeSoundComposer.englishRemainingPhrase(30), "Thirty minutes left.")
+        XCTAssertEqual(ChimeSoundComposer.englishRemainingPhrase(1), "One minute left.")
+        XCTAssertEqual(ChimeSoundComposer.englishRemainingPhrase(90), "One hour thirty minutes left.")
+    }
+
+    func testPhraseFollowsAppLanguage() {
+        let en = Locale(identifier: "en")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 10, locale: en, remainingMinutes: 20), "Twenty minutes left.")
+        XCTAssertEqual(ChimeSoundComposer.languageTag(for: en), "en")
+        XCTAssertEqual(ChimeSoundComposer.languageTag(for: Locale(identifier: "zh-Hant")), "zh")
+    }
+
+    func testPhraseSwitchesOnRemaining() {
+        let zh = Locale(identifier: "zh-Hant")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 10, locale: zh), "早上七點十分")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 10, locale: zh, remainingMinutes: 20), "剩二十分鐘")
+    }
+}

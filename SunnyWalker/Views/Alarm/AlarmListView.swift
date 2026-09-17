@@ -561,7 +561,8 @@ private struct AlarmCard: View {
                     .foregroundStyle(color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(L("chime_every_minutes %lld", alarm.chimeIntervalMinutes ?? 0))
+                Text(L("chime_every_minutes %lld", alarm.chimeIntervalMinutes ?? 0)
+                     + (alarm.effectiveChimeCountdown ? " · " + L("chime_countdown_badge") : ""))
                     .font(SunnyFonts.caption(12))
                     .foregroundStyle(SunnyColors.lanternOrange)
                     .padding(.horizontal, 6)
@@ -700,7 +701,7 @@ struct MergedAlarmGroup: Identifiable {
     static func key(for a: Alarm) -> String {
         var k = "\(a.hour):\(a.minute)|\(a.label)|\(a.kind)"
         if a.kind == .chime, a.isIntervalChime {
-            k += "|\(a.chimeEndHour ?? -1):\(a.chimeEndMinute ?? -1)/\(a.chimeIntervalMinutes ?? 0)"
+            k += "|\(a.chimeEndHour ?? -1):\(a.chimeEndMinute ?? -1)/\(a.chimeIntervalMinutes ?? 0)/\(a.effectiveChimeCountdown)"
         }
         return k
     }

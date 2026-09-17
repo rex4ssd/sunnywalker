@@ -7065,6 +7065,70 @@
           }
         }
       }
+    },
+    "chime_countdown_toggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Count down"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倒數報時"
+          }
+        }
+      }
+    },
+    "chime_countdown_footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instead of the clock time, announces the time left until the end time (“30 minutes left, 20 minutes left…”)."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不念幾點幾分，改念「剩 30 分鐘、剩 20 分鐘…」，倒數到「迄」時刻。"
+          }
+        }
+      }
+    },
+    "chime_remaining_short %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min left"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剩 %lld 分"
+          }
+        }
+      }
+    },
+    "chime_countdown_badge": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "countdown"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "倒數"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

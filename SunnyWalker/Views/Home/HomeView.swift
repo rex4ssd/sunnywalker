@@ -196,6 +196,12 @@ struct HomeView: View {
         .onChange(of: settings.backgroundListeningEnabled) { _, _ in
             syncBackgroundListening()
         }
+        // 切換 App 語言（中 ↔ 英）→ 報時鬧鐘重排一次：scheduleChime 會發現語音檔語言不符而重新合成，
+        // 報時／倒數念的話與橫幅文字才會跟著介面語言走。
+        .onChange(of: localization.language) { _, _ in
+            let chimes = alarms.filter { $0.isChimeAlarm && $0.isEnabled }
+            Task { for a in chimes { try? await AlarmScheduler.shared.schedule(alarm: a) } }
+        }
         // 家長頁尾段（共用件）的「延長解鎖／立即上鎖」動的是 ParentalUnlockSession；
         // 鏡射回 AppSettings，首頁「＋」與設定鈕的免驗證判斷才會跟著。
         .onChange(of: parentalSession.unlockedUntil) { _, until in
