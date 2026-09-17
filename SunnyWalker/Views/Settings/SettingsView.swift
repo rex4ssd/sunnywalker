@@ -44,7 +44,9 @@ struct SettingsView: View {
     @State private var showingTodoHistory = false
     /// 「進階設定」展開狀態（每次進頁預設收起）。
     @State private var showAdvanced = false
-    /// 點（或長按）某組的報時／待辦圖示後，在那一列下方顯示「剛剛開了／關了什麼」的說明。
+    /// 群組段最下面的說明區目前在哪一頁（命名／報時／待辦）。點群組列的圖示會自動切到對應那頁。
+    @State private var groupFooterTab: GroupFooterTab = .naming
+    /// 最後一次點的是哪一組的哪顆圖示、點完是開還是關——顯示在說明區第一行。
     @State private var groupNote: GroupNote? = nil
 
     private var theme: KidsTheme {
@@ -221,9 +223,7 @@ struct SettingsView: View {
     private var groupSection: some View {
         Section(
             header: Text("group_section"),
-            footer: Text(settings.groupEnabled
-                         ? LocalizedStringKey("group_rename_footer")
-                         : LocalizedStringKey("group_section_footer"))
+            footer: groupFooter
         ) {
             Toggle(isOn: $settings.groupEnabled) {
                 Label("group_enable_label", systemImage: "person.2.fill")
@@ -307,25 +307,12 @@ struct SettingsView: View {
                 }
 
                 // 報時開關（鈴鐺）／待辦開關（氣球）。兩者互斥。
-                // 點一下＝切換，**同時**在這一列下面說明剛剛開了／關了什麼（以前只有長按才看得到說明，
-                // 家長點了只看到 icon 變色，不知道啟用了什麼）。長按＝只看說明、不切換。
+                // 點一下＝切換，**同時**把群組段最下面的說明區切到對應那頁（見 groupFooter）。
+                // 說明不放在這一列下面：點了才冒字會把下面整排往下推，畫面跳動。長按＝只看說明、不切換。
                 groupModeButton(i, mode: .chime)
                 groupModeButton(i, mode: .todo)
             }
 
-            if let note = groupNote, note.group == i {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(LocalizedStringKey(note.mode.noteKey(isOn: note.isOn)))
-                        .font(.caption)
-                        .foregroundStyle(note.isOn ? note.mode.noteColor : SunnyColors.sunnyGray)
-                    Text("group_mode_existing_note")
-                        .font(.caption2)
-                        .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
-                }
-                .fixedSize(horizontal: false, vertical: true)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-                .accessibilityElement(children: .combine)
-            }
         }
     }
 
@@ -347,15 +334,90 @@ struct SettingsView: View {
         )
         .accessibilityLabel(Text(LocalizedStringKey(mode.titleKey)))
         .accessibilityValue(Text(isOn ? "group_on_badge" : "group_off_badge"))
-        .accessibilityHint(Text(LocalizedStringKey(mode.noteKey(isOn: true))))
+        .accessibilityHint(Text(LocalizedStringKey(mode.descKey)))
     }
 
-    /// 顯示（或更新）某組某功能的說明；狀態取「現在」的值，所以點完切換後念的是新狀態。
-    /// 開待辦會連動關掉報時（互斥），說明跟著最後點的那顆走。
+    /// 把最下面的說明區切到這顆圖示的那一頁，並記下「哪一組、現在是開還是關」。
+    /// 狀態取「現在」的值，所以點完切換後顯示的是新狀態。開待辦會連動關掉報時（互斥）。
     private func showGroupNote(_ i: Int, _ mode: GroupMode) {
-        withAnimation(.spring(duration: 0.2)) {
-            groupNote = GroupNote(group: i, mode: mode, isOn: mode.isOn(settings, i))
+        groupNote = GroupNote(group: i, mode: mode, isOn: mode.isOn(settings, i))
+        withAnimation(.easeInOut(duration: 0.15)) { groupFooterTab = mode.footerTab }
+    }
+
+    /// 群組段最下面的說明區：命名／報時／待辦三頁，**高度固定**（三頁疊在同一個 ZStack，
+    /// 只顯示選中的那頁）——點圖示或切頁都不會讓畫面上下跳。分組沒開時只有一句總說明。
+    @ViewBuilder
+    private var groupFooter: some View {
+        if !settings.groupEnabled {
+            Text("group_section_footer")
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    ForEach(GroupFooterTab.allCases) { tab in
+                        let selected = groupFooterTab == tab
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.15)) { groupFooterTab = tab }
+                        } label: {
+                            Label {
+                                Text(LocalizedStringKey(tab.titleKey))
+                            } icon: {
+                                Image(systemName: tab.systemImage)
+                            }
+                            // 字重固定：選中才加粗會讓膠囊高度差 1pt，整段跟著抖一下。
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(selected ? Color.white : SunnyColors.sunnyGray)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Capsule().fill(selected ? tab.tint : SunnyColors.sunnyGray.opacity(0.12)))
+                        }
+                        // .plain：在 List 的 footer 裡不加會整列一起吃點擊。
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
+                    Spacer(minLength: 0)
+                }
+
+                ZStack(alignment: .topLeading) {
+                    ForEach(GroupFooterTab.allCases) { tab in
+                        groupFooterPage(tab)
+                            .opacity(groupFooterTab == tab ? 1 : 0)
+                            .accessibilityHidden(groupFooterTab != tab)
+                    }
+                }
+            }
+            .textCase(nil)
         }
+    }
+
+    /// 一頁說明。報時／待辦頁第一行是「剛剛點了哪一組、現在開或關」——沒點過就留一行空白佔位，
+    /// 這樣點了之後高度也不變。
+    @ViewBuilder
+    private func groupFooterPage(_ tab: GroupFooterTab) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            switch tab {
+            case .naming:
+                Text("group_rename_footer")
+                // 這頁字最少——補一句「右邊兩顆圖示是什麼」，順便把固定高度留下的空白用掉。
+                Text("group_naming_tip")
+                    .padding(.top, 4)
+            case .chime, .todo:
+                let mode: GroupMode = tab == .chime ? .chime : .todo
+                if let note = groupNote, note.mode == mode {
+                    (Text(verbatim: settings.groupDisplayName(note.group) + "  ")
+                     + Text(note.isOn ? "group_mode_now_on" : "group_mode_now_off"))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(note.isOn ? mode.noteColor : SunnyColors.sunnyGray)
+                } else {
+                    Text(verbatim: " ")
+                }
+                Text(LocalizedStringKey(mode.descKey))
+                Text("group_mode_existing_note")
+                    .font(.caption2)
+                    .foregroundStyle(SunnyColors.sunnyGray.opacity(0.8))
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 進階設定（預設收起）：循環播放間隔、切段響鈴、響鈴時長、錄音自動命名加長。
@@ -511,13 +573,39 @@ private enum GroupMode {
         if self == .chime { s.setGroupChimeEnabled(i, on) } else { s.setGroupTodoEnabled(i, on) }
     }
 
-    /// Localizable.xcstrings key：開啟／關閉各一句「這個功能做什麼」。
-    func noteKey(isOn: Bool) -> String {
-        switch (self, isOn) {
-        case (.chime, true):  return "group_chime_on_note"
-        case (.chime, false): return "group_chime_off_note"
-        case (.todo, true):   return "group_todo_on_note"
-        case (.todo, false):  return "group_todo_off_note"
+    /// Localizable.xcstrings key：這個功能開了會怎樣、關了會怎樣（一段話講完）。
+    var descKey: String { self == .chime ? "group_chime_desc" : "group_todo_desc" }
+
+    var footerTab: GroupFooterTab { self == .chime ? .chime : .todo }
+}
+
+/// 群組段最下面說明區的三頁。
+private enum GroupFooterTab: String, CaseIterable, Identifiable {
+    case naming, chime, todo
+
+    var id: String { rawValue }
+
+    var titleKey: String {
+        switch self {
+        case .naming: return "group_tab_naming"
+        case .chime:  return "chime_card_title"
+        case .todo:   return "todo_card_title"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .naming: return "pencil"
+        case .chime:  return "bell.badge.fill"
+        case .todo:   return "balloon.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .naming: return SunnyColors.forestDeep
+        case .chime:  return SunnyColors.lanternOrange
+        case .todo:   return SunnyColors.forestDeep
         }
     }
 }

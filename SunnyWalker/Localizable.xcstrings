@@ -7098,70 +7098,6 @@
         }
       }
     },
-    "group_chime_on_note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Time chime is ON. Alarms in this group read the time aloud instead of ringing (you can repeat every few minutes or count down), then stop on their own."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「報時」已開啟：這一組的鬧鐘不響鈴聲，改用語音念出時間（可設每幾分鐘報一次、倒數），念完自動停。"
-          }
-        }
-      }
-    },
-    "group_chime_off_note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Time chime is OFF. This group rings like a normal alarm again."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「報時」已關閉：這一組回到一般鬧鐘（響鈴聲、要按掉）。"
-          }
-        }
-      }
-    },
-    "group_todo_on_note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do reminders are ON. This group doesn't ring: at the set time a badge appears by the mascot, your child taps it to hear your recording, then long-presses to confirm. It can't be combined with time chime."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「待辦提醒」已開啟：這一組不會響；時間到時主頁吉祥物旁會冒出小圖示，孩子點一下聽你錄的提醒、長按確認。和報時只能二選一。"
-          }
-        }
-      }
-    },
-    "group_todo_off_note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To-do reminders are OFF. This group rings like a normal alarm again."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「待辦提醒」已關閉：這一組回到一般鬧鐘（響鈴聲、要按掉）。"
-          }
-        }
-      }
-    },
     "group_mode_existing_note": {
       "localizations": {
         "en": {
@@ -7174,6 +7110,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "這一組原有的鬧鐘，要打開再按一次「儲存」才會套用。"
+          }
+        }
+      }
+    },
+    "group_chime_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, alarms in this group read the time aloud instead of ringing (you can repeat every few minutes or count down), then stop on their own. Turn it off to ring like a normal alarm again."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟後，這一組的鬧鐘不響鈴聲，改用語音念出時間（可設每幾分鐘報一次、倒數），念完自動停。關閉就回到一般鬧鐘。"
+          }
+        }
+      }
+    },
+    "group_todo_desc": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When on, this group doesn't ring: at the set time a badge appears by the mascot, your child taps it to hear your recording, then long-presses to confirm. It can't be combined with time chime. Turn it off to ring like a normal alarm again."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟後，這一組不會響；時間到時主頁吉祥物旁會冒出小圖示，孩子點一下聽你錄的提醒、長按確認。和報時只能二選一。關閉就回到一般鬧鐘。"
+          }
+        }
+      }
+    },
+    "group_tab_naming": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Names"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "命名"
+          }
+        }
+      }
+    },
+    "group_mode_now_on": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is now ON"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已開啟"
+          }
+        }
+      }
+    },
+    "group_mode_now_off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "is now OFF"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已關閉"
+          }
+        }
+      }
+    },
+    "group_naming_tip": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bell and balloon on each row switch that group to time chime or to-do reminders. Tap one and its explanation shows here."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每一列右邊的鈴鐺／氣球，可把那一組切成「報時」或「待辦提醒」；點了之後說明會顯示在這裡。"
           }
         }
       }
