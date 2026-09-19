@@ -55,6 +55,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scrollProxy in
             List {
                 voiceLibrarySection
                 timeFormatSection
@@ -85,6 +86,14 @@ struct SettingsView: View {
                         onTap: { showingPro = true }
                     )
                 )
+            }
+            // 上架截圖模式（DEBUG）：直接捲到群組段。平常不做任何事。
+            .onAppear {
+                guard StoreShots.isActive, StoreShots.screen == "settings" else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    scrollProxy.scrollTo("groupSection", anchor: .top)
+                }
+            }
             }
             .parentInfoAccent(SunnyColors.lanternOrange)
             .navigationTitle(Text("settings_label"))
@@ -230,6 +239,7 @@ struct SettingsView: View {
                     .foregroundStyle(SunnyColors.forestDeep)
             }
             .tint(SunnyColors.leafFresh)
+            .id("groupSection")
 
             if settings.groupEnabled {
                 // 群組數量（1…5）

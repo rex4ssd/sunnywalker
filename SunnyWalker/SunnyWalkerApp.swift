@@ -31,6 +31,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // .task). It's account-bound, so it no longer depends on launch-ordering or on-device state —
         // nothing to do here at didFinishLaunching.
 
+        #if DEBUG
+        // 上架截圖模式（啟動參數 -StoreShots）：要在 AppSettings.shared 第一次被碰到之前設好 UserDefaults。
+        StoreShots.prepareDefaults()
+        #endif
+
         // Record the build number the very first time the app is ever launched (idempotent — only
         // writes on the first run). Powers the "首次啟動 First launch" row in Settings' version card.
         AppVersion.registerFirstLaunch()
@@ -236,6 +241,8 @@ struct SunnyWalkerApp: App {
                     // purchase UI. Missing the listener loses async transactions (Ask-to-Buy approval,
                     // Family Sharing, refund/revocation). Safe to call repeatedly — start() is idempotent.
                     StoreService.shared.start()
+                    // 截圖模式：不跳任何權限對話框（會蓋在畫面上），也不需要真的排鬧鐘。
+                    guard !StoreShots.isActive else { return }
                     // Request mic + speech permissions (v1 path)
                     await PermissionManager.shared.requestAllPermissions()
                     // Request AlarmKit authorization — HomeView.onAppear will then

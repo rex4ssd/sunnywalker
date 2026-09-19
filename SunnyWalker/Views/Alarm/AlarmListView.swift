@@ -154,7 +154,7 @@ struct AlarmListView: View {
                 }
             }
         } else {
-            let nextID = Self.nextUpcomingAlarmID(in: liveAlarms, now: Date())
+            let nextID = Self.nextUpcomingAlarmID(in: liveAlarms, now: StoreShots.fixedNow ?? Date())
             // Single List: header row (clock+mascot) + alarm cards scroll together as one long strip.
             // List (not ScrollView+LazyVStack) so .swipeActions works natively.
             List {
@@ -259,9 +259,16 @@ struct AlarmListView: View {
             }
             title.font(SunnyFonts.caption(15))
         }
-        .foregroundStyle(SunnyColors.cloudWhite.opacity(0.92))
-        .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+        // 節標題跟著天色換色：白字只在夜景看得清楚，白天的淺藍天空上幾乎隱形（上架截圖時發現）。
+        .foregroundStyle(isNightScene ? SunnyColors.cloudWhite.opacity(0.92) : SunnyColors.nightIndigo.opacity(0.72))
+        .shadow(color: isNightScene ? .black.opacity(0.18) : .white.opacity(0.35), radius: 2, y: 1)
         .listRowInsets(EdgeInsets(top: 10, leading: 28, bottom: 2, trailing: 20))
+    }
+
+    /// 首頁現在是不是夜景（與 HomeView 的 DaytimeScene 同一套時段）。
+    private var isNightScene: Bool {
+        let hour = Calendar.current.component(.hour, from: StoreShots.fixedNow ?? Date())
+        return DaytimeScene.current(hour: hour) == .night
     }
 
     // MARK: - 方案 A／B 的展開狀態

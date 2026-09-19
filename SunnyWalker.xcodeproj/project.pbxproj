@@ -18,6 +18,7 @@
 		1871D0205CB66D4D6DA89165 /* TodoBadgesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B9F0F0DC245E5787F1E6B5 /* TodoBadgesView.swift */; };
 		1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */; };
 		1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05356F2D5C177271D275559D /* BedSideManager.swift */; };
+		1BBE9596AA677CFDF0BCA5A2 /* StoreShots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0FFCA2D9D892904ADDD439 /* StoreShots.swift */; };
 		2672781D604CF539F7C33C21 /* ProUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */; };
 		29BD4F65DED2C01951CEDFF1 /* sunny_wake.caf in Resources */ = {isa = PBXBuildFile; fileRef = 5ADAA14820B7C78C2F26A0D8 /* sunny_wake.caf */; };
 		2A6E1323194D61C957BA4877 /* MascotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B9262BFA4C34750865DE277 /* MascotView.swift */; };
@@ -171,6 +172,7 @@
 		9C4E43C0AE0F566D3ACB622D /* SunnyWalkerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerApp.swift; sourceTree = "<group>"; };
 		9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreService.swift; sourceTree = "<group>"; };
 		9CE7FA83B8576CE1FFA1F10E /* WatercolorCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatercolorCard.swift; sourceTree = "<group>"; };
+		9F0FFCA2D9D892904ADDD439 /* StoreShots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreShots.swift; sourceTree = "<group>"; };
 		A07E5B7D33466BF7E41BCBC2 /* ProUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProUpgradeView.swift; sourceTree = "<group>"; };
 		A62870FEE6EBDBF0393F2E7D /* SunnyWalkerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SunnyWalkerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A78A4E3EF2804681F00AFC87 /* mascot_greet_08.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_08.aiff; sourceTree = "<group>"; };
@@ -411,6 +413,7 @@
 				773F5F23DEBEE5FB52190734 /* SnapshotBuilder.swift */,
 				3B95C4905637E5F644D212ED /* SpeechRecognizer.swift */,
 				9CA71AE7DEEF1F90E48864F1 /* StoreService.swift */,
+				9F0FFCA2D9D892904ADDD439 /* StoreShots.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -591,6 +594,7 @@
 				C4C00C3A9B2D5847BE43516A /* SpeechRecognizer.swift in Sources */,
 				6E2BF1D94579A87F0381BA12 /* StopAlarmIntent.swift in Sources */,
 				6480FE0C57ED235D76338A7B /* StoreService.swift in Sources */,
+				1BBE9596AA677CFDF0BCA5A2 /* StoreShots.swift in Sources */,
 				579B7BCCE0AC2BBCD507366F /* SunnyAvatar.swift in Sources */,
 				019276FB701C56D377901176 /* SunnyButton.swift in Sources */,
 				C714C087A1B5D9F0B11DECAB /* SunnyColors.swift in Sources */,
@@ -696,7 +700,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.4.20260814;
+				MARKETING_VERSION = 1.4.20260920;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -798,7 +802,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.4.20260814;
+				MARKETING_VERSION = 1.4.20260920;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -271,6 +271,7 @@ struct AlarmEditorView: View {
         NavigationStack {
             ZStack {
                 SunnyColors.cloudWhite.ignoresSafeArea()
+                ScrollViewReader { scrollProxy in
                 ScrollView {
                     VStack(spacing: 24) {
                         timePicker
@@ -295,6 +296,7 @@ struct AlarmEditorView: View {
                                 onPreview: { previewChime() },
                                 pickerLocale: pickerLocale
                             )
+                            .id("chimeCard")
                         } else if todoActive {
                             todoCard
                         } else {
@@ -311,6 +313,14 @@ struct AlarmEditorView: View {
                         }
                     }
                     .padding(24)
+                }
+                // 上架截圖模式（DEBUG）：直接捲到報時卡，不靠手動滑。平常不做任何事。
+                .onAppear {
+                    guard StoreShots.isActive, StoreShots.screen == "editor" else { return }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        scrollProxy.scrollTo("chimeCard", anchor: .top)
+                    }
+                }
                 }
                 if isComposingChime {
                     composingOverlay

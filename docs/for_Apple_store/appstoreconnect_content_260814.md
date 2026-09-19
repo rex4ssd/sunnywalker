@@ -1,3 +1,5 @@
+> **已被取代，勿再貼** —— 1.4.20260814 從未送審；現行文案見 `appstoreconnect_content_260920.md`。
+
 # App Store Connect 內容 — 1.4.20260814 (build 18)
 
 > 每格中（zh-Hant）／英（en）兩版，**直接複製 fence 內的內容**貼到 ASC 對應 locale。

@@ -16,7 +16,7 @@ struct HomeView: View {
     // user unlocks and taps the AlarmKit stop button on the lock screen).
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var currentTime = Date()
+    @State private var currentTime = StoreShots.fixedNow ?? Date()
 
     // FAB hint: which icon's label capsule is currently shown. Default nil keeps the bar clean;
     // long-pressing an icon reveals its hint for ~1.6s. See revealHint(_:) / FabHint.
@@ -42,7 +42,7 @@ struct HomeView: View {
 
     // Multi-person alarm groups: which group page the home list is currently showing.
     // 0 = group A. Clamped whenever the parent lowers the group count / disables grouping.
-    @State private var homeGroupSelection = 0
+    @State private var homeGroupSelection = StoreShots.initialGroup
 
     // Day 19: bed-side mode
     @StateObject private var bedSide = BedSideManager.shared
@@ -161,6 +161,21 @@ struct HomeView: View {
         // onAppear fires before SwiftData populates @Query → alarms is [] on first call.
         // Triggering on alarms.count catches the initial load (0 → N) and any add/delete.
         .task(id: alarms.count) {
+            #if DEBUG
+            // 上架截圖模式：灌示範資料 → 直接開到指定畫面；不排通知／AlarmKit。
+            if StoreShots.isActive {
+                let hero = StoreShots.seedIfNeeded(modelContext, existing: alarms)
+                guard !alarms.isEmpty else { return }   // 剛灌完，等 @Query 刷新後再進來一次
+                try? await Task.sleep(for: .seconds(0.6))
+                switch StoreShots.screen {
+                case "editor":   editingImportedAlarm = hero
+                case "new":      showingAddAlarm = true
+                case "settings": showingSettings = true
+                default:         break
+                }
+                return
+            }
+            #endif
             guard !alarms.isEmpty else { return }
             // App 更新自癒：build 變了 → 全部聲音檔換新檔名重匯出，否則系統端的 stale 路徑/快取
             // 會讓自訂鈴聲靜默退成預設「咚」聲（見 AlarmSoundUpgradeHealer）。要放在下面的
@@ -358,7 +373,7 @@ struct HomeView: View {
                 }
             }
         }
-        .onReceive(sceneTick) { currentTime = $0 }
+        .onReceive(sceneTick) { if !StoreShots.isActive { currentTime = $0 } }
         .onReceive(foregroundAlarmTick) { _ in checkForegroundAlarm() }
         .onReceive(NotificationCenter.default.publisher(for: .alarmFired)) { note in
             print("🏠 HomeView.onReceive(.alarmFired): object=\(String(describing: note.object))")
@@ -1186,7 +1201,7 @@ private struct ClockHeaderView: View {
     let fontSize: CGFloat
     let textColor: Color
 
-    @State private var now = Date()
+    @State private var now = StoreShots.fixedNow ?? Date()
     @ObservedObject private var settings = AppSettings.shared
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -1209,6 +1224,7 @@ private struct ClockHeaderView: View {
         // 省掉每秒 59 次無謂的 numericText 轉場重繪（床頭整夜常駐時的主要耗電來源）；計時器仍 1Hz，
         // 所以分鐘照樣準時翻，不會延遲。
         .onReceive(tick) { newNow in
+            guard !StoreShots.isActive else { return }   // 截圖模式時鐘固定 9:41
             // 比「分鐘桶」(epoch 對齊整分) 而非格式化字串——省掉每秒 DateFormatter 配置，只在分鐘翻面更新。
             if Int(newNow.timeIntervalSince1970 / 60) != Int(now.timeIntervalSince1970 / 60) {
                 now = newNow
