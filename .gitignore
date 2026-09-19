@@ -27,3 +27,6 @@ orchestrator/logs/*/
 # IDE
 .vscode/
 .idea/
+
+# xcodebuild archive / export 產物（送審包，不進版控）
+build/
