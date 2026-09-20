@@ -11,6 +11,7 @@
 		0056C1BF7EACDD7EC6A18DA7 /* mascot_greet_01.aiff in Resources */ = {isa = PBXBuildFile; fileRef = 9A1D83BDF0D7A50AA1D837D3 /* mascot_greet_01.aiff */; };
 		00F40DEC550A65F5744B1465 /* success_cheer.wav in Resources */ = {isa = PBXBuildFile; fileRef = 04CFE05C97D05DBDEFEACB3C /* success_cheer.wav */; };
 		019276FB701C56D377901176 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */; };
+		03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */; };
 		0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD068A8949D465654B55698 /* AlarmAutoStopService.swift */; };
 		0E06CC87F2E8356A5C190B46 /* TodoHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */; };
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
@@ -149,6 +150,7 @@
 		5F22F1B4D12C2ACE8FDC02DE /* Configuration.storekit */ = {isa = PBXFileReference; path = Configuration.storekit; sourceTree = "<group>"; };
 		5F6D67B3B5D9C27FB3D0E4A5 /* WakeRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeRecord.swift; sourceTree = "<group>"; };
 		60114EB5C3B3CEE759BABCDF /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
+		62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimeRenderTests.swift; sourceTree = "<group>"; };
 		671EE8FD6148CA192AD2F3DC /* FamilyAlarmRequestSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilyAlarmRequestSheet.swift; sourceTree = "<group>"; };
 		6A42B2A278FAC5F1A781F640 /* mascot_greet_07.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = mascot_greet_07.aiff; sourceTree = "<group>"; };
 		6B72BE62A0ACFFCBD3599F28 /* WakePhrase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakePhrase.swift; sourceTree = "<group>"; };
@@ -270,6 +272,7 @@
 			isa = PBXGroup;
 			children = (
 				EB8A38FA16EEC90C273F6A0B /* ChimeIntervalTests.swift */,
+				62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */,
 				F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */,
 				8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */,
 				C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */,
@@ -617,6 +620,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				55B9CFE25F37245E06B12B3C /* ChimeIntervalTests.swift in Sources */,
+				03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */,
 				1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */,
 				94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */,
 				38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */,
