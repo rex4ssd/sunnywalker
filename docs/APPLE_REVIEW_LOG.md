@@ -24,3 +24,12 @@
   - `asc_api.reexec_in_venv_if_needed` 在這個 session 找不到 venv（`is_file()` 判斷失敗），直接用
     `~/Documents/py/venv/bin/python3` 跑就好。
 - **尚未 Submit for Review**（等 Rex 確認）。送審籃只能有 1 個項目（app 版本）；IAP `pro.lifetime2` 早已上架，不要加進去。
+
+## 2026-09-20 21:50 — 1.4.20260920 (build 18) 送審，Waiting for Review
+
+- Rex 試用後授權送審。送出前最後核對：build 18 VALID 已掛、中英各 15 張截圖全 COMPLETE、Review Notes 2152 字元、
+  聯絡資訊齊、無其他進行中的送審；發佈方式沿用「過審後自動上架」（AFTER_APPROVAL）。
+- 用 API 送：`POST /reviewSubmissions` → `POST /reviewSubmissionItems`（只放 app 版本，籃內 1 項，IAP 沒帶）→
+  `PATCH submitted=true`。⚠️ `asc_api` 的 `post/patch` 會自己包外層 `{"data": …}`，傳進去的 dict 不要再包一層（第一次 422 就是這個）。
+- 送審前補的一個檢查：實際合成最長的報時／倒數句子量長度（`ChimeRenderTests`）——中英最長都 < 3s，
+  低於 iOS 自訂通知音的安全長度（~4.6s，超過會被換成預設音）。
