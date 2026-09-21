@@ -550,8 +550,10 @@ final class AlarmScheduler {
                 if (try? await center.add(req)) != nil { extra += 1; left -= 1 }
             }
         }
+        ChimeCoverage.shared.coveredUntil = fitsWholeWeek ? nil : chosen.last?.date
+        let planMode = fitsWholeWeek ? "weekly-repeating" : "rolling-one-shot(budget short)"  // i18n-ignore: debug log
         let horizon = chosen.last.map { "\($0.date)" } ?? "-"
-        print("🔔 AlarmScheduler.chimePlan: \(planned.count) alarm(s), \(candidates.count) candidate(s), others=\(others) budget=\(budget) → \(added) slot(s) +\(extra) repeat(s); covered until \(horizon)\(fitsWholeWeek ? " ✅ 整週排滿（每週重複）" : " ⚠️ 額度不足，一次性滾動排程")")
+        print("🔔 AlarmScheduler.chimePlan: \(planned.count) alarm(s), \(candidates.count) candidate(s), others=\(others) budget=\(budget) → \(added) slot(s) +\(extra) repeat(s); covered until \(horizon) mode=\(planMode)")
     }
 
     /// 報時橫幅：標題＝鬧鐘標籤（沒有就「報時」），內文＝跟語音念的一模一樣（早上七點零五分）。

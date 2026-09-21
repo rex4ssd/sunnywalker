@@ -155,7 +155,9 @@ final class AppSettings: ObservableObject {
         }
         self.recordingGapSeconds = UserDefaults.standard.object(forKey: "recordingGapSeconds") as? Int ?? 2
         self.burstGapSeconds = UserDefaults.standard.object(forKey: "burstGapSeconds") as? Int ?? 2
-        self.burstSpanSeconds = UserDefaults.standard.object(forKey: "burstSpanSeconds") as? Int ?? AppSettings.burstSpanOptions.last!
+        let storedSpan = UserDefaults.standard.object(forKey: "burstSpanSeconds") as? Int ?? AppSettings.defaultBurstSpanSeconds
+        // 舊版的 20／30 → 夾回預設，Picker 才有對應的選項可顯示。
+        self.burstSpanSeconds = AppSettings.burstSpanOptions.contains(storedSpan) ? storedSpan : AppSettings.defaultBurstSpanSeconds
         // 首頁排列：新 key 優先；沒有時沿用舊的「依星期分組」布林（開＝weekday、關＝time），舊用戶感覺不到差別。
         if let raw = UserDefaults.standard.string(forKey: "homeListLayout"),
            let layout = HomeListLayout(rawValue: raw) {
@@ -233,13 +235,14 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(burstGapSeconds, forKey: "burstGapSeconds") }
     }
 
-    /// 切段可選的總響鈴長度（秒）。上限 30：切段是靠「同一分鐘內秒級錯開的多顆通知」堆出來的，
-    /// 秒位必須 < 60（見 AlarmScheduler.scheduleGentleRepeatBurst），再長就得跨分鐘、
-    /// 且會吃掉更多 64 顆 pending 通知的額度。
-    static let burstSpanOptions = [10, 20, 30]
+    /// 切段可選的總響鈴長度（秒）：6…12。
+    /// 2026-09-21 由 10/20/30 改短：切段是靠「同一分鐘內秒級錯開的多顆一次性通知」堆出來的，
+    /// 30 秒＝每顆鬧鐘多佔 4–5 顆 pending 通知，會把 64 顆額度擠爆（區間報時只響一次的幫兇）。
+    static let burstSpanOptions = Array(6...12)
+    static let defaultBurstSpanSeconds = 10
 
-    /// 「切段響滿 N 秒」的 N。預設 30（＝原本寫死的值）。想響短一點（例如只提醒 10 秒、
-    /// 不吵到還在睡的手足）就調小。只影響開啟切段的溫和提醒鬧鐘。
+    /// 「切段響滿 N 秒」的 N。預設 10。只影響開啟切段的溫和提醒鬧鐘。
+    /// 舊版存的 20／30 不在選項內 → effectiveBurstSpanSeconds 會回到預設 10。
     @Published var burstSpanSeconds: Int {
         didSet { UserDefaults.standard.set(burstSpanSeconds, forKey: "burstSpanSeconds") }
     }
@@ -248,7 +251,7 @@ final class AppSettings: ObservableObject {
     var effectiveBurstSpanSeconds: Int {
         AppSettings.burstSpanOptions.contains(burstSpanSeconds)
             ? burstSpanSeconds
-            : AppSettings.burstSpanOptions.last!
+            : AppSettings.defaultBurstSpanSeconds
     }
 
     // MARK: - Home list layout

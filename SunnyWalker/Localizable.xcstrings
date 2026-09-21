@@ -539,6 +539,22 @@
         }
       }
     },
+    "chime_coverage_hint %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many scheduled announcements for iOS to hold at once (64 max). Guaranteed until %@ — opening SunnyWalker tops it up automatically."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "報時排太多了，iPhone 一次最多只能預排 64 個通知。目前保證響到 %@；打開 SunnyWalker 就會自動續排。"
+          }
+        }
+      }
+    },
     "chime_schedule_capped %lld": {
       "localizations": {
         "en": {

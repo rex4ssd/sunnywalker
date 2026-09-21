@@ -61,6 +61,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 AlarmAutoStopService.shared.handleBGTask(processingTask)
             }
         }
+        // 區間報時的滾動排程靠背景喚醒續排（通知額度不夠排滿一週時）。
+        ChimeRefreshService.register()
         print("🛡️ BGTaskScheduler: registered \(AlarmAutoStopService.bgTaskIdentifier)")
 
         let center = UNUserNotificationCenter.current()
@@ -97,6 +99,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     // 🔬 forensics markers — 用來區分「只是進背景」vs「app 被關閉/殺掉」。
     func applicationDidEnterBackground(_ application: UIApplication) {
         UserDefaults.standard.set(Date(), forKey: AlarmAutoStopService.lastDidEnterBgKey)
+        Task { @MainActor in ChimeRefreshService.scheduleNext() }
     }
 
     // ⚠️ 注意：force-quit（從多工列上滑）通常『不會』觸發 willTerminate（app 已 suspended 直接被殺）。

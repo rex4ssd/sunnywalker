@@ -60,3 +60,23 @@ final class ChimePlannerTests: XCTestCase {
         XCTAssertEqual(AlarmScheduler.planChimes(cands, budget: 62).count, 30)
     }
 }
+
+/// 切段響鈴長度：6…12 秒、預設 10（2026-09-21 由 10/20/30 改短，省通知額度）。
+@MainActor
+final class BurstSpanSettingTests: XCTestCase {
+    func testOptionsAreSixToTwelveWithDefaultTen() {
+        XCTAssertEqual(AppSettings.burstSpanOptions, Array(6...12))
+        XCTAssertEqual(AppSettings.defaultBurstSpanSeconds, 10)
+        XCTAssertTrue(AppSettings.burstSpanOptions.contains(AppSettings.defaultBurstSpanSeconds))
+    }
+
+    func testLegacyThirtyFallsBackToTen() {
+        let s = AppSettings.shared
+        let saved = s.burstSpanSeconds
+        defer { s.burstSpanSeconds = saved }
+        s.burstSpanSeconds = 30
+        XCTAssertEqual(s.effectiveBurstSpanSeconds, 10)
+        s.burstSpanSeconds = 6
+        XCTAssertEqual(s.effectiveBurstSpanSeconds, 6)
+    }
+}

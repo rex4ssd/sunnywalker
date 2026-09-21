@@ -72,6 +72,7 @@
 		94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */; };
 		9755A93FDAED01AD518AA530 /* mascot_greet_08.aiff in Resources */ = {isa = PBXBuildFile; fileRef = A78A4E3EF2804681F00AFC87 /* mascot_greet_08.aiff */; };
 		9963F75094590316808918F3 /* WakeHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E8F50B718D9D7CBCD731146 /* WakeHistoryView.swift */; };
+		A0251F58CE296786A8E7ED36 /* ChimeRefreshService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2CEC7FE34DB8650E33754BF /* ChimeRefreshService.swift */; };
 		A2F163FC44719CCE23C942D7 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60114EB5C3B3CEE759BABCDF /* Alarm.swift */; };
 		ACB1138CDE53DBCB3CB3FAA4 /* AlarmRingLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160DF5850A30909A1D36773F /* AlarmRingLog.swift */; };
 		AE34FEC3FB8419495514DA29 /* VoiceClip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8E8B44056E1DBE4A0429A7 /* VoiceClip.swift */; };
@@ -190,6 +191,7 @@
 		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
 		C46AD7C87263E8207444D72F /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
 		C6A487603264A6DA88C647F8 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		D2CEC7FE34DB8650E33754BF /* ChimeRefreshService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimeRefreshService.swift; sourceTree = "<group>"; };
 		D43882E1C62C0E0AF8608822 /* SunnyColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyColors.swift; sourceTree = "<group>"; };
 		E082FE6D44313D96DE49E326 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
 		E0D014C1458197C25E160373 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -411,6 +413,7 @@
 				C6A487603264A6DA88C647F8 /* AudioPlayer.swift */,
 				402591D9D880D83E7903B948 /* AudioRecorder.swift */,
 				05356F2D5C177271D275559D /* BedSideManager.swift */,
+				D2CEC7FE34DB8650E33754BF /* ChimeRefreshService.swift */,
 				AC5D08D9775AC2929E331087 /* ChimeSoundComposer.swift */,
 				516B2604745027F5019B1653 /* FamilyAlarmRequest.swift */,
 				17D2C7A097FD7E4BAEC53FA4 /* Localization.swift */,
@@ -576,6 +579,7 @@
 				DD467670A8B05840FBB95018 /* AudioRecorder.swift in Sources */,
 				1AD2DBF58E01FBE42AF1F681 /* BedSideManager.swift in Sources */,
 				7DCC0F013C22DDE02051B377 /* ChimeCardView.swift in Sources */,
+				A0251F58CE296786A8E7ED36 /* ChimeRefreshService.swift in Sources */,
 				D9A5FB7840358B54CFF8C772 /* ChimeSoundComposer.swift in Sources */,
 				F3417E034F113A67319AC0D7 /* CloudBackground.swift in Sources */,
 				7338FA1271440248492463D6 /* ContentView.swift in Sources */,

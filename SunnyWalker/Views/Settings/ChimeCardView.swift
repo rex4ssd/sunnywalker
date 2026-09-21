@@ -16,6 +16,7 @@ import SwiftUI
 
 struct ChimeCardView: View {
     /// 起時刻（＝編輯器最上面的時間輪）。
+    @ObservedObject private var coverage = ChimeCoverage.shared
     let startTime: Date
     @Binding var chimeCount: Int
     @Binding var intervalOn: Bool
@@ -223,6 +224,14 @@ struct ChimeCardView: View {
                 Text(L("chime_schedule_summary %@ %lld", scheduleSummary, slots.count))
                     .font(SunnyFonts.caption(13).monospacedDigit())
                     .foregroundStyle(SunnyColors.forestDeep)
+                // 通知額度（iOS 每 app 64 顆）不夠排滿一週時，誠實告訴家長目前保證到哪。
+                if let until = coverage.coveredUntil {
+                    Text(L("chime_coverage_hint %@", until.formatted(
+                        Date.FormatStyle(date: .abbreviated, time: .shortened).locale(pickerLocale))))
+                        .font(SunnyFonts.caption(12))
+                        .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if slots.count >= Alarm.maxChimeSlots {
                     Text(L("chime_schedule_capped %lld", Alarm.maxChimeSlots))
                         .font(SunnyFonts.caption(12))
