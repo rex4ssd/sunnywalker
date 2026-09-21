@@ -287,6 +287,21 @@ struct HomeView: View {
                 if firingAlarm == nil {
                     AlarmAutoStopService.shared.endBackgroundLifecycle()
                 }
+                // 部分星期的區間報時是「一次性、最近優先」的滾動排程（64 顆通知額度）——
+                // 每次回前景補排，把已響過的額度讓給接下來的時刻。
+                // 同理，切段連響只預排 48 小時內的那一次，也靠這裡補。前景 add() 一定跑得完
+                // （不排的是「背景轉場」——那個會被 force-quit 中斷）。
+                let snapshot = alarms.filter {
+                    $0.isEnabled && !$0.isTodo && $0.effectiveBackgroundMode == .notification
+                        && AppSettings.groupAllowsFiring($0.effectiveGroupIndex)
+                }
+                Task {
+                    // 單次鬧鐘不在這裡重排（響過之後會被排到明天）；每天重複的報時本來就是 repeats:true，不用補。
+                    for a in snapshot where !a.isChimeAlarm && !a.weekdays.isEmpty {
+                        try? await AlarmScheduler.shared.schedule(alarm: a)
+                    }
+                    await AlarmScheduler.shared.replanWeekdayChimes(alarms: snapshot)
+                }
                 // Fallback: stop any alarm that outlived its ring window (covers the case where
                 // BGProcessingTask / DispatchTimer didn't fire before user opened the app).
                 AlarmAutoStopService.shared.checkAndStopOverdue()

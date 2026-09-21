@@ -3,6 +3,7 @@
 // ⚠️ DEPRECATED — v1 path kept alongside AlarmKitService (v2) until device validation.
 // Remove after confirming AlarmKit breaks silent/Focus mode and weekly repeats on real hardware.
 
+import SwiftData
 import UserNotifications
 import Foundation
 import AVFAudio  // CAF duration check（短 CAF 自我修復用）
@@ -334,6 +335,15 @@ final class AlarmScheduler {
 
         let cal = Calendar.current
         let daily = Set(alarm.weekdays) == Set(1...7)
+
+        // 勾「部分星期」的區間報時：時刻 × 星期的重複通知會把 64 顆額度吃光（12 時刻 × 5 天＝60），
+        // 第二顆報時鬧鐘就只排得進第一個時刻 →「只響一次，後面完全沒反應」（iPad 實機：pending=62）。
+        // 這種鬧鐘改交給全域規劃器：跨所有報時鬧鐘「最近的先排」，額度永遠留給接下來要響的那幾聲。
+        if !alarm.weekdays.isEmpty, !daily {
+            let all = (try? alarm.modelContext?.fetch(FetchDescriptor<Alarm>())) ?? [alarm]
+            await replanWeekdayChimes(alarms: all.contains(where: { $0.id == alarm.id }) ? all : all + [alarm])
+            return
+        }
         var added = 0
         var slotSeconds: [Double] = []
 
@@ -366,15 +376,6 @@ final class AlarmScheduler {
                     identifier: AlarmNotificationIDs.chimeSlot(alarm.id, slot: s), content: content,
                     trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: true))
                 if (try? await center.add(req)) != nil { added += 1; budget -= 1 }
-            } else {
-                for wd in alarm.weekdays {
-                    guard budget > 0 else { break }
-                    var c = comps; c.weekday = wd
-                    let req = UNNotificationRequest(
-                        identifier: AlarmNotificationIDs.chimeSlot(alarm.id, slot: s, weekday: wd), content: content,
-                        trigger: UNCalendarNotificationTrigger(dateMatching: c, repeats: true))
-                    if (try? await center.add(req)) != nil { added += 1; budget -= 1 }
-                }
             }
         }
         print("🔔 AlarmScheduler.chime: \(alarm.id.uuidString.prefix(8)) \(slots.count) slot(s) × \(alarm.weekdays.isEmpty ? "once" : (daily ? "daily" : "\(alarm.weekdays.count) day(s)")) → \(added) request(s), voice=\(voice.rawValue), budgetLeft=\(budget)")
@@ -401,6 +402,145 @@ final class AlarmScheduler {
             }
         }
         print("🔔 AlarmScheduler.chime: repeats ×\(count) → +\(extra) one-shot(s) (budgetLeft=\(budget))")
+    }
+
+    // MARK: - 部分星期的區間報時：全域「最近優先」規劃
+
+    /// 一聲待排的報時（某顆鬧鐘的第 s 個時刻、在星期 wd 的下一次發生）。
+    struct ChimeOccurrence: Equatable {
+        let alarmID: UUID
+        let slot: Int
+        let weekday: Int
+        let date: Date
+    }
+
+    /// 純函式（可測）：把所有候選依「發生時間」排序，取前 `budget` 聲。
+    /// 同一時間的以 alarmID／slot 排序，結果穩定。
+    nonisolated static func planChimes(_ candidates: [ChimeOccurrence], budget: Int) -> [ChimeOccurrence] {
+        let sorted = candidates.sorted {
+            if $0.date != $1.date { return $0.date < $1.date }
+            if $0.alarmID != $1.alarmID { return $0.alarmID.uuidString < $1.alarmID.uuidString }
+            return $0.slot < $1.slot
+        }
+        return Array(sorted.prefix(max(0, budget)))
+    }
+
+    /// 純函式（可測）：一顆鬧鐘未來 7 天內每個（時刻 × 勾選星期）的下一次發生。
+    nonisolated static func chimeOccurrences(alarmID: UUID, slots: [(hour: Int, minute: Int)], weekdays: [Int],
+                                             after now: Date, calendar cal: Calendar = .current) -> [ChimeOccurrence] {
+        var out: [ChimeOccurrence] = []
+        for (s, slot) in slots.enumerated() {
+            for wd in Set(weekdays) {
+                var c = DateComponents()
+                c.hour = slot.hour; c.minute = slot.minute; c.second = 0; c.weekday = wd
+                if let d = cal.nextDate(after: now, matching: c, matchingPolicy: .nextTime) {
+                    out.append(ChimeOccurrence(alarmID: alarmID, slot: s, weekday: wd, date: d))
+                }
+            }
+        }
+        return out
+    }
+
+    private var chimeReplanRunning = false
+    private var chimeReplanDirty = false
+
+    /// 重排所有「部分星期」報時鬧鐘的通知：一次性 trigger、最近的先排、總數不超過系統額度。
+    /// 一次性通知響完就沒了，所以每次啟動／回前景／存檔都要呼叫（HomeView 與 schedule() 會叫）。
+    /// 額度夠的時候會排滿一整週；不夠的時候優先保住「接下來要響的」。
+    func replanWeekdayChimes(alarms: [Alarm]) async {
+        // 合併並發呼叫：啟動時每顆報時鬧鐘都會觸發一次，跑一輪就夠。
+        if chimeReplanRunning { chimeReplanDirty = true; return }
+        chimeReplanRunning = true
+        defer { chimeReplanRunning = false }
+        repeat {
+            chimeReplanDirty = false
+            await replanWeekdayChimesOnce(alarms: alarms)
+        } while chimeReplanDirty
+    }
+
+    private func replanWeekdayChimesOnce(alarms: [Alarm]) async {
+        let center = UNUserNotificationCenter.current()
+        let ns = await center.notificationSettings()
+        let timeSensitive = ns.timeSensitiveSetting == .enabled
+        let locale = SunnyLocalization.locale
+
+        let planned = alarms.filter {
+            $0.isEnabled && !$0.isTodo && $0.isChimeAlarm
+                && !$0.weekdays.isEmpty && Set($0.weekdays) != Set(1...7)
+                && AppSettings.groupAllowsFiring($0.effectiveGroupIndex)
+        }
+        // 這批鬧鐘名下、歸規劃器管的 id（時刻×星期 ＋ 連報）。其餘 pending 都算「別人」的額度。
+        var owned = Set<String>()
+        for a in planned {
+            for s in 0..<Alarm.maxChimeSlots {
+                for wd in 1...7 { owned.insert(AlarmNotificationIDs.chimeSlot(a.id, slot: s, weekday: wd)) }
+                for k in 2...Alarm.maxChimeCount { owned.insert(AlarmNotificationIDs.chimeSlotRepeat(a.id, slot: s, k)) }
+            }
+        }
+        let pending = await center.pendingNotificationRequests()
+        let others = pending.filter { !owned.contains($0.identifier) }.count
+        let budget = max(0, 64 - others - 2)
+
+        var byID: [UUID: (alarm: Alarm, files: [String], remaining: [Int]?)] = [:]
+        var candidates: [ChimeOccurrence] = []
+        let now = Date()
+        for a in planned {
+            // 語音檔沒對齊（舊資料／檔案遺失）的鬧鐘這輪跳過——它自己的 schedule() 會重新合成後再叫規劃器。
+            guard let files = a.alignedChimeSlotFiles,
+                  files.allSatisfy({ FileManager.default.fileExists(atPath: AppPaths.soundURL(named: $0).path) })
+            else { continue }
+            byID[a.id] = (a, files, a.chimeSlotRemaining)
+            candidates += Self.chimeOccurrences(alarmID: a.id, slots: a.chimeSlotTimes, weekdays: a.weekdays, after: now)
+        }
+        let chosen = Self.planChimes(candidates, budget: budget)
+        let chosenIDs = Set(chosen.map { AlarmNotificationIDs.chimeSlot($0.alarmID, slot: $0.slot, weekday: $0.weekday) })
+
+        // 先清掉不在新計畫裡的（含舊版留下的 repeats:true 與所有連報），再 add（同 id 會直接取代）。
+        center.removePendingNotificationRequests(withIdentifiers: Array(owned.subtracting(chosenIDs)))
+
+        let cal = Calendar.current
+        var added = 0
+        for occ in chosen {
+            guard let e = byID[occ.alarmID] else { continue }
+            let slot = e.alarm.chimeSlotTimes[occ.slot]
+            let content = makeChimeContent(alarm: e.alarm, hour: slot.hour, minute: slot.minute,
+                                           soundFile: e.files[occ.slot], locale: locale,
+                                           remainingMinutes: e.remaining?[occ.slot], timeSensitiveEnabled: timeSensitive)
+            let parts = cal.dateComponents([.year, .month, .day, .hour, .minute], from: occ.date)
+            let req = UNNotificationRequest(
+                identifier: AlarmNotificationIDs.chimeSlot(occ.alarmID, slot: occ.slot, weekday: occ.weekday),
+                content: content, trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+            if (try? await center.add(req)) != nil { added += 1 }
+        }
+
+        // 連報 N 次：用剩下的額度，一樣最近的先排；每個時刻只補它「最近那一次」的第 2…N 聲。
+        var left = budget - added
+        var extra = 0
+        var seen = Set<String>()
+        for occ in chosen where left > 0 {
+            guard let e = byID[occ.alarmID], e.alarm.effectiveChimeCount > 1,
+                  seen.insert("\(occ.alarmID)-\(occ.slot)").inserted else { continue }
+            let slot = e.alarm.chimeSlotTimes[occ.slot]
+            var secs: Double = 3
+            if let caf = try? AVAudioFile(forReading: AppPaths.soundURL(named: e.files[occ.slot])) {
+                secs = max(1, Double(caf.length) / caf.fileFormat.sampleRate)
+            }
+            let period = max(2, Int(ceil(secs)) + 1)
+            let content = makeChimeContent(alarm: e.alarm, hour: slot.hour, minute: slot.minute,
+                                           soundFile: e.files[occ.slot], locale: locale,
+                                           remainingMinutes: e.remaining?[occ.slot], timeSensitiveEnabled: timeSensitive)
+            for k in 2...e.alarm.effectiveChimeCount {
+                let off = period * (k - 1)
+                guard off < 60, left > 0, let date = cal.date(byAdding: .second, value: off, to: occ.date) else { break }
+                let parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+                let req = UNNotificationRequest(
+                    identifier: AlarmNotificationIDs.chimeSlotRepeat(occ.alarmID, slot: occ.slot, k), content: content,
+                    trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+                if (try? await center.add(req)) != nil { extra += 1; left -= 1 }
+            }
+        }
+        let horizon = chosen.last.map { "\($0.date)" } ?? "-"
+        print("🔔 AlarmScheduler.chimePlan: \(planned.count) alarm(s), \(candidates.count) candidate(s), others=\(others) budget=\(budget) → \(added) slot(s) +\(extra) repeat(s); covered until \(horizon)\(candidates.count > chosen.count ? " ⚠️ 額度不足，未排滿一週" : "")")
     }
 
     /// 報時橫幅：標題＝鬧鐘標籤（沒有就「報時」），內文＝跟語音念的一模一樣（早上七點零五分）。
@@ -460,6 +600,9 @@ final class AlarmScheduler {
     /// 之後沒有更多通知 → 自然停（溫和、不續電）。每次 `schedule()` 都重排下一次的 burst
     /// （app 前景/背景常 re-arm）。即使被殺多天沒開 app，baseline 那顆 repeating 仍會響一段完整語音。
     /// ⚠️ iOS 每 app pending 上限 64：用 runtime pending 計數自我設限，先到先得，後面的鬧鐘自動少排。
+    /// 切段連響只預排這麼近的發生（秒）。
+    static let burstPrearmHorizon: TimeInterval = 48 * 3600
+
     private func scheduleGentleRepeatBurst(
         alarm: Alarm,
         content: UNNotificationContent,
@@ -484,6 +627,14 @@ final class AlarmScheduler {
             t += period
         }
         guard !offsets.isEmpty else { return }
+
+        // 切段連響是「下一次發生」的一次性通知。離現在還很久（例如下週一）就先不排——那幾顆會白佔
+        // 64 顆額度好幾天，把區間報時擠掉（iPad 實機：4 顆鬧鐘的 -rep- 佔了 16 顆）。
+        // App 啟動／回前景都會重排，進入 48 小時內就會補上。
+        guard fireDate.timeIntervalSinceNow <= Self.burstPrearmHorizon else {
+            print("🔔 AlarmScheduler: gentle-repeat burst DEFERRED — \(alarm.id.uuidString.prefix(8)) fires in \(Int(fireDate.timeIntervalSinceNow / 3600))h (> 48h), will arm on a later launch/foreground")
+            return
+        }
 
         // 64 上限防衛：看現在還剩多少額度，最多補這麼多顆（留 2 顆 margin）。
         let pendingNow = await center.pendingNotificationRequests().count

@@ -12,6 +12,7 @@
 		00F40DEC550A65F5744B1465 /* success_cheer.wav in Resources */ = {isa = PBXBuildFile; fileRef = 04CFE05C97D05DBDEFEACB3C /* success_cheer.wav */; };
 		019276FB701C56D377901176 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */; };
 		03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */; };
+		0570F6CA106CF98ED48777C7 /* ChimePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */; };
 		0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD068A8949D465654B55698 /* AlarmAutoStopService.swift */; };
 		0E06CC87F2E8356A5C190B46 /* TodoHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */; };
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
@@ -124,6 +125,7 @@
 		1A45118986E73A0E0C556CB8 /* AlarmNotificationIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmNotificationIDs.swift; sourceTree = "<group>"; };
 		1EB6388EF249B7365D9B3B48 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		1FA51657CE218FB1EB7B4DA0 /* FlowerCenterEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowerCenterEditorView.swift; sourceTree = "<group>"; };
+		21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimePlannerTests.swift; sourceTree = "<group>"; };
 		24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLibraryView.swift; sourceTree = "<group>"; };
 		24E60EC8DBFE229AFCAD080B /* PaperTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperTexture.swift; sourceTree = "<group>"; };
 		26E49492007B21D867DE139A /* AlarmIOView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmIOView.swift; sourceTree = "<group>"; };
@@ -272,6 +274,7 @@
 			isa = PBXGroup;
 			children = (
 				EB8A38FA16EEC90C273F6A0B /* ChimeIntervalTests.swift */,
+				21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */,
 				62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */,
 				F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */,
 				8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */,
@@ -620,6 +623,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				55B9CFE25F37245E06B12B3C /* ChimeIntervalTests.swift in Sources */,
+				0570F6CA106CF98ED48777C7 /* ChimePlannerTests.swift in Sources */,
 				03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */,
 				1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */,
 				94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */,
