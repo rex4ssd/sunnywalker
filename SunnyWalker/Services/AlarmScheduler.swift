@@ -493,6 +493,7 @@ final class AlarmScheduler {
             candidates += Self.chimeOccurrences(alarmID: a.id, slots: a.chimeSlotTimes, weekdays: a.weekdays, after: now)
         }
         let chosen = Self.planChimes(candidates, budget: budget)
+        let fitsWholeWeek = chosen.count == candidates.count
         let chosenIDs = Set(chosen.map { AlarmNotificationIDs.chimeSlot($0.alarmID, slot: $0.slot, weekday: $0.weekday) })
 
         // 先清掉不在新計畫裡的（含舊版留下的 repeats:true 與所有連報），再 add（同 id 會直接取代）。
@@ -506,10 +507,20 @@ final class AlarmScheduler {
             let content = makeChimeContent(alarm: e.alarm, hour: slot.hour, minute: slot.minute,
                                            soundFile: e.files[occ.slot], locale: locale,
                                            remainingMinutes: e.remaining?[occ.slot], timeSensitiveEnabled: timeSensitive)
-            let parts = cal.dateComponents([.year, .month, .day, .hour, .minute], from: occ.date)
+            // 整週都排得下 → 用每週重複的 trigger：永遠不會用完，不開 app 也一直響。
+            // 排不下才退成一次性（最近優先），靠啟動／回前景續排。
+            let trigger: UNCalendarNotificationTrigger
+            if fitsWholeWeek {
+                var c = DateComponents()
+                c.hour = slot.hour; c.minute = slot.minute; c.weekday = occ.weekday
+                trigger = UNCalendarNotificationTrigger(dateMatching: c, repeats: true)
+            } else {
+                let parts = cal.dateComponents([.year, .month, .day, .hour, .minute], from: occ.date)
+                trigger = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
+            }
             let req = UNNotificationRequest(
                 identifier: AlarmNotificationIDs.chimeSlot(occ.alarmID, slot: occ.slot, weekday: occ.weekday),
-                content: content, trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+                content: content, trigger: trigger)
             if (try? await center.add(req)) != nil { added += 1 }
         }
 
@@ -540,7 +551,7 @@ final class AlarmScheduler {
             }
         }
         let horizon = chosen.last.map { "\($0.date)" } ?? "-"
-        print("🔔 AlarmScheduler.chimePlan: \(planned.count) alarm(s), \(candidates.count) candidate(s), others=\(others) budget=\(budget) → \(added) slot(s) +\(extra) repeat(s); covered until \(horizon)\(candidates.count > chosen.count ? " ⚠️ 額度不足，未排滿一週" : "")")
+        print("🔔 AlarmScheduler.chimePlan: \(planned.count) alarm(s), \(candidates.count) candidate(s), others=\(others) budget=\(budget) → \(added) slot(s) +\(extra) repeat(s); covered until \(horizon)\(fitsWholeWeek ? " ✅ 整週排滿（每週重複）" : " ⚠️ 額度不足，一次性滾動排程")")
     }
 
     /// 報時橫幅：標題＝鬧鐘標籤（沒有就「報時」），內文＝跟語音念的一模一樣（早上七點零五分）。
