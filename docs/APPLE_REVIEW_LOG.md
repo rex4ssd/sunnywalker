@@ -33,3 +33,10 @@
   `PATCH submitted=true`。⚠️ `asc_api` 的 `post/patch` 會自己包外層 `{"data": …}`，傳進去的 dict 不要再包一層（第一次 422 就是這個）。
 - 送審前補的一個檢查：實際合成最長的報時／倒數句子量長度（`ChimeRenderTests`）——中英最長都 < 3s，
   低於 iOS 自訂通知音的安全長度（~4.6s，超過會被換成預設音）。
+
+## 2026-09-21 06:18 — 1.4.20260920 (build 18) 過審
+
+- Apple 通知「Review of your submission is complete … eligible for distribution」；送出（09-20 21:50）到通過約 8.5 小時，一次過、無退件。
+- 發佈方式是 AFTER_APPROVAL，過審即自動上架，取代架上的 1.3.20260615 (17)。
+- 這版帶上去的合規敏感點都沒被問：MetricKit 本機診斷（Review Notes 1）、家長閘可改 4 位數密碼（2）、Pro 購買列移到家長頁尾段（3）、
+  語音報時走本機通知（4）。Promo 拿掉「免費／free」後也沒有 2.3.7 的問題。
