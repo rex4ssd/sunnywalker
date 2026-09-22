@@ -653,6 +653,9 @@ private struct WeekdayDots: View {
     private static let workdays: Set<Int> = [2, 3, 4, 5, 6]
     private static let weekend: Set<Int> = [1, 7]
     private static let symbols = ["日", "一", "二", "三", "四", "五", "六"]
+    // Dynamic Type：圓點與字一起隨系統字級縮放（store_risk_check P1：寫死字級易破版）。
+    @ScaledMetric(relativeTo: .caption2) private var dotSize: CGFloat = 15
+    @ScaledMetric(relativeTo: .caption2) private var dotFont: CGFloat = 9
 
     var body: some View {
         let set = Set(weekdays)
@@ -669,8 +672,8 @@ private struct WeekdayDots: View {
                 ForEach([2, 3, 4, 5, 6, 7, 1], id: \.self) { d in
                     let on = set.contains(d)
                     Text(LocalizedStringKey(Self.symbols[d - 1]))
-                        .font(.system(size: 9, weight: .semibold))
-                        .frame(width: 15, height: 15)
+                        .font(.system(size: dotFont, weight: .semibold))
+                        .frame(width: dotSize, height: dotSize)
                         .foregroundStyle(on ? .white : SunnyColors.sunnyGray.opacity(0.55))
                         .background(Circle().fill(on ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12)))
                 }
