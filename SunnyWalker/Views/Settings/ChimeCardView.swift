@@ -14,6 +14,9 @@
 
 import SwiftUI
 
+/// 試聽按鈕的三態：合成中（反灰）→ 可播（綠）→ 播放中（橘、可停）。
+enum ChimePreviewState { case preparing, ready, playing }
+
 struct ChimeCardView: View {
     /// 起時刻（＝編輯器最上面的時間輪）。
     @ObservedObject private var coverage = ChimeCoverage.shared
@@ -25,8 +28,9 @@ struct ChimeCardView: View {
     /// 倒數：不念時刻，改念「剩 30 分鐘、剩 20 分鐘…」。
     @Binding var countdown: Bool
     @Binding var voice: ChimeVoiceGender
-    let isPreviewing: Bool
+    let previewState: ChimePreviewState
     let onPreview: () -> Void
+    @State private var showEndWheel = false
     /// 時間輪的 12/24h locale（跟編輯器的時間輪同一份）。
     let pickerLocale: Locale
 
@@ -148,33 +152,73 @@ struct ChimeCardView: View {
                     .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
             }
             Spacer()
-            // 試聽：合成「起」時刻 + 目前人聲的報時音並播放。合成需約 1 秒，期間圖示先進入播放態。
+            // 試聽：語音在背景先合成好（改時間／人聲就重合成）。還沒好＝反灰轉圈、按不下去；
+            // 好了＝綠色可播；播放中＝橘色可停。使用者回饋：以前按了沒反應、不知道要等。
             Button(action: onPreview) {
-                Image(systemName: isPreviewing ? "stop.circle.fill" : "play.circle.fill")
-                    .font(.title)
-                    .foregroundStyle(isPreviewing ? SunnyColors.lanternOrange : SunnyColors.skyBlue)
-                    .symbolEffect(.pulse, isActive: isPreviewing)
+                ZStack {
+                    if previewState == .preparing {
+                        ProgressView().tint(SunnyColors.sunnyGray)
+                    } else {
+                        Image(systemName: previewState == .playing ? "stop.circle.fill" : "play.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(previewState == .playing ? SunnyColors.lanternOrange : SunnyColors.leafFresh)
+                            .symbolEffect(.pulse, isActive: previewState == .playing)
+                    }
+                }
+                .frame(width: 34, height: 34)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(Text("試聽聲音"))
+            .disabled(previewState == .preparing)
+            .accessibilityLabel(Text(previewState == .preparing ? "chime_preview_preparing" : "試聽聲音"))
         }
     }
 
     @ViewBuilder
     private var intervalRows: some View {
-        // 迄時刻
+        // 迄時刻：點一下展開卡片內的時間輪、按「完成」收起（compact 的浮動選單沒有完成鈕，
+        // 使用者選完不知道下一步）。
         HStack {
             Label("chime_end_label", systemImage: "flag.checkered")
                 .font(SunnyFonts.caption())
                 .foregroundStyle(SunnyColors.nightIndigo)
             Spacer()
-            DatePicker("", selection: $endTime, displayedComponents: [.hourAndMinute])
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .tint(SunnyColors.lanternOrange)
-                // iOS 26 Liquid Glass：淺色卡片上 picker 文字會變白——強制 light（同時間輪的修法）。
-                .colorScheme(.light)
-                .environment(\.locale, pickerLocale)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { showEndWheel.toggle() }
+            } label: {
+                Text(Alarm.timeString(hour: endHM.0, minute: endHM.1, use24h: settings.use24HourClock))
+                    .font(SunnyFonts.caption().monospacedDigit())
+                    .foregroundStyle(showEndWheel ? .white : SunnyColors.nightIndigo)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 8)
+                        .fill(showEndWheel ? SunnyColors.lanternOrange : SunnyColors.sunnyGray.opacity(0.12)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("chime_end_label"))
+            .accessibilityHint(Text(showEndWheel ? "完成" : "chime_end_tap_hint"))
+        }
+        if showEndWheel {
+            VStack(spacing: 4) {
+                DatePicker("", selection: $endTime, displayedComponents: [.hourAndMinute])
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 150)
+                    // iOS 26 Liquid Glass：淺色卡片上 picker 文字會變白——強制 light（同時間輪的修法）。
+                    .colorScheme(.light)
+                    .environment(\.locale, pickerLocale)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showEndWheel = false }
+                } label: {
+                    Text("完成")
+                        .font(SunnyFonts.caption())
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(SunnyColors.lanternOrange))
+                }
+                .buttonStyle(.plain)
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
 
         // 間隔
@@ -277,7 +321,7 @@ struct ChimeCardView: View {
             intervalMinutes: .constant(10),
             countdown: .constant(true),
             voice: .constant(.female),
-            isPreviewing: false,
+            previewState: .ready,
             onPreview: {},
             pickerLocale: .current
         )

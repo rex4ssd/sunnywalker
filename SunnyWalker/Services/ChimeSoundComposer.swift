@@ -72,9 +72,10 @@ enum ChimeSoundComposer {
     }
 
     /// 編輯器「試聽」用：寫到 tmp（不進 Library/Sounds、不留垃圾），每次覆蓋同一個檔。
+    /// `tag` 讓不同內容的試聽各自一個 tmp 檔（改時間後重合成時，不會覆寫正在播的那個）。
     static func composePreview(hour: Int, minute: Int, locale: Locale,
-                               voice: ChimeVoiceGender, remainingMinutes: Int? = nil) -> URL? {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("chime_preview.caf")
+                               voice: ChimeVoiceGender, remainingMinutes: Int? = nil, tag: String = "") -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("chime_preview\(tag.isEmpty ? "" : "_" + tag).caf")
         try? FileManager.default.removeItem(at: url)
         return render(hour: hour, minute: minute, locale: locale, voice: voice,
                       remainingMinutes: remainingMinutes, to: url) ? url : nil
@@ -181,31 +182,66 @@ enum ChimeSoundComposer {
 
     /// 用 AVSpeechSynthesizer 離線把一句話 render 成連續 float PCM buffer。
     /// 收集 write callback 吐出的每一塊 buffer（最後一塊 frameLength==0 代表結束），再串成一顆。
+    /// 🔴 一顆 app 生命週期共用的 synthesizer，絕不 dealloc。
+    /// 之前每次 render 各 new 一顆 local synthesizer，`done.wait` 回來（最後一塊空 buffer 或 15s 逾時）就 return
+    /// → synthesizer 被釋放，但 TextToSpeech 內部還有派到 main queue 的收尾工作引用它 →
+    /// 主執行緒 SIGSEGV（i15 實機：試聽一按就閃退，TextToSpeech +0x43c2c）。LetCube 同雷（Vein 20260804）。
+    /// 一次只 render 一句（renderLock），語音本來就只有一個聲道，共用等於現實。
+    private static let sharedSynth = AVSpeechSynthesizer()
+    private static let renderLock = NSLock()
+
     private static func renderPhrase(_ phrase: String, voice: AVSpeechSynthesisVoice?) -> AVAudioPCMBuffer? {
-        let synth = AVSpeechSynthesizer()
+        renderLock.lock()
+        defer { renderLock.unlock() }
+        let synth = sharedSynth
         let utterance = AVSpeechUtterance(string: phrase)
         utterance.voice = voice
         // 報時念慢一點、咬字清楚（給小朋友聽）。AVSpeechUtteranceDefaultSpeechRate=0.5；
         // 之前 0.92×（≈0.46）使用者反映太快 → 降到 0.7×（≈0.35）放慢。
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7
 
-        var chunks: [AVAudioPCMBuffer] = []
-        let done = DispatchSemaphore(value: 0)
-        var finished = false
-
+        // callback 在 TTS 內部 queue：chunks / finished 用鎖保護，別跟 wait 端搶。
+        let state = RenderState()
         synth.write(utterance) { (buffer: AVAudioBuffer) in
             guard let pcm = buffer as? AVAudioPCMBuffer else { return }
             if pcm.frameLength == 0 {
-                if !finished { finished = true; done.signal() }
+                state.finish()
                 return
             }
-            if let copy = copyFloatBuffer(pcm) { chunks.append(copy) }
+            if let copy = copyFloatBuffer(pcm) { state.append(copy) }
         }
 
-        // render 是非同步的（callback 在內部 queue），等它吐完最後一塊空 buffer。給 15s 上限防呆。
-        _ = done.wait(timeout: .now() + 15)
+        // render 是非同步的，等它吐完最後一塊空 buffer。15s 上限防呆——逾時就主動叫停，
+        // 並再等一下讓它真的收尾（不能帶著還在講的 utterance 離開，下一句會撞）。
+        if !state.wait(seconds: 15) {
+            print("🔔 ChimeSoundComposer: render TIMEOUT for phrase=\(phrase) — stopping synthesizer")
+            synth.stopSpeaking(at: .immediate)
+            _ = state.wait(seconds: 2)
+            return nil
+        }
+        let chunks = state.chunks
         guard !chunks.isEmpty else { return nil }
         return concatenate(chunks)
+    }
+
+    /// renderPhrase 的跨執行緒狀態（TTS callback queue ↔ 等待端）。
+    private final class RenderState: @unchecked Sendable {
+        private let lock = NSLock()
+        private let done = DispatchSemaphore(value: 0)
+        private var finished = false
+        private var buffers: [AVAudioPCMBuffer] = []
+
+        var chunks: [AVAudioPCMBuffer] { lock.lock(); defer { lock.unlock() }; return buffers }
+        func append(_ b: AVAudioPCMBuffer) { lock.lock(); buffers.append(b); lock.unlock() }
+        func finish() {
+            lock.lock()
+            let first = !finished
+            finished = true
+            lock.unlock()
+            if first { done.signal() }
+        }
+        /// true＝正常收到結束訊號；false＝逾時。
+        func wait(seconds: Double) -> Bool { done.wait(timeout: .now() + seconds) == .success }
     }
 
     /// 深拷貝一塊 float PCM buffer（callback 提供的 buffer 可能被系統重用，必須複製保存）。

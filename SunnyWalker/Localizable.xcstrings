@@ -443,6 +443,18 @@
         }
       }
     },
+    "chime_end_tap_hint": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap to change the end time" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "點一下更改迄時刻" } }
+      }
+    },
+    "chime_preview_preparing": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preparing preview…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "試聽準備中…" } }
+      }
+    },
     "chime_end_label": {
       "localizations": {
         "en": {

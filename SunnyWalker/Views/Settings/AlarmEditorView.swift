@@ -56,6 +56,10 @@ struct AlarmEditorView: View {
     private let todoDurationOptions = [10, 30, 60, 0]
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
+    /// 報時試聽：改時間／人聲／倒數就在背景先合成好（key＝內容指紋），按鈕好了才變綠。
+    @State private var chimePreviewURL: URL? = nil
+    @State private var chimePreviewKey = ""
+    @State private var chimePreviewTask: Task<Void, Never>? = nil
     /// 「用時間當標籤」：打勾＝標籤自動跟著上面的時間（改時間就跟著變）；取消勾選才能自行輸入。
     @State private var labelFollowsTime = false
     // Label tap/long-press
@@ -315,7 +319,7 @@ struct AlarmEditorView: View {
                                 intervalMinutes: $chimeIntervalMinutes,
                                 countdown: $chimeCountdown,
                                 voice: $chimeVoice,
-                                isPreviewing: previewingRow == "chime",
+                                previewState: chimePreviewState,
                                 onPreview: { previewChime() },
                                 pickerLocale: pickerLocale
                             )
@@ -360,6 +364,15 @@ struct AlarmEditorView: View {
             .onReceive(previewPlayer.$isPlaying) { playing in
                 if !playing { previewingRow = nil }
             }
+            // 報時試聽預合成：任何會改變念的內容的欄位一變就重做（0.5s 去抖）。
+            .onAppear { refreshChimePreview() }
+            .onChange(of: selectedTime) { _, _ in refreshChimePreview() }
+            .onChange(of: chimeEndTime) { _, _ in refreshChimePreview() }
+            .onChange(of: chimeIntervalOn) { _, _ in refreshChimePreview() }
+            .onChange(of: chimeCountdown) { _, _ in refreshChimePreview() }
+            .onChange(of: chimeVoice) { _, _ in refreshChimePreview() }
+            .onChange(of: chimeActive) { _, _ in refreshChimePreview() }
+            .onDisappear { chimePreviewTask?.cancel() }
             .alert("todo_needs_recording_title", isPresented: $showingTodoNeedsRecording) {
                 Button("好", role: .cancel) {}
             } message: {
@@ -957,43 +970,68 @@ struct AlarmEditorView: View {
 
     // MARK: - Preview
 
-    /// 試聽報時：用目前選的時間 + 次數合成報時音（背景執行緒）後播放一次。
-    /// ⚠️ 用 previewingRow=="chime" 當狀態（不要另立會被 onReceive 歸零的旗標）：previewPlayer.stop()
-    ///    會同步觸發 $isPlaying→false 的 onReceive 把 previewingRow 清掉，所以要在 stop() 之後才設
-    ///    previewingRow，合成期間 isPlaying 不變動、previewingRow 維持 "chime"，播完才被 onReceive 清掉。
-    private func previewChime() {
-        if previewingRow == "chime" {
-            previewPlayer.stop()
-            previewingRow = nil
-            return
-        }
-        previewPlayer.stop()
-        previewingRow = "chime"
+    /// 試聽按鈕的狀態：合成中（反灰）／可播（綠）／播放中（橘）。
+    private var chimePreviewState: ChimePreviewState {
+        if previewingRow == "chime" { return .playing }
+        return chimePreviewURL != nil ? .ready : .preparing
+    }
+
+    /// 試聽會念的內容（起時刻 + 人聲 + 倒數的第一句）。
+    private func chimePreviewSpec() -> (hour: Int, minute: Int, left: Int?, voice: ChimeVoiceGender, locale: Locale, key: String) {
         let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
         let h = comps.hour ?? 7
         let m = comps.minute ?? 0
-        let loc = SunnyLocalization.locale
-        let voice = chimeVoice
         // 倒數模式試聽第一句「剩 N 分鐘」（N＝起到迄）；迄沒有晚於起就照念時刻。
         var left: Int? = nil
         if chimeIntervalOn, chimeCountdown {
             let span = (endComps.hour ?? 0) * 60 + (endComps.minute ?? 0) - (h * 60 + m)
             if span > 0 { left = span }
         }
-        Task {
-            // 試聽寫到 tmp（以前每按一次就在 Library/Sounds 留一個孤兒檔）。
-            let url = await Task.detached(priority: .userInitiated) {
-                ChimeSoundComposer.composePreview(hour: h, minute: m, locale: loc, voice: voice,
-                                                  remainingMinutes: left)
-            }.value
-            await MainActor.run {
-                guard previewingRow == "chime", let url else {
-                    if previewingRow == "chime" { previewingRow = nil }
-                    return
-                }
-                previewPlayer.play(url: url, loop: false)
-            }
+        let loc = SunnyLocalization.locale
+        let key = "\(h)-\(m)-\(left.map(String.init) ?? "t")-\(chimeVoice.rawValue)-\(ChimeSoundComposer.languageTag(for: loc))"
+        return (h, m, left, chimeVoice, loc, key)
+    }
+
+    /// 在背景把試聽音合成好；內容沒變就不重做。播放中改設定 → 停掉再重合成。
+    private func refreshChimePreview() {
+        guard chimeActive else {
+            chimePreviewTask?.cancel(); chimePreviewTask = nil
+            chimePreviewURL = nil; chimePreviewKey = ""
+            return
         }
+        let spec = chimePreviewSpec()
+        if spec.key == chimePreviewKey, chimePreviewURL != nil { return }
+        if previewingRow == "chime" { previewPlayer.stop(); previewingRow = nil }
+        chimePreviewTask?.cancel()
+        chimePreviewKey = spec.key
+        chimePreviewURL = nil
+        chimePreviewTask = Task {
+            try? await Task.sleep(for: .milliseconds(500))   // 去抖：轉時間輪時別每一格都合成
+            guard !Task.isCancelled else { return }
+            // 試聽寫到 tmp（以前每按一次就在 Library/Sounds 留一個孤兒檔）；合成含 semaphore 等待，不能在 main。
+            let url = await Task.detached(priority: .userInitiated) {
+                ChimeSoundComposer.composePreview(hour: spec.hour, minute: spec.minute, locale: spec.locale,
+                                                  voice: spec.voice, remainingMinutes: spec.left, tag: spec.key)
+            }.value
+            guard !Task.isCancelled, chimePreviewKey == spec.key else { return }
+            chimePreviewURL = url
+            if url == nil { print("🔔 AlarmEditor: chime preview compose FAILED for key=\(spec.key)") }
+        }
+    }
+
+    /// 試聽報時：播放預先合成好的那句；播放中再按＝停。
+    /// ⚠️ 用 previewingRow=="chime" 當播放狀態：previewPlayer.stop() 會同步觸發 $isPlaying→false 的
+    ///    onReceive 把 previewingRow 清掉，所以要在 stop() 之後才設 previewingRow。
+    private func previewChime() {
+        if previewingRow == "chime" {
+            previewPlayer.stop()
+            previewingRow = nil
+            return
+        }
+        guard let url = chimePreviewURL else { refreshChimePreview(); return }
+        previewPlayer.stop()
+        previewingRow = "chime"
+        previewPlayer.play(url: url, loop: false)
     }
 
     private func togglePreview(_ row: String) {
