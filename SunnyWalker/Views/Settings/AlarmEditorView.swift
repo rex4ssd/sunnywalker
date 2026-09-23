@@ -226,40 +226,63 @@ struct AlarmEditorView: View {
                 soundFileName: a.soundFileName
             )
         } else {
-            // Create mode
-            let fresh = Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button)
+            // Create mode：每個欄位都沿用「上一次新增並儲存」的設定（NewAlarmDefaults），
+            // 只有時間永遠是現在——Rex 2026-09-23：每顆都要重勾「用時間當標籤」、重選鈴聲、重挑星期太煩。
+            let d = NewAlarmDefaults.load()
             let now = Date()
+            let nowParts = Calendar.current.dateComponents([.hour, .minute], from: now)
+            let voice = d.voiceDismiss && !d.recordingName.isEmpty
+            let fresh = Alarm(label: d.label, hour: 7, minute: 0, taskType: voice ? .voice : .button)
+            fresh.soundFileName = d.soundFileName
+            fresh.recordingName = d.recordingName
+            fresh.recordingDisplayName = d.recordingDisplayName
+            // 「用時間當標籤」記住了 → 標籤直接是現在的時刻字串（跟 onChange(selectedTime) 同一套格式）。
+            let use24h = MainActor.assumeIsolated { AppSettings.shared.use24HourClock }
+            let initialLabel = d.labelFollowsTime
+                ? Alarm.timeString(hour: nowParts.hour ?? 0, minute: nowParts.minute ?? 0, use24h: use24h)
+                : d.label
             _tempAlarm = State(initialValue: fresh)
             _selectedTime     = State(initialValue: now)
-            _label            = State(initialValue: "起床囉")
-            _selectedWeekdays = State(initialValue: [2, 3, 4, 5, 6])
-            _selectedTaskType = State(initialValue: .button)
-            // 區間報時的迄預設＝現在 + 30 分。
-            let end = now.addingTimeInterval(30 * 60)
+            _label            = State(initialValue: initialLabel)
+            _labelFollowsTime = State(initialValue: d.labelFollowsTime)
+            _selectedWeekdays = State(initialValue: Set(d.weekdays))
+            _selectedTaskType = State(initialValue: voice ? .voice : .button)
+            _customPhrase     = State(initialValue: d.customPhrase)
+            _useNotificationMode = State(initialValue: d.notificationMode)
+            _segmentedBurst   = State(initialValue: d.segmentedBurst)
+            _selectedGroupIndex = State(initialValue: d.groupIndex)
+            _chimeCount       = State(initialValue: d.chimeCount)
+            _chimeIntervalOn  = State(initialValue: d.chimeIntervalOn)
+            // 區間報時的迄＝現在 + 上次的區間長度（預設 30 分）。
+            let end = now.addingTimeInterval(TimeInterval(d.chimeSpanMinutes * 60))
             _chimeEndTime = State(initialValue: end)
             let endParts = Calendar.current.dateComponents([.hour, .minute], from: end)
-            // 同上：其餘欄位沿用 @State 的宣告預設值（notificationMode false / burst false /
-            // group 0 / chime 1 / balloon / 10 分），這裡照抄一份當基準。
-            let nowParts = Calendar.current.dateComponents([.hour, .minute], from: now)
+            _chimeIntervalMinutes = State(initialValue: d.chimeIntervalMinutes)
+            _chimeCountdown   = State(initialValue: d.chimeCountdown)
+            _chimeVoice       = State(initialValue: d.chimeVoice)
+            _showAdvanced     = State(initialValue: d.notificationMode || voice)
+            _todoIcon         = State(initialValue: d.todoIcon)
+            _todoDuration     = State(initialValue: d.todoDurationMinutes)
+            // 未儲存變更防護的比對基準：跟上面每個 State 的初值一致。
             baseline = EditorSnapshot(
                 hour: nowParts.hour ?? 0,
                 minute: nowParts.minute ?? 0,
-                label: "起床囉",
-                weekdays: [2, 3, 4, 5, 6],
-                taskType: .button,
-                customPhrase: "",
-                notificationMode: false,
-                segmentedBurst: false,
-                groupIndex: 0,
-                chimeCount: 1,
-                chimeIntervalOn: false,
+                label: initialLabel,
+                weekdays: Set(d.weekdays),
+                taskType: voice ? .voice : .button,
+                customPhrase: d.customPhrase,
+                notificationMode: d.notificationMode,
+                segmentedBurst: d.segmentedBurst,
+                groupIndex: d.groupIndex,
+                chimeCount: d.chimeCount,
+                chimeIntervalOn: d.chimeIntervalOn,
                 chimeEndHour: endParts.hour ?? 0,
                 chimeEndMinute: endParts.minute ?? 0,
-                chimeInterval: 5,
-                chimeCountdown: false,
-                chimeVoice: .female,
-                todoIcon: .balloon,
-                todoDuration: 10,
+                chimeInterval: d.chimeIntervalMinutes,
+                chimeCountdown: d.chimeCountdown,
+                chimeVoice: d.chimeVoice,
+                todoIcon: d.todoIcon,
+                todoDuration: d.todoDurationMinutes,
                 recordingName: fresh.recordingName,
                 recordingDisplayName: fresh.recordingDisplayName ?? "",
                 soundFileName: fresh.soundFileName
@@ -1206,6 +1229,31 @@ struct AlarmEditorView: View {
 
         if !isEditing {
             modelContext.insert(tempAlarm)
+            // 記住這次的設定當下次「新增鬧鐘」的預設（編輯既有鬧鐘不記——那是改一顆，不是偏好）。
+            let startMin = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+            let endMin = (endComps.hour ?? 0) * 60 + (endComps.minute ?? 0)
+            NewAlarmDefaults(
+                // 勾了「用時間當標籤」時 label 是時刻字串，不能當下次的手打標籤 → 保留上次記的。
+                label: labelFollowsTime ? NewAlarmDefaults.load().label : tempAlarm.label,
+                labelFollowsTime: labelFollowsTime,
+                weekdays: tempAlarm.weekdays,
+                soundFileName: tempAlarm.soundFileName,
+                recordingName: tempAlarm.recordingName,
+                recordingDisplayName: tempAlarm.recordingDisplayName,
+                voiceDismiss: tempAlarm.effectiveTaskType == .voice,
+                customPhrase: phrase,
+                notificationMode: useNotificationMode,
+                segmentedBurst: segmentedBurst,
+                groupIndex: selectedGroupIndex,
+                chimeCount: chimeCount,
+                chimeIntervalOn: chimeIntervalOn,
+                chimeSpanMinutes: endMin > startMin ? endMin - startMin : 30,
+                chimeIntervalMinutes: chimeIntervalMinutes,
+                chimeCountdown: chimeCountdown,
+                chimeVoice: chimeVoice,
+                todoIcon: todoIcon,
+                todoDurationMinutes: todoDuration
+            ).store()
         }
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
 
@@ -1330,6 +1378,79 @@ private struct GroupChip: View {
 
     private var fill: Color {
         isSelected ? SunnyColors.leafFresh : SunnyColors.sunnyGray.opacity(0.12)
+    }
+}
+
+// MARK: - 新增鬧鐘的預設值（記住上次）
+
+/// 「新增鬧鐘」進頁時的預設值＝上一次新增並儲存的那顆的設定。只有 create 模式儲存時才寫入；
+/// 編輯既有鬧鐘不影響。時間刻意不記——每顆鬧鐘的時間本來就不同，進頁仍是「現在」
+/// （區間報時只記「區間長度」，迄＝現在＋長度）。
+struct NewAlarmDefaults: Codable, Equatable {
+    var label = "起床囉"
+    var labelFollowsTime = false
+    var weekdays: [Int] = [2, 3, 4, 5, 6]
+    var soundFileName = "sunny_wake.caf"
+    var recordingName = ""
+    var recordingDisplayName: String? = nil
+    var voiceDismiss = false
+    var customPhrase = ""
+    var notificationMode = false
+    var segmentedBurst = false
+    var groupIndex = 0
+    var chimeCount = 1
+    var chimeIntervalOn = false
+    var chimeSpanMinutes = 30
+    var chimeIntervalMinutes = 5
+    var chimeCountdown = false
+    var chimeVoice: ChimeVoiceGender = .female
+    var todoIcon: TodoIcon = .balloon
+    var todoDurationMinutes = 10
+
+    static let storageKey = "newAlarmDefaults"
+
+    /// 沒存過／解不開 → 原本的出廠預設（跟以前的行為一樣）。
+    static func load(from defaults: UserDefaults = .standard) -> NewAlarmDefaults {
+        guard let data = defaults.data(forKey: storageKey),
+              let d = try? JSONDecoder().decode(NewAlarmDefaults.self, from: data) else {
+            return NewAlarmDefaults()
+        }
+        return d.validated()
+    }
+
+    func store(to defaults: UserDefaults = .standard) {
+        if let data = try? JSONEncoder().encode(self) {
+            defaults.set(data, forKey: Self.storageKey)
+        }
+    }
+
+    /// 錄音／自訂音檔可能已在錄音管理被刪：檔不在就退回內建預設音，別讓新鬧鐘一存就指向不存在的檔。
+    /// 報時合成檔（chime_ 前綴）是每顆鬧鐘各自產的，也不沿用。星期／群組夾回合法範圍。
+    func validated(fileExists: (String) -> Bool = NewAlarmDefaults.soundFileExists,
+                   recordingExists: (String) -> Bool = AppPaths.recordingExists(named:)) -> NewAlarmDefaults {
+        var d = self
+        if !d.recordingName.isEmpty, !recordingExists(d.recordingName) {
+            d.recordingName = ""
+            d.recordingDisplayName = nil
+            d.voiceDismiss = false
+        }
+        if d.soundFileName.isEmpty || d.soundFileName.hasPrefix(Alarm.chimeFilePrefix) || !fileExists(d.soundFileName) {
+            d.soundFileName = "sunny_wake.caf"
+        }
+        d.weekdays = Array(Set(d.weekdays.filter { (1...7).contains($0) })).sorted()
+        if d.weekdays.isEmpty { d.weekdays = [2, 3, 4, 5, 6] }
+        d.groupIndex = min(max(d.groupIndex, 0), 4)
+        d.chimeCount = min(max(d.chimeCount, 1), Alarm.maxChimeCount)
+        if !Alarm.chimeIntervalOptions.contains(d.chimeIntervalMinutes) { d.chimeIntervalMinutes = 5 }
+        d.chimeSpanMinutes = max(1, d.chimeSpanMinutes)
+        d.todoDurationMinutes = max(0, d.todoDurationMinutes)
+        return d
+    }
+
+    /// 內建鈴聲在 bundle、匯出的自訂音在 Library/Sounds（同 Alarm.ringtoneURL 的查法）。
+    static func soundFileExists(_ name: String) -> Bool {
+        FileManager.default.fileExists(atPath: AppPaths.soundURL(named: name).path)
+            || Bundle.main.url(forResource: name, withExtension: nil) != nil
     }
 }
 

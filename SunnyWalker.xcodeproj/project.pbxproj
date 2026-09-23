@@ -30,6 +30,7 @@
 		38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */; };
 		3AFF1E5DCB46051419AE5A95 /* VoiceLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24B2BFC0C5DBBE0D50BC812C /* VoiceLibraryView.swift */; };
 		3BC8F8E87CABFEF31FB088DA /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6A487603264A6DA88C647F8 /* AudioPlayer.swift */; };
+		3D786A2E93A5E65973AE36A6 /* NewAlarmDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9790E462B19DB10D512D78B /* NewAlarmDefaultsTests.swift */; };
 		443AE8609D04C19C84D54B4A /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1025175993B11094CCAC30F5 /* Animations.swift */; };
 		45F72E7897FB77ED3CFD2342 /* FamilyAlarmRequestSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 671EE8FD6148CA192AD2F3DC /* FamilyAlarmRequestSheet.swift */; };
 		4682ABA3D6A732CACCE90B96 /* KidsDiagnostics in Frameworks */ = {isa = PBXBuildFile; productRef = FDEB94F95B30C7DB3441F693 /* KidsDiagnostics */; };
@@ -191,6 +192,7 @@
 		C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyWalkerTests.swift; sourceTree = "<group>"; };
 		C46AD7C87263E8207444D72F /* AppPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPaths.swift; sourceTree = "<group>"; };
 		C6A487603264A6DA88C647F8 /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		C9790E462B19DB10D512D78B /* NewAlarmDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewAlarmDefaultsTests.swift; sourceTree = "<group>"; };
 		D2CEC7FE34DB8650E33754BF /* ChimeRefreshService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimeRefreshService.swift; sourceTree = "<group>"; };
 		D43882E1C62C0E0AF8608822 /* SunnyColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunnyColors.swift; sourceTree = "<group>"; };
 		E082FE6D44313D96DE49E326 /* CloudBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackground.swift; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 				21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */,
 				62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */,
 				F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */,
+				C9790E462B19DB10D512D78B /* NewAlarmDefaultsTests.swift */,
 				8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */,
 				C3D1F26EFBA32A646095235A /* SunnyWalkerTests.swift */,
 			);
@@ -630,6 +633,7 @@
 				0570F6CA106CF98ED48777C7 /* ChimePlannerTests.swift in Sources */,
 				03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */,
 				1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */,
+				3D786A2E93A5E65973AE36A6 /* NewAlarmDefaultsTests.swift in Sources */,
 				94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */,
 				38587801E02A30EB326F77B6 /* SunnyWalkerTests.swift in Sources */,
 			);
