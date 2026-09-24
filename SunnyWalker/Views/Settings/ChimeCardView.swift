@@ -139,10 +139,8 @@ struct ChimeCardView: View {
     // MARK: - Pieces
 
     private var header: some View {
+        // 不放左側喇叭圖示：讓說明多一點寬度、一行放得下（Rex 2026-09-24：這段少一行高度）。
         HStack(spacing: 10) {
-            Image(systemName: "speaker.wave.2.bubble.fill")
-                .font(.title2)
-                .foregroundStyle(SunnyColors.lanternOrange)
             VStack(alignment: .leading, spacing: 2) {
                 Text("chime_card_title")
                     .font(SunnyFonts.caption())

@@ -528,15 +528,20 @@ struct AlarmEditorView: View {
     /// 多人鬧鐘：選這個鬧鐘屬於哪一個群組（哥哥 / 妹妹…）。只有家長在設定頁開啟分組時才出現。
     /// 群組名稱由設定頁集中管理，這裡只負責「選哪一組」（水平捲動的膠囊按鈕）。
     private var groupCard: some View {
-        WatercolorCard {
-            VStack(alignment: .leading, spacing: 12) {
+        // 標題和群組圓球排同一列（Rex 2026-09-24：少一行高度）。
+        let hasCustomNames = (0..<settings.effectiveGroupCount).contains { settings.groupCustomName($0) != nil }
+        return WatercolorCard {
+            HStack(spacing: 14) {
                 Label("group_select_label", systemImage: "person.2.fill")
                     .font(SunnyFonts.caption())
                     .foregroundStyle(SunnyColors.sunnyGray)
+                    .fixedSize()
+                    // 有自訂名稱時右邊底下多留了捲軸空間 → 標題往上對齊膠囊的中線。
+                    .padding(.bottom, hasCustomNames ? 8 : 0)
 
                 // 預設簡約：沒取名的群組只畫一顆字母圓球（A／B／C…），五組也排得進一列。
                 // 家長取了名字才展開成「字母＋名稱」膠囊；名字長到排不下就橫向捲動，
-                // 捲軸照常顯示（底下留一點空間給它，不要壓到圓球）。
+                // 捲軸照常顯示（有自訂名稱時底下才留空間給它，不要壓到膠囊）。
                 ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 10) {
                         ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
@@ -552,11 +557,12 @@ struct AlarmEditorView: View {
                     }
                     .padding(.horizontal, 2)
                     .padding(.top, 2)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, hasCustomNames ? 10 : 2)
                 }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)   // 排得下就不要可以亂拖
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, hasCustomNames ? 12 : 10)
         }
     }
 

@@ -379,13 +379,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When the alarm fires, it reads out the time aloud, then stops on its own (in the app language)."
+            "value": "Reads the time aloud, then stops (app language)."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "時間到時用語音念出時刻、報完自動停（語言跟著 App 設定）。"
+            "value": "時間到念出時刻、報完自動停（語言同 App）。"
           }
         }
       }
