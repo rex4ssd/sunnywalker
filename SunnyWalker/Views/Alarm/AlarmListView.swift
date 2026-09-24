@@ -416,6 +416,20 @@ struct AlarmListView: View {
 
 // MARK: - AlarmCard (interactive, wrapped in WatercolorCard)
 
+// MARK: - 「複製」動作（HomeView 注入：要過鬧鐘上限與家長閘，跟「＋」同一條路）
+
+private struct DuplicateAlarmKey: EnvironmentKey {
+    static let defaultValue: ((Alarm) -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    /// 長按首頁鬧鐘卡 →「複製」：以這顆為範本開新增頁。nil＝不提供（卡片就不顯示這個選項）。
+    var duplicateAlarm: ((Alarm) -> Void)? {
+        get { self[DuplicateAlarmKey.self] }
+        set { self[DuplicateAlarmKey.self] = newValue }
+    }
+}
+
 private struct AlarmCard: View {
     @Bindable var alarm: Alarm
     /// 今天接下來最先響的那顆 → 加「下一個」標籤與橘框。
@@ -424,9 +438,24 @@ private struct AlarmCard: View {
     /// 整份清單共用的試聽播放器（長按左側圖示）。
     @ObservedObject var preview: AlarmPreviewPlayer
     @State private var showingEditor = false
+    @State private var showingCardMenu = false
+    /// 長按彈出選單的時間點：放開手指時 Button 仍會觸發一次點按 → 用它吃掉那一次，別同時開編輯頁。
+    @State private var longPressAt: Date? = nil
+    @Environment(\.duplicateAlarm) private var duplicateAlarm
     @ObservedObject private var settings = AppSettings.shared
 
     private var isPreviewing: Bool { preview.playingID == alarm.id }
+
+    /// 區間報時（含倒數）：第一行寫名稱、第二行寫「每 N 分」。
+    private var isIntervalChime: Bool { alarm.kind == .chime && alarm.isIntervalChime }
+
+    /// 長按選單的標題：「07:00–07:25 起床囉」。
+    private var menuTitle: String {
+        let time = isIntervalChime ? alarm.formattedChimeRange(use24h: settings.use24HourClock)
+                                   : alarm.formattedTime(use24h: settings.use24HourClock)
+        let name = alarm.label.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? time : "\(time)  \(L(name))"
+    }
 
     var body: some View {
         WatercolorCard {
@@ -462,17 +491,31 @@ private struct AlarmCard: View {
                 }
 
                 Button {
+                    // 長按選單剛彈出（放開手指的那次點按）→ 吃掉，不要同時開編輯頁。
+                    if let t = longPressAt, Date().timeIntervalSince(t) < 2 {
+                        longPressAt = nil
+                        return
+                    }
+                    longPressAt = nil
                     showingEditor = true
                 } label: {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
                             timeLine
                             HStack(spacing: 6) {
-                                // Known default/common names localize; custom parent names show as typed.
-                                Text(LocalizedStringKey(alarm.label))
-                                    .font(SunnyFonts.caption())
-                                    .foregroundStyle(SunnyColors.sunnyGray)
-                                    .lineLimit(1)
+                                if isIntervalChime {
+                                    // 名稱已經在第一行；這裡放間隔，星期圓點也有空間完整顯示。
+                                    Text(L("chime_every_minutes %lld", alarm.chimeIntervalMinutes ?? 0))
+                                        .font(SunnyFonts.caption())
+                                        .foregroundStyle(SunnyColors.sunnyGray)
+                                        .lineLimit(1)
+                                } else {
+                                    // Known default/common names localize; custom parent names show as typed.
+                                    Text(LocalizedStringKey(alarm.label))
+                                        .font(SunnyFonts.caption())
+                                        .foregroundStyle(SunnyColors.sunnyGray)
+                                        .lineLimit(1)
+                                }
                                 WeekdayDots(weekdays: alarm.weekdays)
                             }
                         }
@@ -488,7 +531,31 @@ private struct AlarmCard: View {
                 // 這裡刻意【沒有】contextMenu。List 會把 cell 內任何 contextMenu 提升成「整列長按」，
                 // 跟圖示的長按試聽搶同一個手勢——模擬器實測：第一次長按試聽成功、第二次卻彈出選單，
                 // 時好時壞（UIKit 的 context-menu interaction 與 SwiftUI 手勢的競態）。
-                // 編輯／刪除已經有右滑（swipeActions）與點按卡片兩條路，所以拿掉選單換一個穩定的長按。
+                // 長按時間／名稱這塊改用只掛在這顆 Button 上的 LongPressGesture ＋ confirmationDialog：
+                // 手勢範圍不會擴到整列，也就不會跟圖示的長按試聽搶。
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .onEnded { _ in
+                            guard duplicateAlarm != nil else { return }
+                            longPressAt = Date()
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            showingCardMenu = true
+                        }
+                )
+                .accessibilityAction(named: Text("alarm_duplicate_action")) {
+                    duplicateAlarm?(alarm)
+                }
+                .confirmationDialog(Text(verbatim: menuTitle), isPresented: $showingCardMenu,
+                                    titleVisibility: .visible) {
+                    Button("alarm_duplicate_action") { duplicateAlarm?(alarm) }
+                    Button("編輯") { showingEditor = true }
+                    Button("取消", role: .cancel) {}
+                } message: {
+                    Text("alarm_duplicate_message")
+                }
+                .onChange(of: showingCardMenu) { _, shown in
+                    if !shown { longPressAt = nil }
+                }
 
                 Toggle("", isOn: $alarm.isEnabled)
                     .tint(SunnyColors.leafFresh)
@@ -557,24 +624,29 @@ private struct AlarmCard: View {
         }
     }
 
-    /// 時間那一行：一般＝大字時刻；區間報時＝「07:00–07:30」+「每 5 分」小標；待辦＝時刻 + 圖示 emoji。
+    /// 時間那一行：一般＝大字時刻；區間報時＝「07:00–07:30」+ 鬧鐘名稱小標（例：妹妹英文課）。
+    /// 報時／倒數不再用文字標，改由左側圖示區分（喇叭／沙漏）；「每 N 分」移到第二行。
     @ViewBuilder
     private var timeLine: some View {
         let color = alarm.isEnabled ? SunnyColors.nightIndigo : SunnyColors.sunnyGray
-        if alarm.kind == .chime, alarm.isIntervalChime {
+        if isIntervalChime {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(alarm.formattedChimeRange(use24h: settings.use24HourClock))
                     .font(SunnyFonts.clock(24))
                     .foregroundStyle(color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                Text(L("chime_every_minutes %lld", alarm.chimeIntervalMinutes ?? 0)
-                     + (alarm.effectiveChimeCountdown ? " · " + L("chime_countdown_badge") : ""))
-                    .font(SunnyFonts.caption(12))
-                    .foregroundStyle(SunnyColors.lanternOrange)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(SunnyColors.lanternOrange.opacity(0.14)))
+                    .layoutPriority(1)   // 空間不夠時先截名稱，時間區間要完整
+                if !alarm.label.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Text(LocalizedStringKey(alarm.label))
+                        .font(SunnyFonts.caption(12))
+                        .foregroundStyle(SunnyColors.lanternOrange)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)   // 名稱稍長時先縮一點，真的放不下才截「…」
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(SunnyColors.lanternOrange.opacity(0.14)))
+                }
             }
         } else {
             Text(alarm.formattedTime(use24h: settings.use24HourClock))
@@ -609,7 +681,8 @@ private struct AlarmKindIcon: View {
                     Text(alarm.effectiveTodoIcon.emoji)
                         .font(.title3)
                 case .chime:
-                    Image(systemName: AlarmKind.chime.systemImage)
+                    // 倒數用沙漏（跟編輯頁「倒數報時」同一個圖示），一般報時用喇叭泡泡。
+                    Image(systemName: alarm.effectiveChimeCountdown ? "hourglass" : AlarmKind.chime.systemImage)
                         .foregroundStyle(SunnyColors.lanternOrange)
                 case .alarm:
                     switch scene {

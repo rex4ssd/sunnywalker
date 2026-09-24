@@ -169,7 +169,8 @@ struct AlarmEditorView: View {
         (1, "日"), (2, "一"), (3, "二"), (4, "三"), (5, "四"), (6, "五"), (7, "六")
     ]
 
-    init(existingAlarm: Alarm? = nil) {
+    /// - Parameter template: 「複製」——以這顆既有鬧鐘的設定（含時間）開新增頁；存檔會新增一顆，範本不受影響。
+    init(existingAlarm: Alarm? = nil, template: Alarm? = nil) {
         self.existingAlarm = existingAlarm
         if let a = existingAlarm {
             // Edit mode: initialise state from the existing alarm
@@ -232,8 +233,12 @@ struct AlarmEditorView: View {
         } else {
             // Create mode：每個欄位都沿用「上一次新增並儲存」的設定（NewAlarmDefaults），
             // 只有時間永遠是現在——Rex 2026-09-23：每顆都要重勾「用時間當標籤」、重選鈴聲、重挑星期太煩。
-            let d = NewAlarmDefaults.load()
-            let now = Date()
+            // 「複製」（長按首頁鬧鐘卡）：改用範本鬧鐘的設定與時間。
+            var d = template.map { NewAlarmDefaults(copying: $0).validated() } ?? NewAlarmDefaults.load()
+            if let t = template, t.weekdays.isEmpty { d.weekdays = [] }   // 單次鬧鐘照抄單次（validated 會補成平日）
+            let now = template.flatMap {
+                Calendar.current.date(bySettingHour: $0.hour, minute: $0.minute, second: 0, of: Date())
+            } ?? Date()
             let nowParts = Calendar.current.dateComponents([.hour, .minute], from: now)
             let voice = d.voiceDismiss && !d.recordingName.isEmpty
             let fresh = Alarm(label: d.label, hour: 7, minute: 0, taskType: voice ? .voice : .button)
@@ -353,9 +358,13 @@ struct AlarmEditorView: View {
                     composingOverlay
                 }
             }
-            .onChange(of: selectedTime) { _, _ in
+            .onChange(of: selectedTime) { old, new in
                 if labelFollowsTime { label = timeAsLabel }
+                shiftChimeEnd(from: old, to: new)
             }
+            // 打開區間／倒數時，迄若不在起之後（例如新增頁的迄是「現在＋30」、起已轉到 07:00）→ 對齊成起＋區間長度。
+            .onChange(of: chimeIntervalOn) { _, on in if on { alignChimeEndIfNeeded() } }
+            .onChange(of: chimeCountdown) { _, on in if on { alignChimeEndIfNeeded() } }
             .onChange(of: tempAlarm.recordingName) { _, newValue in
                 if newValue.isEmpty, selectedTaskType == .voice {
                     selectedTaskType = .button
@@ -970,6 +979,44 @@ struct AlarmEditorView: View {
 
     // MARK: - Preview
 
+    // MARK: - 區間報時：迄跟著起走
+
+    private static func minuteOfDay(_ d: Date) -> Int {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: d)
+        return (c.hour ?? 0) * 60 + (c.minute ?? 0)
+    }
+
+    /// 純函式（可測）：起從 `oldStart` 移到 `newStart` 後，迄該在當天第幾分。
+    /// 保持區間長度；原本迄不在起之後 → 用 `fallbackSpan`。跨午夜就停在 23:59（報時不跨日）。
+    nonisolated static func followedChimeEnd(oldStart: Int, newStart: Int, end: Int, fallbackSpan: Int) -> Int {
+        let span = end - oldStart
+        return clampedMinuteOfDay(newStart + (span > 0 ? span : fallbackSpan))
+    }
+
+    nonisolated static func clampedMinuteOfDay(_ m: Int) -> Int { min(max(m, 0), 23 * 60 + 59) }
+
+    /// 把迄設成當天第 `minutes` 分（跨午夜就停在 23:59——報時不跨日）。
+    private func setChimeEnd(minuteOfDay minutes: Int) {
+        let m = Self.clampedMinuteOfDay(minutes)
+        chimeEndTime = Calendar.current.date(bySettingHour: m / 60, minute: m % 60, second: 0, of: chimeEndTime)
+            ?? chimeEndTime
+    }
+
+    /// 起時刻一動，迄跟著平移、區間長度不變——家長只要轉一次時間輪（Rex 2026-09-24：
+    /// 起轉到 07:00 之後還得另外把迄調到 07:25 太沒效率）。迄原本就不在起之後 → 用上次的區間長度。
+    private func shiftChimeEnd(from old: Date, to new: Date) {
+        guard chimeActive, chimeIntervalOn else { return }
+        setChimeEnd(minuteOfDay: Self.followedChimeEnd(
+            oldStart: Self.minuteOfDay(old), newStart: Self.minuteOfDay(new),
+            end: Self.minuteOfDay(chimeEndTime), fallbackSpan: NewAlarmDefaults.load().chimeSpanMinutes))
+    }
+
+    private func alignChimeEndIfNeeded() {
+        let start = Self.minuteOfDay(selectedTime)
+        guard Self.minuteOfDay(chimeEndTime) <= start else { return }
+        setChimeEnd(minuteOfDay: start + NewAlarmDefaults.load().chimeSpanMinutes)
+    }
+
     /// 試聽按鈕的狀態：合成中（反灰）／可播（綠）／播放中（橘）。
     private var chimePreviewState: ChimePreviewState {
         if previewingRow == "chime" { return .playing }
@@ -1489,6 +1536,37 @@ struct NewAlarmDefaults: Codable, Equatable {
     static func soundFileExists(_ name: String) -> Bool {
         FileManager.default.fileExists(atPath: AppPaths.soundURL(named: name).path)
             || Bundle.main.url(forResource: name, withExtension: nil) != nil
+    }
+}
+
+extension NewAlarmDefaults {
+    /// 「複製」：以既有鬧鐘為範本。報時合成檔不沿用（呼叫端再 validated() 會換回內建音）——
+    /// 新鬧鐘存檔時自己合成；共用同一個檔的話，刪掉任一顆就會讓另一顆變無聲。
+    init(copying a: Alarm) {
+        self.init()
+        label = a.label
+        labelFollowsTime = a.label == Alarm.timeString(hour: a.hour, minute: a.minute, use24h: true)
+            || a.label == Alarm.timeString(hour: a.hour, minute: a.minute, use24h: false)
+        weekdays = a.weekdays
+        soundFileName = a.soundFileName
+        recordingName = a.recordingName
+        recordingDisplayName = a.recordingDisplayName
+        voiceDismiss = !a.recordingName.isEmpty && a.effectiveTaskType == .voice
+        customPhrase = a.customDismissPhrase ?? ""
+        notificationMode = a.effectiveBackgroundMode == .notification
+        segmentedBurst = a.effectiveSegmentedBurst
+        groupIndex = a.effectiveGroupIndex
+        chimeCount = a.effectiveChimeCount
+        chimeIntervalOn = (a.chimeIntervalMinutes ?? 0) > 0 && a.chimeEndHour != nil
+        if let eh = a.chimeEndHour, let em = a.chimeEndMinute {
+            let span = eh * 60 + em - (a.hour * 60 + a.minute)
+            if span > 0 { chimeSpanMinutes = span }
+        }
+        chimeIntervalMinutes = a.chimeIntervalMinutes ?? 5
+        chimeCountdown = a.chimeCountdown ?? false
+        chimeVoice = a.effectiveChimeVoice
+        todoIcon = a.effectiveTodoIcon
+        todoDurationMinutes = a.effectiveTodoDurationMinutes
     }
 }
 

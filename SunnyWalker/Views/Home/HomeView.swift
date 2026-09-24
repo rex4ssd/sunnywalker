@@ -31,6 +31,8 @@ struct HomeView: View {
     @State private var showingParentalGate = false
     @State private var gateDidSucceed = false
     @State private var showingAddAlarm = false
+    /// 長按鬧鐘卡 →「複製」的範本；nil＝一般「＋」新增。
+    @State private var duplicateSource: Alarm? = nil
 
     // Notification-driven / long-press alarm ring
     @State private var firingAlarm: Alarm?
@@ -149,6 +151,8 @@ struct HomeView: View {
             }
             addButton
         }
+        // 長按鬧鐘卡 →「複製」：跟「＋」同一條路（上限 → 家長閘 → 新增頁），只是新增頁帶入範本。
+        .environment(\.duplicateAlarm, { openAddAlarmFlow(template: $0) })
         .ignoresSafeArea(edges: .top)
         // Keep the visible group page valid when the parent lowers the count or disables grouping.
         .onChange(of: settings.effectiveGroupCount) { _, n in
@@ -920,6 +924,8 @@ struct HomeView: View {
             if gateDidSucceed {
                 gateDidSucceed = false
                 showingAddAlarm = true
+            } else {
+                duplicateSource = nil   // 家長閘取消 → 這次「複製」作廢，別殘留到下一次新增
             }
         }) {
             // Shared family-wide gate (KidsParentalUI). Callback style: onUnlock fires the moment
@@ -940,8 +946,11 @@ struct HomeView: View {
                 }
             ) { Color.clear }
         }
-        .sheet(isPresented: $showingAddAlarm) {
-            AlarmEditorView()
+        .sheet(isPresented: $showingAddAlarm, onDismiss: { duplicateSource = nil }) {
+            // .id：sheet 內容會先用「還沒更新的」duplicateSource（nil）建一次，編輯頁的 @State 就定型成空白新增頁。
+            // 換 id 才會在範本到位時重建（模擬器實測：不加這行，複製出來的是空白新增頁）。
+            AlarmEditorView(template: duplicateSource)
+                .id(duplicateSource?.id)
         }
         // Settings parental gate → SettingsView
         .sheet(isPresented: $showingParentalForSettings, onDismiss: {
@@ -1004,9 +1013,12 @@ struct HomeView: View {
         }
     }
 
-    private func openAddAlarmFlow() {
+    /// - Parameter template: 長按鬧鐘卡「複製」的來源；跟「＋」走同一條路（上限 → 家長閘 → 新增頁）。
+    private func openAddAlarmFlow(template: Alarm? = nil) {
+        duplicateSource = template
         // Enforce the alarm cap before anything else (even before the parental gate).
         guard alarms.count < maxAlarms else {
+            duplicateSource = nil
             showingMaxAlarmsAlert = true
             return
         }

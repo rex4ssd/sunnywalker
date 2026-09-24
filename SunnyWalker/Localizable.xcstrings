@@ -262,6 +262,18 @@
         }
       }
     },
+    "alarm_duplicate_action": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Duplicate & Edit" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "複製並修改" } }
+      }
+    },
+    "alarm_duplicate_message": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Opens a new alarm with the same settings. The original stays as it is." } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "用同樣的設定開一顆新鬧鐘，原本這顆不會變。" } }
+      }
+    },
     "alarm_next_badge": {
       "localizations": {
         "en": {

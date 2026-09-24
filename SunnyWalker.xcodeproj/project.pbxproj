@@ -13,6 +13,7 @@
 		019276FB701C56D377901176 /* SunnyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46FBC69DB1653C24FCF0FA66 /* SunnyButton.swift */; };
 		03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */; };
 		0570F6CA106CF98ED48777C7 /* ChimePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */; };
+		05C313F154665A477D41E3C6 /* DuplicateAndChimeEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F87387A8FDC3EDE8E0030DBC /* DuplicateAndChimeEndTests.swift */; };
 		0DC4CC522C9DFA1225950B12 /* AlarmAutoStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BD068A8949D465654B55698 /* AlarmAutoStopService.swift */; };
 		0E06CC87F2E8356A5C190B46 /* TodoHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */; };
 		1386818AEDA460AC0E1A2E56 /* leaf_rustle.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3C92C8D1710737421F80BF59 /* leaf_rustle.caf */; };
@@ -200,6 +201,7 @@
 		EB8A38FA16EEC90C273F6A0B /* ChimeIntervalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChimeIntervalTests.swift; sourceTree = "<group>"; };
 		EB92438CB48445F28D1B8B76 /* TodoHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoHistoryView.swift; sourceTree = "<group>"; };
 		F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAlarmIOTests.swift; sourceTree = "<group>"; };
+		F87387A8FDC3EDE8E0030DBC /* DuplicateAndChimeEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateAndChimeEndTests.swift; sourceTree = "<group>"; };
 		F8B2F46A3941FEE3E76A4346 /* RewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -280,6 +282,7 @@
 				EB8A38FA16EEC90C273F6A0B /* ChimeIntervalTests.swift */,
 				21523EDA0A3E47F485292486 /* ChimePlannerTests.swift */,
 				62C12093272FFB7143AB98E7 /* ChimeRenderTests.swift */,
+				F87387A8FDC3EDE8E0030DBC /* DuplicateAndChimeEndTests.swift */,
 				F362D3CAFCECFADA0BA3E574 /* MarkdownAlarmIOTests.swift */,
 				C9790E462B19DB10D512D78B /* NewAlarmDefaultsTests.swift */,
 				8CA2696C444B2690FAAD74DB /* SnapshotBuilderTests.swift */,
@@ -632,6 +635,7 @@
 				55B9CFE25F37245E06B12B3C /* ChimeIntervalTests.swift in Sources */,
 				0570F6CA106CF98ED48777C7 /* ChimePlannerTests.swift in Sources */,
 				03D5284433EE2D4F1D8CC304 /* ChimeRenderTests.swift in Sources */,
+				05C313F154665A477D41E3C6 /* DuplicateAndChimeEndTests.swift in Sources */,
 				1AC49EB82A9B4C478ED86B0D /* MarkdownAlarmIOTests.swift in Sources */,
 				3D786A2E93A5E65973AE36A6 /* NewAlarmDefaultsTests.swift in Sources */,
 				94E7EEA3B4839D3FD558FAB7 /* SnapshotBuilderTests.swift in Sources */,
