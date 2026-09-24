@@ -56,6 +56,8 @@ struct AlarmEditorView: View {
     private let todoDurationOptions = [10, 30, 60, 0]
     @StateObject private var previewPlayer = AudioPlayer()
     @State private var previewingRow: String? = nil
+    /// 群組列的捲動量測（決定要不要畫自製捲軸、兩端要不要淡出）。
+    @State private var groupScroll = GroupScrollMetrics()
     /// 報時試聽：改時間／人聲／倒數就在背景先合成好（key＝內容指紋），按鈕好了才變綠。
     @State private var chimePreviewURL: URL? = nil
     @State private var chimePreviewKey = ""
@@ -529,40 +531,66 @@ struct AlarmEditorView: View {
     /// 群組名稱由設定頁集中管理，這裡只負責「選哪一組」（水平捲動的膠囊按鈕）。
     private var groupCard: some View {
         // 標題和群組圓球排同一列（Rex 2026-09-24：少一行高度）。
-        let hasCustomNames = (0..<settings.effectiveGroupCount).contains { settings.groupCustomName($0) != nil }
+        let overflow = groupScroll.overflows
         return WatercolorCard {
             HStack(spacing: 14) {
                 Label("group_select_label", systemImage: "person.2.fill")
                     .font(SunnyFonts.caption())
                     .foregroundStyle(SunnyColors.sunnyGray)
                     .fixedSize()
-                    // 有自訂名稱時右邊底下多留了捲軸空間 → 標題往上對齊膠囊的中線。
-                    .padding(.bottom, hasCustomNames ? 8 : 0)
+                    // 排不下時底下多一條捲軸 → 標題往上對齊膠囊的中線。
+                    .padding(.bottom, overflow ? 7 : 0)
 
                 // 預設簡約：沒取名的群組只畫一顆字母圓球（A／B／C…），五組也排得進一列。
-                // 家長取了名字才展開成「字母＋名稱」膠囊；名字長到排不下就橫向捲動，
-                // 捲軸照常顯示（有自訂名稱時底下才留空間給它，不要壓到膠囊）。
-                ScrollView(.horizontal, showsIndicators: true) {
-                    HStack(spacing: 10) {
-                        ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
-                            GroupChip(
-                                letter: String(Character(UnicodeScalar(UInt8(65 + i)))),
-                                customName: settings.groupCustomName(i),
-                                accessibilityName: settings.groupDisplayName(i),
-                                isSelected: selectedGroupIndex == i
-                            ) {
-                                selectedGroupIndex = i
+                // 家長取了名字才展開成「字母＋名稱」膠囊；名字長到排不下就橫向捲動。
+                // iOS 的系統捲軸只在拖動時閃一下、平常看不到（Rex 2026-09-25：「太長會有 scroll bar 嗎」），
+                // 所以排不下時自己畫一條一直在的細捲軸，兩端再淡出，一看就知道還有東西。
+                VStack(spacing: 4) {
+                    ScrollViewReader { proxy in
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
+                                    GroupChip(
+                                        letter: String(Character(UnicodeScalar(UInt8(65 + i)))),
+                                        customName: settings.groupCustomName(i),
+                                        accessibilityName: settings.groupDisplayName(i),
+                                        isSelected: selectedGroupIndex == i
+                                    ) {
+                                        selectedGroupIndex = i
+                                    }
+                                    .id(i)
+                                }
                             }
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 2)
+                        }
+                        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)   // 排得下就不要可以亂拖
+                        .onScrollGeometryChange(for: GroupScrollMetrics.self) { g in
+                            GroupScrollMetrics(offset: g.contentOffset.x,
+                                               content: g.contentSize.width,
+                                               container: g.containerSize.width)
+                        } action: { _, new in
+                            groupScroll = new
+                        }
+                        .mask { GroupScrollFade(metrics: groupScroll) }
+                        // 選中的那組被擠到右邊看不到 → 進頁時捲過去；之後點別組也跟著置中。
+                        .onAppear {
+                            DispatchQueue.main.async { proxy.scrollTo(selectedGroupIndex, anchor: .center) }
+                        }
+                        .onChange(of: selectedGroupIndex) { _, i in
+                            withAnimation(.easeInOut(duration: 0.25)) { proxy.scrollTo(i, anchor: .center) }
                         }
                     }
-                    .padding(.horizontal, 2)
-                    .padding(.top, 2)
-                    .padding(.bottom, hasCustomNames ? 10 : 2)
+                    if overflow {
+                        GroupScrollBar(metrics: groupScroll)
+                            .frame(height: 3)
+                            .padding(.horizontal, 4)
+                            .accessibilityHidden(true)
+                    }
                 }
-                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)   // 排得下就不要可以亂拖
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, hasCustomNames ? 12 : 10)
+            .padding(.vertical, 10)
         }
     }
 
@@ -1096,7 +1124,7 @@ struct AlarmEditorView: View {
         previewPlayer.stop()
         let url: URL?
         if row == "builtin" {
-            url = Bundle.main.url(forResource: tempAlarm.soundFileName, withExtension: nil)
+            url = Bundle.main.url(forResource: builtinSoundFile, withExtension: nil)
         } else {
             guard AppPaths.recordingExists(named: tempAlarm.recordingName) else { return }
             url = AppPaths.recordingURL(named: tempAlarm.recordingName)
@@ -1111,11 +1139,17 @@ struct AlarmEditorView: View {
         !tempAlarm.soundFileName.hasPrefix("alarm_")
     }
 
+    /// 內建鈴聲列實際代表的檔：報時合成檔（從報時群組換到一般群組時還留著）存檔時會被換回預設
+    /// 「陽光起床」（saveAlarm 的 clearChimeIfNeeded）→ 顯示與試聽都先照那樣，不要露出 chime_…caf 檔名。
+    private var builtinSoundFile: String {
+        tempAlarm.soundFileName.hasPrefix(Alarm.chimeFilePrefix) ? "sunny_wake.caf" : tempAlarm.soundFileName
+    }
+
     // Display subtitle for the built-in row.
     // 回傳 Text（非 String）：鈴聲名走 LocalizedStringKey 才能在英文版翻譯；
     // emoji 與檔名/錄音名是 verbatim 不翻譯。
     private var builtinSubtitle: Text {
-        switch tempAlarm.soundFileName {
+        switch builtinSoundFile {
         case "sunny_wake.caf":  return Text("☀️ \(Text(LocalizedStringKey("陽光起床")))")
         case "leaf_rustle.caf": return Text("🍃 \(Text(LocalizedStringKey("樹葉沙沙")))")
         default:                return isBuiltinSelected ? Text(tempAlarm.soundFileName) : Text(LocalizedStringKey("未選擇"))
@@ -1421,6 +1455,64 @@ private struct WeekdayChip: View {
 }
 
 // MARK: - GroupChip (multi-person alarm group selector)
+
+// MARK: - 群組列的捲軸（系統捲軸平常看不到 → 排不下時自己畫一條一直在的）
+
+struct GroupScrollMetrics: Equatable {
+    var offset: CGFloat = 0
+    var content: CGFloat = 0
+    var container: CGFloat = 0
+
+    /// 內容比可見寬度多 1pt 以上才算排不下（避免浮點誤差讓捲軸閃現）。
+    var overflows: Bool { container > 0 && content > container + 1 }
+    var maxOffset: CGFloat { max(0, content - container) }
+    /// 0＝最左、1＝最右。
+    var progress: CGFloat { maxOffset > 0 ? min(max(offset / maxOffset, 0), 1) : 0 }
+    /// 可見比例（捲軸滑塊的長度比例）。
+    var visibleFraction: CGFloat { content > 0 ? min(container / content, 1) : 1 }
+    var atStart: Bool { offset <= 1 }
+    var atEnd: Bool { offset >= maxOffset - 1 }
+}
+
+private struct GroupScrollBar: View {
+    let metrics: GroupScrollMetrics
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let thumb = max(24, w * metrics.visibleFraction)
+            Capsule()
+                .fill(SunnyColors.sunnyGray.opacity(0.14))
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(SunnyColors.sunnyGray.opacity(0.55))
+                        .frame(width: thumb)
+                        .offset(x: (w - thumb) * metrics.progress)
+                }
+        }
+    }
+}
+
+/// 排不下時兩端淡出（還能往哪邊捲，那邊就淡）；排得下就完全不遮。
+private struct GroupScrollFade: View {
+    let metrics: GroupScrollMetrics
+
+    var body: some View {
+        if metrics.overflows {
+            HStack(spacing: 0) {
+                LinearGradient(colors: [.black.opacity(metrics.atStart ? 1 : 0), .black],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 18)
+                Rectangle().fill(.black)
+                LinearGradient(colors: [.black, .black.opacity(metrics.atEnd ? 1 : 0)],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 28)
+            }
+        } else {
+            Rectangle().fill(.black)
+        }
+    }
+}
 
 private struct GroupChip: View {
     let letter: String
