@@ -213,13 +213,17 @@ final class BackgroundListeningManager: ObservableObject {
                 print("🟠 BGListen: input node not ready (sampleRate=\(fmt.sampleRate)) — abort start")
                 return
             }
-            input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { [weak self] buffer, _ in
-                // Feed recognition only while firing; otherwise the buffer is simply discarded,
-                // which is enough to keep the session (and the app) alive in the background.
-                self?.request?.append(buffer)
+            // installTap / prepare / start raise an Obj-C NSException (uncatchable in Swift) when the
+            // input format changes after we read it (rotation / Bluetooth) — see SpeechRecognizer.
+            try ObjCException.catching {
+                input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { [weak self] buffer, _ in
+                    // Feed recognition only while firing; otherwise the buffer is simply discarded,
+                    // which is enough to keep the session (and the app) alive in the background.
+                    self?.request?.append(buffer)
+                }
             }
-            engine.prepare()
-            try engine.start()
+            try ObjCException.catching { engine.prepare() }
+            try ObjCException.catching { try engine.start() }
             isActive = true
             startTimer()
 
@@ -243,6 +247,8 @@ final class BackgroundListeningManager: ObservableObject {
 
             print("🟠 BGListen: started — mic session kept alive (orange dot on)")
         } catch {
+            // Don't leave a tap behind: the next start()'s installTap would raise "bus already has a tap".
+            try? ObjCException.catching { engine.inputNode.removeTap(onBus: 0) }
             print("🟠 BGListen: start FAILED — \(error.localizedDescription)")
         }
     }
@@ -269,7 +275,10 @@ final class BackgroundListeningManager: ObservableObject {
         guard isActive else { return }
         do {
             try AVAudioSession.sharedInstance().setActive(true)
-            if !engine.isRunning { engine.prepare(); try engine.start() }
+            if !engine.isRunning {
+                try ObjCException.catching { engine.prepare() }
+                try ObjCException.catching { try engine.start() }
+            }
             if isFiring { restartRecognition() }
             print("🟠 BGListen: resumed after interruption (engineRunning=\(engine.isRunning), firing=\(isFiring))")
         } catch {

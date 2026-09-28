@@ -3,6 +3,7 @@
 import Speech
 import AVFoundation
 import Foundation
+import AudioCoreKit
 
 @MainActor
 final class SpeechRecognizer: ObservableObject {
@@ -124,17 +125,23 @@ final class SpeechRecognizer: ObservableObject {
             throw NSError(domain: "SpeechRecognizer", code: -3,
                           userInfo: [NSLocalizedDescriptionKey: L("麥克風尚未就緒")])
         }
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            self?.request?.append(buffer)
-        }
-
-        audioEngine.prepare()
+        // The format check can't catch the format changing between reading it and installing the
+        // tap (rotation / Bluetooth route change → RemoteIO IOFormatsChanged). installTap, prepare
+        // and start then raise an Obj-C NSException that Swift can't catch; ObjCException turns it
+        // into a Swift error so it takes the normal failure path (LetPod 260925 i15 rotation crash).
         do {
-            try audioEngine.start()
+            try ObjCException.catching {
+                inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+                    self?.request?.append(buffer)
+                }
+            }
+            try ObjCException.catching { audioEngine.prepare() }
+            try ObjCException.catching { try audioEngine.start() }
         } catch {
-            // Roll back the tap + alarm node so a retry starts from a clean state.
-            print("🎤 SpeechRecognizer: audioEngine.start() FAILED — \(error.localizedDescription)")
-            inputNode.removeTap(onBus: 0)
+            // Roll back the tap + alarm node so a retry starts from a clean state (a tap left
+            // half-installed would make the retry's installTap raise "bus already has a tap").
+            print("🎤 SpeechRecognizer: installTap/audioEngine.start() FAILED — \(error.localizedDescription)")
+            try? ObjCException.catching { inputNode.removeTap(onBus: 0) }
             teardownAlarmReference()
             request = nil
             throw error
