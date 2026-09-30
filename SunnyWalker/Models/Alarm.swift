@@ -280,6 +280,37 @@ final class Alarm {
     /// 倒數模式是否生效：要開了倒數、而且真的是區間報時（單一時刻沒有「迄」可以倒數）。
     var effectiveChimeCountdown: Bool { (chimeCountdown ?? false) && isIntervalChime }
 
+    /// 倒數時接在「剩 N 分鐘」後面念的事（例：要上學 → 剩十分鐘要上學）。nil／空＝只念剩幾分鐘。
+    /// Optional + default nil 配合 SwiftData lightweight migration。讀取請用 `effectiveCountdownPurpose`。
+    var chimeCountdownPurpose: String? = nil
+
+    /// 倒數要念的事上限（UTF-8 位元組）：10 → 中文 3 個字（要上學／要睡覺）、英文 10 個字母（bedtime／school）。
+    /// 上限由「最長那句實際合成的秒數」決定——通知音超過 ~4.6 秒 iOS 會整顆換成預設音（見 ChimeRenderTests）。
+    /// 模擬器實測：中文 4 字時最長一句「剩五小時五十七分鐘要去上學」4.29 秒，離上限太近（實機語音可能更慢）→ 取 3 字。
+    static let countdownPurposeMaxBytes = 10
+
+    /// 輸入中的截斷：只砍長度（不 trim，英文要能打空白），按字切、不切壞中文字。
+    static func clampedCountdownPurposeInput(_ raw: String) -> String {
+        var out = ""
+        for ch in raw where !ch.isNewline {
+            if (out + String(ch)).utf8.count > countdownPurposeMaxBytes { break }
+            out.append(ch)
+        }
+        return out
+    }
+
+    /// 要念／存的版本：去頭尾空白、連續空白收成一個、截到上限；空的回 nil。
+    static func sanitizedCountdownPurpose(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let collapsed = raw.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).joined(separator: " ")
+        let clamped = clampedCountdownPurposeInput(collapsed).trimmingCharacters(in: .whitespaces)
+        return clamped.isEmpty ? nil : clamped
+    }
+
+    var effectiveCountdownPurpose: String? {
+        effectiveChimeCountdown ? Self.sanitizedCountdownPurpose(chimeCountdownPurpose) : nil
+    }
+
     /// 倒數模式下每個時刻要念的「剩幾分鐘」（與 `chimeSlotTimes` 對齊）；不是倒數模式 → nil。
     var chimeSlotRemaining: [Int]? {
         guard effectiveChimeCountdown, let eh = chimeEndHour, let em = chimeEndMinute else { return nil }

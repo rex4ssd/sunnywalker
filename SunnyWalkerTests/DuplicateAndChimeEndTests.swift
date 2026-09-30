@@ -113,3 +113,52 @@ final class BurstSpanChipTests: XCTestCase {
         XCTAssertEqual(d.validated(fileExists: { _ in true }, recordingExists: { _ in true }).burstSpanSeconds, 12)
     }
 }
+
+/// 2026-09-30：倒數後面接「要做什麼」（剩十分鐘要上學）。
+final class CountdownPurposeTests: XCTestCase {
+    private let zh = Locale(identifier: "zh-Hant")
+    private let en = Locale(identifier: "en")
+
+    func testChineseAppendsPurpose() {
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 10, purpose: "要上學"),
+                       "剩十分鐘要上學")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 5, purpose: "要睡覺"),
+                       "剩五分鐘要睡覺")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 0, purpose: "要上學"),
+                       "時間到了，要上學")
+        // 沒填 → 跟以前一模一樣。
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 10, purpose: "  "),
+                       "剩十分鐘")
+    }
+
+    func testEnglishUsesUntil() {
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 10, purpose: "school"),
+                       "Ten minutes until school.")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 0, purpose: "bed"),
+                       "Time for bed.")
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 10),
+                       "Ten minutes left.")
+    }
+
+    /// 一般報時（不是倒數）不念 purpose。
+    func testTimeChimeIgnoresPurpose() {
+        XCTAssertEqual(ChimeSoundComposer.phrase(hour: 7, minute: 10, locale: zh, purpose: "要上學"), "早上七點十分")
+    }
+
+    func testLimitIsTenBytes() {
+        XCTAssertEqual(Alarm.clampedCountdownPurposeInput("要上學了"), "要上學")          // 中文 3 字
+        XCTAssertEqual(Alarm.clampedCountdownPurposeInput("piano lesson"), "piano less")  // 英文 10 字母
+        XCTAssertEqual(Alarm.clampedCountdownPurposeInput("要\n上學"), "要上學")          // 換行丟掉
+        XCTAssertEqual(Alarm.sanitizedCountdownPurpose("  to   bed "), "to bed")
+        XCTAssertNil(Alarm.sanitizedCountdownPurpose("   "))
+        XCTAssertNil(Alarm.sanitizedCountdownPurpose(nil))
+    }
+
+    func testOnlyCountdownAlarmsSpeakPurpose() {
+        let a = Alarm(label: "上學", hour: 7, minute: 0, taskType: .button)
+        a.chimeCountdownPurpose = "要上學"
+        XCTAssertNil(a.effectiveCountdownPurpose)            // 不是區間倒數
+        a.chimeEndHour = 7; a.chimeEndMinute = 30; a.chimeIntervalMinutes = 10; a.chimeCountdown = true
+        XCTAssertEqual(a.effectiveCountdownPurpose, "要上學")
+    }
+}

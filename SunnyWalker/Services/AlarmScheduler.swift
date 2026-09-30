@@ -307,8 +307,10 @@ final class AlarmScheduler {
         }
         if files == nil {
             let old = Set((alarm.chimeSlotSoundFiles ?? []) + [alarm.soundFileName])
+            let purpose = alarm.effectiveCountdownPurpose
             let composed = await Task.detached(priority: .userInitiated) {
-                ChimeSoundComposer.composeSlots(slots, locale: locale, voice: voice, remaining: remaining)
+                ChimeSoundComposer.composeSlots(slots, locale: locale, voice: voice, remaining: remaining,
+                                                purpose: purpose)
             }.value
             if let composed, let first = composed.first {
                 alarm.chimeSlotSoundFiles = composed
@@ -564,7 +566,8 @@ final class AlarmScheduler {
         let label = alarm.label.trimmingCharacters(in: .whitespaces)
         content.title = label.isEmpty ? L("chime_notification_title") : label
         content.body = ChimeSoundComposer.phrase(hour: hour, minute: minute, locale: locale,
-                                                 remainingMinutes: remainingMinutes)
+                                                 remainingMinutes: remainingMinutes,
+                                                 purpose: remainingMinutes == nil ? nil : alarm.effectiveCountdownPurpose)
         content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundFile))
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
         content.threadIdentifier = alarm.id.uuidString

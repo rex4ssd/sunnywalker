@@ -46,6 +46,8 @@ struct AlarmEditorView: View {
     /// 倒數報時：區間報時時不念時刻，改念「剩 30 分鐘、剩 20 分鐘…」。
     @State private var chimeCountdown = false
     /// 報時人聲（女／男）。
+    /// 倒數要念的事（例：要上學）。
+    @State private var chimePurpose = ""
     @State private var chimeVoice: ChimeVoiceGender = .female
     /// 儲存時正在背景合成報時語音（區間報時最多 12 句、每句約 1 秒）→ 顯示進度、擋重複儲存。
     @State private var isComposingChime = false
@@ -100,6 +102,7 @@ struct AlarmEditorView: View {
         var chimeEndMinute: Int
         var chimeInterval: Int
         var chimeCountdown: Bool
+        var chimePurpose: String
         var chimeVoice: ChimeVoiceGender
         var todoIcon: TodoIcon
         var todoDuration: Int
@@ -132,6 +135,7 @@ struct AlarmEditorView: View {
             chimeEndMinute: endComps.minute ?? 0,
             chimeInterval: chimeIntervalMinutes,
             chimeCountdown: chimeCountdown,
+            chimePurpose: chimePurpose,
             chimeVoice: chimeVoice,
             todoIcon: todoIcon,
             todoDuration: todoDuration,
@@ -209,6 +213,7 @@ struct AlarmEditorView: View {
             _chimeEndTime = State(initialValue: Calendar.current.date(from: endComps) ?? t)
             _chimeIntervalMinutes = State(initialValue: max(1, a.chimeIntervalMinutes ?? 5))
             _chimeCountdown = State(initialValue: a.chimeCountdown ?? false)
+            _chimePurpose = State(initialValue: a.chimeCountdownPurpose ?? "")
             _chimeVoice = State(initialValue: a.effectiveChimeVoice)
             _showAdvanced = State(initialValue: a.effectiveBackgroundMode == .notification
                                   || (!a.recordingName.isEmpty && a.effectiveTaskType == .voice))
@@ -237,6 +242,7 @@ struct AlarmEditorView: View {
                 chimeEndMinute: endM,
                 chimeInterval: max(1, a.chimeIntervalMinutes ?? 5),
                 chimeCountdown: a.chimeCountdown ?? false,
+                chimePurpose: a.chimeCountdownPurpose ?? "",
                 chimeVoice: a.effectiveChimeVoice,
                 todoIcon: a.effectiveTodoIcon,
                 todoDuration: a.effectiveTodoDurationMinutes,
@@ -285,6 +291,7 @@ struct AlarmEditorView: View {
             let endParts = Calendar.current.dateComponents([.hour, .minute], from: end)
             _chimeIntervalMinutes = State(initialValue: d.chimeIntervalMinutes)
             _chimeCountdown   = State(initialValue: d.chimeCountdown)
+            _chimePurpose     = State(initialValue: d.chimeCountdownPurpose ?? "")
             _chimeVoice       = State(initialValue: d.chimeVoice)
             _showAdvanced     = State(initialValue: d.notificationMode || voice)
             _todoIcon         = State(initialValue: d.todoIcon)
@@ -307,6 +314,7 @@ struct AlarmEditorView: View {
                 chimeEndMinute: endParts.minute ?? 0,
                 chimeInterval: d.chimeIntervalMinutes,
                 chimeCountdown: d.chimeCountdown,
+                chimePurpose: d.chimeCountdownPurpose ?? "",
                 chimeVoice: d.chimeVoice,
                 todoIcon: d.todoIcon,
                 todoDuration: d.todoDurationMinutes,
@@ -341,6 +349,7 @@ struct AlarmEditorView: View {
                                 endTime: $chimeEndTime,
                                 intervalMinutes: $chimeIntervalMinutes,
                                 countdown: $chimeCountdown,
+                                purpose: $chimePurpose,
                                 voice: $chimeVoice,
                                 previewState: chimePreviewState,
                                 onPreview: { previewChime() },
@@ -401,6 +410,7 @@ struct AlarmEditorView: View {
             .onChange(of: chimeIntervalOn) { _, _ in refreshChimePreview() }
             .onChange(of: chimeCountdown) { _, _ in refreshChimePreview() }
             .onChange(of: chimeVoice) { _, _ in refreshChimePreview() }
+            .onChange(of: chimePurpose) { _, _ in refreshChimePreview() }
             .onChange(of: chimeActive) { _, _ in refreshChimePreview() }
             .onDisappear { chimePreviewTask?.cancel() }
             .alert("todo_needs_recording_title", isPresented: $showingTodoNeedsRecording) {
@@ -1118,7 +1128,8 @@ struct AlarmEditorView: View {
     }
 
     /// 試聽會念的內容（起時刻 + 人聲 + 倒數的第一句）。
-    private func chimePreviewSpec() -> (hour: Int, minute: Int, left: Int?, voice: ChimeVoiceGender, locale: Locale, key: String) {
+    private func chimePreviewSpec() -> (hour: Int, minute: Int, left: Int?, purpose: String?,
+                                        voice: ChimeVoiceGender, locale: Locale, key: String) {
         let comps = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
         let h = comps.hour ?? 7
         let m = comps.minute ?? 0
@@ -1129,8 +1140,10 @@ struct AlarmEditorView: View {
             if span > 0 { left = span }
         }
         let loc = SunnyLocalization.locale
+        let what = left == nil ? nil : Alarm.sanitizedCountdownPurpose(chimePurpose)
         let key = "\(h)-\(m)-\(left.map(String.init) ?? "t")-\(chimeVoice.rawValue)-\(ChimeSoundComposer.languageTag(for: loc))"
-        return (h, m, left, chimeVoice, loc, key)
+            + (what.map { "-\(abs($0.hashValue))" } ?? "")
+        return (h, m, left, what, chimeVoice, loc, key)
     }
 
     /// 在背景把試聽音合成好；內容沒變就不重做。播放中改設定 → 停掉再重合成。
@@ -1152,7 +1165,8 @@ struct AlarmEditorView: View {
             // 試聽寫到 tmp（以前每按一次就在 Library/Sounds 留一個孤兒檔）；合成含 semaphore 等待，不能在 main。
             let url = await Task.detached(priority: .userInitiated) {
                 ChimeSoundComposer.composePreview(hour: spec.hour, minute: spec.minute, locale: spec.locale,
-                                                  voice: spec.voice, remainingMinutes: spec.left, tag: spec.key)
+                                                  voice: spec.voice, remainingMinutes: spec.left,
+                                                  purpose: spec.purpose, tag: spec.key)
             }.value
             guard !Task.isCancelled, chimePreviewKey == spec.key else { return }
             chimePreviewURL = url
@@ -1374,6 +1388,7 @@ struct AlarmEditorView: View {
             tempAlarm.chimeEndMinute = nil
             tempAlarm.chimeIntervalMinutes = nil
             tempAlarm.chimeCountdown = nil
+            tempAlarm.chimeCountdownPurpose = nil
             tempAlarm.chimeVoice = nil
         }
         if chimeOn {
@@ -1383,11 +1398,13 @@ struct AlarmEditorView: View {
                 tempAlarm.chimeEndMinute = endComps.minute ?? 0
                 tempAlarm.chimeIntervalMinutes = chimeIntervalMinutes
                 tempAlarm.chimeCountdown = chimeCountdown
+                tempAlarm.chimeCountdownPurpose = chimeCountdown ? Alarm.sanitizedCountdownPurpose(chimePurpose) : nil
             } else {
                 tempAlarm.chimeEndHour = nil
                 tempAlarm.chimeEndMinute = nil
                 tempAlarm.chimeIntervalMinutes = nil
                 tempAlarm.chimeCountdown = nil     // 倒數要有「迄」才成立
+                tempAlarm.chimeCountdownPurpose = nil
             }
             tempAlarm.chimeVoice = chimeVoice.rawValue
             tempAlarm.todoIcon = nil
@@ -1439,13 +1456,15 @@ struct AlarmEditorView: View {
                 chimeVoice: chimeVoice,
                 todoIcon: todoIcon,
                 todoDurationMinutes: todoDuration,
-                burstSpanSeconds: burstSpan
+                burstSpanSeconds: burstSpan,
+                chimeCountdownPurpose: chimeCountdown ? Alarm.sanitizedCountdownPurpose(chimePurpose) : nil
             ).store()
         }
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
 
         let chimeSlots = tempAlarm.chimeSlotTimes
         let chimeRemaining = tempAlarm.chimeSlotRemaining   // 倒數模式才有值
+        let chimePurposeSpoken = tempAlarm.effectiveCountdownPurpose
         let chimeLocale = SunnyLocalization.locale
         let chimeVoiceChoice = chimeVoice
         Task {
@@ -1455,7 +1474,7 @@ struct AlarmEditorView: View {
                 withAnimation { isComposingChime = true }
                 let files = await Task.detached(priority: .userInitiated) {
                     ChimeSoundComposer.composeSlots(chimeSlots, locale: chimeLocale, voice: chimeVoiceChoice,
-                                                    remaining: chimeRemaining)
+                                                    remaining: chimeRemaining, purpose: chimePurposeSpoken)
                 }.value
                 await MainActor.run {
                     if let files, let first = files.first {
@@ -1675,6 +1694,8 @@ struct NewAlarmDefaults: Codable, Equatable {
     /// 切段響鈴總長。Optional：舊版存的 JSON 沒有這個 key 也要解得開（非 Optional 會整份解碼失敗、
     /// 家長記住的預設全部消失）。nil → 編輯頁用最接近全域值的圓鈕。
     var burstSpanSeconds: Int? = nil
+    /// 倒數要念的事（例：要上學）。Optional，理由同上。
+    var chimeCountdownPurpose: String? = nil
 
     static let storageKey = "newAlarmDefaults"
 
@@ -1714,6 +1735,7 @@ struct NewAlarmDefaults: Codable, Equatable {
         d.chimeSpanMinutes = max(1, d.chimeSpanMinutes)
         d.todoDurationMinutes = max(0, d.todoDurationMinutes)
         if let b = d.burstSpanSeconds, !Alarm.burstSpanOptions.contains(b) { d.burstSpanSeconds = nil }
+        d.chimeCountdownPurpose = Alarm.sanitizedCountdownPurpose(d.chimeCountdownPurpose)
         return d
     }
 
@@ -1741,6 +1763,7 @@ extension NewAlarmDefaults {
         notificationMode = a.effectiveBackgroundMode == .notification
         segmentedBurst = a.effectiveSegmentedBurst
         burstSpanSeconds = a.chosenBurstSpanSeconds
+        chimeCountdownPurpose = a.chimeCountdownPurpose
         groupIndex = a.effectiveGroupIndex
         chimeCount = a.effectiveChimeCount
         chimeIntervalOn = (a.chimeIntervalMinutes ?? 0) > 0 && a.chimeEndHour != nil

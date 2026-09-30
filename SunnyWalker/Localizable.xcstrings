@@ -410,6 +410,30 @@
         "zh-Hant": { "stringUnit": { "state": "translated", "value": "長度" } }
       }
     },
+    "chime_purpose_example %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Will say: “%@”" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "會念：「%@」" } }
+      }
+    },
+    "chime_purpose_hint": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Optional — e.g. “school” → “Ten minutes until school.” Up to 10 letters." } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "選填：例如「要上學」→ 剩十分鐘要上學。最多 3 個字。" } }
+      }
+    },
+    "chime_purpose_label": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Say what" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "要做什麼" } }
+      }
+    },
+    "chime_purpose_placeholder": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "school" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "要上學" } }
+      }
+    },
     "chime_card_subtitle": {
       "localizations": {
         "en": {

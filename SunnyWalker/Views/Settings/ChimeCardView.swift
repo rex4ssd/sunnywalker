@@ -27,6 +27,8 @@ struct ChimeCardView: View {
     @Binding var intervalMinutes: Int
     /// 倒數：不念時刻，改念「剩 30 分鐘、剩 20 分鐘…」。
     @Binding var countdown: Bool
+    /// 倒數時接在「剩 N 分鐘」後面念的事（例：要上學）。
+    @Binding var purpose: String
     @Binding var voice: ChimeVoiceGender
     let previewState: ChimePreviewState
     let onPreview: () -> Void
@@ -137,6 +139,49 @@ struct ChimeCardView: View {
     }
 
     // MARK: - Pieces
+
+    /// 倒數的第一句（例：剩二十五分鐘要上學）——讓家長看到實際會念什麼。
+    private var purposeExample: String? {
+        guard let what = Alarm.sanitizedCountdownPurpose(purpose), !endIsBeforeStart else { return nil }
+        let (eh, em) = endHM
+        guard let first = Alarm.chimeRemainingMinutes(slots: slots, endHour: eh, endMinute: em).first else { return nil }
+        return ChimeSoundComposer.phrase(hour: 0, minute: 0, locale: SunnyLocalization.locale,
+                                         remainingMinutes: first, purpose: what)
+    }
+
+    @ViewBuilder
+    private var purposeRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
+                Label("chime_purpose_label", systemImage: "text.bubble")
+                    .font(SunnyFonts.caption())
+                    .foregroundStyle(SunnyColors.nightIndigo)
+                    .fixedSize()
+                Spacer(minLength: 8)
+                TextField(text: $purpose, prompt: Text("chime_purpose_placeholder")) {
+                    Text("chime_purpose_label")
+                }
+                .font(SunnyFonts.caption())
+                .foregroundStyle(SunnyColors.nightIndigo)
+                .multilineTextAlignment(.trailing)
+                .textInputAutocapitalization(.never)   // 句中念的字：英文不要自動大寫（…until school）
+                .submitLabel(.done)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .frame(maxWidth: 160)
+                .background(RoundedRectangle(cornerRadius: 8).fill(SunnyColors.sunnyGray.opacity(0.10)))
+                // 打字當下就截長度（中文 3 字／英文 10 字母）：念太長會超過通知音的安全秒數。
+                .onChange(of: purpose) { _, new in
+                    let clamped = Alarm.clampedCountdownPurposeInput(new)
+                    if clamped != new { purpose = clamped }
+                }
+            }
+            Text(purposeExample.map { L("chime_purpose_example %@", $0) } ?? L("chime_purpose_hint"))
+                .font(SunnyFonts.caption(12))
+                .foregroundStyle(purposeExample == nil ? SunnyColors.sunnyGray.opacity(0.8) : SunnyColors.forestDeep)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
 
     private var header: some View {
         // 不放左側喇叭圖示：讓說明多一點寬度、一行放得下（Rex 2026-09-24：這段少一行高度）。
@@ -256,6 +301,11 @@ struct ChimeCardView: View {
         }
         .tint(SunnyColors.lanternOrange)
 
+        // 倒數要念的事（Rex 2026-09-30）：剩十分鐘「要上學」。上限見 Alarm.countdownPurposeMaxBytes。
+        if countdown {
+            purposeRow
+        }
+
         // 會報哪些時刻——所見即所得，家長不用猜「迄」有沒有算進去。
         if endIsBeforeStart {
             Label("chime_end_before_start", systemImage: "exclamationmark.triangle.fill")
@@ -318,6 +368,7 @@ struct ChimeCardView: View {
             endTime: .constant(Date().addingTimeInterval(1800)),
             intervalMinutes: .constant(10),
             countdown: .constant(true),
+            purpose: .constant("要上學"),
             voice: .constant(.female),
             previewState: .ready,
             onPreview: {},
