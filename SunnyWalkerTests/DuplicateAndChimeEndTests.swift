@@ -61,3 +61,55 @@ final class DuplicateAlarmTemplateTests: XCTestCase {
         XCTAssertTrue(NewAlarmDefaults(copying: a).labelFollowsTime)
     }
 }
+
+/// 2026-09-30：切段長度改成每顆鬧鐘選 4／8／12／14 秒（圓鈕）。
+final class BurstSpanChipTests: XCTestCase {
+    func testOffsetsMatchSchedulerRules() {
+        // 一段 3 秒 + 間隔 2 秒 → 每 5 秒一聲。
+        XCTAssertEqual(AlarmScheduler.burstOffsets(voiceSeconds: 3, gap: 2, span: 4), [])        // 只響一次
+        XCTAssertEqual(AlarmScheduler.burstOffsets(voiceSeconds: 3, gap: 2, span: 12), [5, 10])
+        XCTAssertEqual(AlarmScheduler.burstOffsets(voiceSeconds: 3, gap: 2, span: 14), [5, 10])
+        // 很短的聲音：間距最少 2 秒。
+        XCTAssertEqual(AlarmScheduler.burstOffsets(voiceSeconds: 0.5, gap: 0, span: 8), [2, 4, 6, 8])
+        XCTAssertEqual(AlarmScheduler.burstOffsets(voiceSeconds: 1.2, gap: 1, span: 8), [3, 6])
+    }
+
+    func testNearestChipPrefersLongerOnTie() {
+        XCTAssertEqual(Alarm.nearestBurstSpan(to: 10), 12)   // 舊預設 10 秒 → 12
+        XCTAssertEqual(Alarm.nearestBurstSpan(to: 6), 8)
+        XCTAssertEqual(Alarm.nearestBurstSpan(to: 7), 8)
+        XCTAssertEqual(Alarm.nearestBurstSpan(to: 30), 14)
+        XCTAssertEqual(Alarm.nearestBurstSpan(to: 1), 4)
+    }
+
+    func testOnlyChipValuesCountAsChosen() {
+        let a = Alarm(label: "起床囉", hour: 7, minute: 0, taskType: .button)
+        XCTAssertNil(a.chosenBurstSpanSeconds)              // 舊資料 → 用全域值
+        a.burstSpanSeconds = 10
+        XCTAssertNil(a.chosenBurstSpanSeconds)              // 不在圓鈕上的值不算
+        a.burstSpanSeconds = 8
+        XCTAssertEqual(a.chosenBurstSpanSeconds, 8)
+    }
+
+    /// 舊版存的「新增鬧鐘預設」沒有 burstSpanSeconds：一定要解得開，否則家長記住的預設全部消失。
+    func testLegacyNewAlarmDefaultsStillDecode() throws {
+        var legacy = NewAlarmDefaults()
+        legacy.label = "上學囉"
+        legacy.segmentedBurst = true
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        json.removeValue(forKey: "burstSpanSeconds")
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(NewAlarmDefaults.self, from: data)
+        XCTAssertEqual(decoded.label, "上學囉")
+        XCTAssertTrue(decoded.segmentedBurst)
+        XCTAssertNil(decoded.burstSpanSeconds)
+    }
+
+    func testDefaultsDropInvalidSpan() {
+        var d = NewAlarmDefaults()
+        d.burstSpanSeconds = 30
+        XCTAssertNil(d.validated(fileExists: { _ in true }, recordingExists: { _ in true }).burstSpanSeconds)
+        d.burstSpanSeconds = 12
+        XCTAssertEqual(d.validated(fileExists: { _ in true }, recordingExists: { _ in true }).burstSpanSeconds, 12)
+    }
+}

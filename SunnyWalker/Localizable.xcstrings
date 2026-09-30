@@ -374,6 +374,42 @@
         }
       }
     },
+    "burst_gap_in_settings": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The gap between segments can be changed in Settings." } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "段間隔可在「設定」調整。" } }
+      }
+    },
+    "burst_plays_hint %@ %lld": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Each play is about %1$@ s → plays %2$lld times." } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "一段約 %1$@ 秒 → 共響 %2$lld 次。" } }
+      }
+    },
+    "burst_plays_once_hint %@ %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Each play is about %1$@ s, longer than %2$@ s → it only plays once." } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "一段約 %1$@ 秒，比 %2$@ 秒長 → 只會響一次。" } }
+      }
+    },
+    "burst_seconds_unit": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "s" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "秒" } }
+      }
+    },
+    "burst_span_accessibility %@": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ seconds" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "%@ 秒" } }
+      }
+    },
+    "burst_span_label": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Length" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "長度" } }
+      }
+    },
     "chime_card_subtitle": {
       "localizations": {
         "en": {

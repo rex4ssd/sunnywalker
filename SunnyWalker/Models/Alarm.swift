@@ -121,6 +121,11 @@ final class Alarm {
     /// Optional + default nil 配合 SwiftData lightweight migration。讀取請用 `effectiveSegmentedBurst`。
     var segmentedBurst: Bool? = nil
 
+    /// 切段響鈴的總長（秒）——編輯頁像選星期一樣按一顆圓鈕：4／8／12／14（Rex 2026-09-30）。
+    /// nil（舊資料）→ 沿用設定頁的全域值（AppSettings.effectiveBurstSpanSeconds），行為完全不變。
+    /// Optional + default nil 配合 SwiftData lightweight migration。
+    var burstSpanSeconds: Int? = nil
+
     /// 多人鬧鐘的群組索引（0 = 群組 A／預設、1 = B … 4 = E）。
     /// 群組功能由家長在設定頁開關（AppSettings.groupEnabled / groupCount / groupNames）；
     /// 未啟用時所有鬧鐘都視為群組 A。Optional + default nil 配合 SwiftData lightweight migration
@@ -184,6 +189,22 @@ final class Alarm {
 
     /// 溫和提醒「切段響滿 30s」是否開啟。nil（舊資料 / 未設）→ false（只響一次、不堆疊通知）。
     var effectiveSegmentedBurst: Bool { segmentedBurst ?? false }
+
+    /// 編輯頁的切段長度圓鈕。
+    static let burstSpanOptions = [4, 8, 12, 14]
+
+    /// 這顆鬧鐘自己選的切段長度；沒選過（舊資料）或不在選項內 → nil，由呼叫端用全域值。
+    var chosenBurstSpanSeconds: Int? {
+        burstSpanSeconds.flatMap { Self.burstSpanOptions.contains($0) ? $0 : nil }
+    }
+
+    /// 最接近 `seconds` 的圓鈕（一樣近取較長的）——舊資料進編輯頁時預選用。
+    static func nearestBurstSpan(to seconds: Int) -> Int {
+        burstSpanOptions.min { a, b in
+            let da = abs(a - seconds), db = abs(b - seconds)
+            return da != db ? da < db : a > b
+        } ?? 8
+    }
 
     /// 群組索引——nil（舊資料 / 未設定）→ 0（群組 A）。請一律用這個讀取，並 clamp 到 0...4。
     var effectiveGroupIndex: Int {

@@ -1,5 +1,6 @@
 // SunnyWalker — AlarmEditorView.swift  |  Day 24  |  edit mode support
 
+import AVFAudio
 import SwiftUI
 import SwiftData
 
@@ -30,6 +31,10 @@ struct AlarmEditorView: View {
     @State private var useNotificationMode = false
     /// 切段：溫和提醒模式下，是否把語音堆成 ~30s（gentle-repeat burst）。預設 off，只響一次。
     @State private var segmentedBurst = false
+    /// 切段響鈴總長（秒）：4／8／12／14 圓鈕。
+    @State private var burstSpan = 8
+    /// 目前鈴聲一段有幾秒（算「共響 N 次」用）；讀不到檔 → nil，就不顯示次數。
+    @State private var soundSeconds: Double? = nil
     /// 多人鬧鐘群組索引（0 = 群組 A，預設）。只有在 settings.groupEnabled 時才顯示選擇器、存回鬧鐘。
     @State private var selectedGroupIndex = 0
     /// 報時次數（報時鬧鐘專用）：時間到要連報幾次。
@@ -87,6 +92,7 @@ struct AlarmEditorView: View {
         var customPhrase: String
         var notificationMode: Bool
         var segmentedBurst: Bool
+        var burstSpan: Int
         var groupIndex: Int
         var chimeCount: Int
         var chimeIntervalOn: Bool
@@ -118,6 +124,7 @@ struct AlarmEditorView: View {
             customPhrase: customPhrase,
             notificationMode: useNotificationMode,
             segmentedBurst: segmentedBurst,
+            burstSpan: burstSpan,
             groupIndex: selectedGroupIndex,
             chimeCount: chimeCount,
             chimeIntervalOn: chimeIntervalOn,
@@ -187,6 +194,10 @@ struct AlarmEditorView: View {
             _customPhrase     = State(initialValue: a.customDismissPhrase ?? "")
             _useNotificationMode = State(initialValue: a.effectiveBackgroundMode == .notification)
             _segmentedBurst = State(initialValue: a.effectiveSegmentedBurst)
+            // 沒選過長度的舊鬧鐘：預選最接近全域值的那顆（存檔才寫進這顆鬧鐘，所見即所得）。
+            let span = a.chosenBurstSpanSeconds ?? Alarm.nearestBurstSpan(
+                to: MainActor.assumeIsolated { AppSettings.shared.effectiveBurstSpanSeconds })
+            _burstSpan = State(initialValue: span)
             _selectedGroupIndex = State(initialValue: a.effectiveGroupIndex)
             _chimeCount = State(initialValue: a.effectiveChimeCount)
             // 區間報時：有迄時刻 + 間隔 → 開；否則迄預設＝起 + 30 分（家長一打開開關就有合理值）。
@@ -218,6 +229,7 @@ struct AlarmEditorView: View {
                 customPhrase: a.customDismissPhrase ?? "",
                 notificationMode: a.effectiveBackgroundMode == .notification,
                 segmentedBurst: a.effectiveSegmentedBurst,
+                burstSpan: span,
                 groupIndex: a.effectiveGroupIndex,
                 chimeCount: a.effectiveChimeCount,
                 chimeIntervalOn: intervalOn,
@@ -261,6 +273,9 @@ struct AlarmEditorView: View {
             _customPhrase     = State(initialValue: d.customPhrase)
             _useNotificationMode = State(initialValue: d.notificationMode)
             _segmentedBurst   = State(initialValue: d.segmentedBurst)
+            let span = d.burstSpanSeconds ?? Alarm.nearestBurstSpan(
+                to: MainActor.assumeIsolated { AppSettings.shared.effectiveBurstSpanSeconds })
+            _burstSpan        = State(initialValue: span)
             _selectedGroupIndex = State(initialValue: d.groupIndex)
             _chimeCount       = State(initialValue: d.chimeCount)
             _chimeIntervalOn  = State(initialValue: d.chimeIntervalOn)
@@ -284,6 +299,7 @@ struct AlarmEditorView: View {
                 customPhrase: d.customPhrase,
                 notificationMode: d.notificationMode,
                 segmentedBurst: d.segmentedBurst,
+                burstSpan: span,
                 groupIndex: d.groupIndex,
                 chimeCount: d.chimeCount,
                 chimeIntervalOn: d.chimeIntervalOn,
@@ -367,6 +383,9 @@ struct AlarmEditorView: View {
             // 打開區間／倒數時，迄若不在起之後（例如新增頁的迄是「現在＋30」、起已轉到 07:00）→ 對齊成起＋區間長度。
             .onChange(of: chimeIntervalOn) { _, on in if on { alignChimeEndIfNeeded() } }
             .onChange(of: chimeCountdown) { _, on in if on { alignChimeEndIfNeeded() } }
+            .onAppear { refreshSoundSeconds() }
+            .onChange(of: tempAlarm.soundFileName) { _, _ in refreshSoundSeconds() }
+            .onChange(of: tempAlarm.recordingName) { _, _ in refreshSoundSeconds() }
             .onChange(of: tempAlarm.recordingName) { _, newValue in
                 if newValue.isEmpty, selectedTaskType == .voice {
                     selectedTaskType = .button
@@ -952,24 +971,49 @@ struct AlarmEditorView: View {
                     Divider()
                     Toggle(isOn: $segmentedBurst) {
                         VStack(alignment: .leading, spacing: 3) {
-                            // 秒數跟著設定走（10/20/30），不再寫死 30——否則家長把持續時間調成
-                            // 10 秒後，這裡還寫「響滿 30 秒」就是騙人的。
-                            Label(L("切段響滿 %@ 秒", String(settings.effectiveBurstSpanSeconds)),
+                            Label(L("切段響滿 %@ 秒", String(burstSpan)),
                                   systemImage: segmentedBurst ? "waveform.badge.plus" : "waveform")
                                 .font(SunnyFonts.caption())
                                 .foregroundStyle(SunnyColors.nightIndigo)
                             Text(L("把語音切成多段、用堆疊通知重複響到約 %@ 秒；關閉時只響一下（較短）。",
-                                   String(settings.effectiveBurstSpanSeconds)))
+                                   String(burstSpan)))
                                 .font(SunnyFonts.caption(13))
                                 .foregroundStyle(SunnyColors.sunnyGray.opacity(0.82))
                         }
                     }
                     .tint(SunnyColors.lanternOrange)
 
-                    // 警告只在切段「開啟」時出現——關閉時是單通知、可靠響一下，沒什麼好警告的。
                     if segmentedBurst {
-                        Label(L("切段可能被 iPhone 在幾秒內關掉，不保證響滿 %@ 秒。",
-                                String(settings.effectiveBurstSpanSeconds)),
+                        // 長度：像選星期一樣按一顆（4／8／12／14 秒）。Rex 2026-09-30。
+                        HStack(spacing: 8) {
+                            Text("burst_span_label")
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                            Spacer(minLength: 4)
+                            ForEach(Alarm.burstSpanOptions, id: \.self) { secs in
+                                BurstSpanChip(seconds: secs, isSelected: burstSpan == secs) {
+                                    burstSpan = secs
+                                }
+                            }
+                            Text("burst_seconds_unit")
+                                .font(SunnyFonts.caption(14))
+                                .foregroundStyle(SunnyColors.sunnyGray)
+                        }
+
+                        // 實際會響幾聲：一段語音比選的長度還長 → 只響一次（選 4 秒常見），要講清楚。
+                        if let secs = soundSeconds {
+                            let plays = 1 + AlarmScheduler.burstOffsets(
+                                voiceSeconds: secs, gap: settings.burstGapSeconds, span: burstSpan).count
+                            Text(plays > 1
+                                 ? L("burst_plays_hint %@ %lld", String(Int(ceil(secs))), plays)
+                                 : L("burst_plays_once_hint %@ %@", String(Int(ceil(secs))), String(burstSpan)))
+                                .font(SunnyFonts.caption(12))
+                                .foregroundStyle(plays > 1 ? SunnyColors.forestDeep : SunnyColors.lanternOrange.opacity(0.95))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        // 警告只在切段「開啟」時出現——關閉時是單通知、可靠響一下，沒什麼好警告的。
+                        Label(L("切段可能被 iPhone 在幾秒內關掉，不保證響滿 %@ 秒。", String(burstSpan)),
                               systemImage: "exclamationmark.triangle.fill")
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.lanternOrange.opacity(0.95))
@@ -977,7 +1021,7 @@ struct AlarmEditorView: View {
                         // 段間隔（1/2 秒）是全域設定，住在 設定 >「切段間隔」——不放這裡，
                         // 因為本編輯器的欄位都是暫存、按「儲存」才生效，全域設定立即寫入會
                         // 讓「按取消卻改到了東西」。這行只指路。
-                        Text(LocalizedStringKey("持續時間與段間隔可在「設定」調整。"))
+                        Text("burst_gap_in_settings")
                             .font(SunnyFonts.caption(12))
                             .foregroundStyle(SunnyColors.sunnyGray.opacity(0.7))
                     }
@@ -1012,6 +1056,22 @@ struct AlarmEditorView: View {
     }
 
     // MARK: - Preview
+
+    /// 目前鈴聲在通知裡「一段」有幾秒——只在切段時用來算「共響幾次」，要跟 AlarmScheduler 實際播的一致：
+    /// 內建鈴聲（bundle 裡 18–20 秒）通知模式播的是修剪成 `AlarmSoundExporter.bundledSafeSeconds` 的短版；
+    /// 錄音播的是 Library/Sounds 裡匯出的 CAF 原長。
+    private func refreshSoundSeconds() {
+        func seconds(_ url: URL) -> Double? {
+            guard let f = try? AVAudioFile(forReading: url), f.fileFormat.sampleRate > 0 else { return nil }
+            return max(1, Double(f.length) / f.fileFormat.sampleRate)
+        }
+        let name = builtinSoundFile
+        if tempAlarm.recordingName.isEmpty, let bundled = Bundle.main.url(forResource: name, withExtension: nil) {
+            soundSeconds = seconds(bundled).map { min($0, AlarmSoundExporter.bundledSafeSeconds) }
+        } else {
+            soundSeconds = seconds(AppPaths.soundURL(named: name))
+        }
+    }
 
     // MARK: - 區間報時：迄跟著起走
 
@@ -1290,6 +1350,7 @@ struct AlarmEditorView: View {
         tempAlarm.backgroundRingMode = useNotificationMode ? .notification : .alarmKit
         // 切段只在溫和提醒模式下有意義；非通知模式一律存 false。
         tempAlarm.segmentedBurst = useNotificationMode ? segmentedBurst : false
+        tempAlarm.burstSpanSeconds = burstSpan
         // 群組：只有啟用分組時才寫回（未啟用時保留鬧鐘原本的 groupIndex，不強制歸 0）。
         if settings.groupEnabled {
             tempAlarm.groupIndex = selectedGroupIndex
@@ -1377,7 +1438,8 @@ struct AlarmEditorView: View {
                 chimeCountdown: chimeCountdown,
                 chimeVoice: chimeVoice,
                 todoIcon: todoIcon,
-                todoDurationMinutes: todoDuration
+                todoDurationMinutes: todoDuration,
+                burstSpanSeconds: burstSpan
             ).store()
         }
         // (Edit mode: tempAlarm IS the existing @Model object — SwiftData tracks changes automatically)
@@ -1451,6 +1513,27 @@ private struct WeekdayChip: View {
                 )
         }
         .sunnyButtonStyle()
+    }
+}
+
+// MARK: - BurstSpanChip（切段長度：跟星期圓鈕同一個樣子）
+
+private struct BurstSpanChip: View {
+    let seconds: Int
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            Text(verbatim: String(seconds))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(isSelected ? .white : SunnyColors.sunnyGray)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(isSelected ? SunnyColors.lanternOrange : SunnyColors.sunnyGray.opacity(0.12)))
+        }
+        .sunnyButtonStyle()
+        .accessibilityLabel(Text(L("burst_span_accessibility %@", String(seconds))))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -1589,6 +1672,9 @@ struct NewAlarmDefaults: Codable, Equatable {
     var chimeVoice: ChimeVoiceGender = .female
     var todoIcon: TodoIcon = .balloon
     var todoDurationMinutes = 10
+    /// 切段響鈴總長。Optional：舊版存的 JSON 沒有這個 key 也要解得開（非 Optional 會整份解碼失敗、
+    /// 家長記住的預設全部消失）。nil → 編輯頁用最接近全域值的圓鈕。
+    var burstSpanSeconds: Int? = nil
 
     static let storageKey = "newAlarmDefaults"
 
@@ -1627,6 +1713,7 @@ struct NewAlarmDefaults: Codable, Equatable {
         if !Alarm.chimeIntervalOptions.contains(d.chimeIntervalMinutes) { d.chimeIntervalMinutes = 5 }
         d.chimeSpanMinutes = max(1, d.chimeSpanMinutes)
         d.todoDurationMinutes = max(0, d.todoDurationMinutes)
+        if let b = d.burstSpanSeconds, !Alarm.burstSpanOptions.contains(b) { d.burstSpanSeconds = nil }
         return d
     }
 
@@ -1653,6 +1740,7 @@ extension NewAlarmDefaults {
         customPhrase = a.customDismissPhrase ?? ""
         notificationMode = a.effectiveBackgroundMode == .notification
         segmentedBurst = a.effectiveSegmentedBurst
+        burstSpanSeconds = a.chosenBurstSpanSeconds
         groupIndex = a.effectiveGroupIndex
         chimeCount = a.effectiveChimeCount
         chimeIntervalOn = (a.chimeIntervalMinutes ?? 0) > 0 && a.chimeEndHour != nil

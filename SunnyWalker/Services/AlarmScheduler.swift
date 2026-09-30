@@ -613,6 +613,20 @@ final class AlarmScheduler {
     /// 之後沒有更多通知 → 自然停（溫和、不續電）。每次 `schedule()` 都重排下一次的 burst
     /// （app 前景/背景常 re-arm）。即使被殺多天沒開 app，baseline 那顆 repeating 仍會響一段完整語音。
     /// ⚠️ iOS 每 app pending 上限 64：用 runtime pending 計數自我設限，先到先得，後面的鬧鐘自動少排。
+    /// 純函式（可測；編輯頁「共響 N 次」也用它，兩邊算法一致）：切段連響第 2…N 聲相對第 1 聲的秒數。
+    /// 兩聲間距＝一段語音長度 + 切段間隔（1 或 2 秒，最少 2 秒）；不超過 `span`，且秒位 < 60
+    /// （留在同一分鐘內，避免跨分鐘 DateComponents 複雜化）。第 1 聲（第 0 秒）是 baseline，不在回傳裡。
+    nonisolated static func burstOffsets(voiceSeconds: Double, gap: Int, span: Int) -> [Int] {
+        let period = max(2, Int(ceil(voiceSeconds)) + max(0, gap))
+        var offsets: [Int] = []
+        var t = period
+        while t <= span && t < 60 {
+            offsets.append(t)
+            t += period
+        }
+        return offsets
+    }
+
     /// 切段連響只預排這麼近的發生（秒）。
     static let burstPrearmHorizon: TimeInterval = 48 * 3600
 
@@ -626,19 +640,10 @@ final class AlarmScheduler {
         // 兩顆通知 fire 時間的間距（秒）＝一段語音長度 + 切段間隔（burstGapSeconds，1 或 2，預設 2）。
         // 2026-08-14 起與 recordingGapSeconds 脫鉤：那顆同時控制 in-app 循環播放；多裝置實測
         // 通知沒聲音時要能單獨調切段間距（1s vs 2s 對照）而不改響鈴節奏。
-        let gap = max(0, AppSettings.shared.burstGapSeconds)
-        let period = max(2, Int(ceil(voiceSeconds)) + gap)
-        // 目標總響鈴長度（秒）——家長可在設定選 10/20/30，預設 30（原本寫死的值）。
-        let targetSpan = AppSettings.shared.effectiveBurstSpanSeconds
-
-        // slot 0 = baseline 那顆（已在 fireDate 第 0 秒排好），這裡只補 slot 1…N。
-        // 秒位須 < 60（留在同一分鐘內，避免跨分鐘 DateComponents 複雜化），且不超過 targetSpan。
-        var offsets: [Int] = []
-        var t = period
-        while t <= targetSpan && t < 60 {
-            offsets.append(t)
-            t += period
-        }
+        // 目標總響鈴長度（秒）——每顆鬧鐘在編輯頁選 4／8／12／14；舊資料沒選過 → 設定頁的全域值。
+        let targetSpan = alarm.chosenBurstSpanSeconds ?? AppSettings.shared.effectiveBurstSpanSeconds
+        let offsets = Self.burstOffsets(voiceSeconds: voiceSeconds,
+                                        gap: AppSettings.shared.burstGapSeconds, span: targetSpan)
         guard !offsets.isEmpty else { return }
 
         // 切段連響是「下一次發生」的一次性通知。離現在還很久（例如下週一）就先不排——那幾顆會白佔
@@ -681,7 +686,7 @@ final class AlarmScheduler {
             let c = cal.dateComponents([.hour, .minute, .second], from: d)
             return String(format: "%02d:%02d:%02d", c.hour ?? 0, c.minute ?? 0, c.second ?? 0)
         }
-        print("🔬 BurstPlan[\(alarm.id.uuidString.prefix(8))]: baseline@\(hhmmss(fireDate)) +\(slots.map(String.init).joined(separator: "s,+"))s | period=\(period)s (voice=\(String(format: "%.1f", voiceSeconds))s + burstGap=\(gap)s) added=\(added)/\(slots.count) pendingWas=\(pendingNow) sound=\(alarm.soundFileName)")
+        print("🔬 BurstPlan[\(alarm.id.uuidString.prefix(8))]: baseline@\(hhmmss(fireDate)) +\(slots.map(String.init).joined(separator: "s,+"))s | span=\(targetSpan)s (voice=\(String(format: "%.1f", voiceSeconds))s + burstGap=\(AppSettings.shared.burstGapSeconds)s) added=\(added)/\(slots.count) pendingWas=\(pendingNow) sound=\(alarm.soundFileName)")
     }
 
     /// Soonest future fire date across an alarm's weekdays (for scheduling strict-mode nags / bursts).

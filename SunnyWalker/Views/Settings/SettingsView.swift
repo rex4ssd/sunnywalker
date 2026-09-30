@@ -452,18 +452,9 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // 切段響鈴——只影響「溫和提醒＋切段」的鬧鐘：響多久（總長）＋每段之間隔多久。
+                // 切段間隔——只影響「溫和提醒＋切段」的鬧鐘。響多久（總長）改到每顆鬧鐘的編輯頁選
+                // （4／8／12／14 秒圓鈕，2026-09-30）；全域的總長只剩舊鬧鐘（沒選過的）沿用。
                 VStack(alignment: .leading, spacing: 4) {
-                    Picker(selection: $settings.burstSpanSeconds) {
-                        // 秒數用 String(...) 插值 → 查表 "%@ 秒"；插 Int 會變沒翻譯的 "%lld 秒"。
-                        ForEach(AppSettings.burstSpanOptions, id: \.self) { secs in
-                            Text("\(String(secs)) 秒").tag(secs)
-                        }
-                    } label: {
-                        Label("切段響鈴", systemImage: "clock.badge.checkmark")
-                    }
-                    .pickerStyle(.menu)
-
                     Picker(selection: $settings.burstGapSeconds) {
                         Text("\(String(1)) 秒").tag(1)
                         Text("\(String(2)) 秒").tag(2)
