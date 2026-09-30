@@ -305,6 +305,18 @@ final class AlarmScheduler {
         if let f = files, f.contains(where: { $0.hasPrefix("\(Alarm.chimeFilePrefix)cd") != (remaining != nil) }) {
             files = nil
         }
+        // 「要做什麼」設了但檔名沒有 p／x 標記（這個標記之前合成的），或拿掉了卻還留著標記 → 重新合成一次。
+        let wantsPurpose = alarm.effectiveCountdownPurpose != nil
+        if remaining != nil, let f = files, f.contains(where: {
+            (ChimeSoundComposer.purposeMark(ofFile: $0) == .none) == wantsPurpose
+        }) {
+            files = nil
+        }
+        // 長度硬上限之前合成的舊檔（例：3.7 秒的倒數＋要做什麼）→ 重新合成，別讓 iOS 換成預設音。
+        if let f = files, f.contains(where: { (ChimeSoundComposer.fileSeconds(named: $0) ?? 0) > ChimeSoundComposer.maxSpokenSeconds + 0.05 }) {
+            print("🔔 AlarmScheduler.chime: \(alarm.id.uuidString.prefix(8)) has slot file(s) over \(ChimeSoundComposer.maxSpokenSeconds)s — re-composing")
+            files = nil
+        }
         if files == nil {
             let old = Set((alarm.chimeSlotSoundFiles ?? []) + [alarm.soundFileName])
             let purpose = alarm.effectiveCountdownPurpose
@@ -565,9 +577,11 @@ final class AlarmScheduler {
         let content = UNMutableNotificationContent()
         let label = alarm.label.trimmingCharacters(in: .whitespaces)
         content.title = label.isEmpty ? L("chime_notification_title") : label
+        // 「要做什麼」只在這個檔真的有念時才寫進橫幅（整句太長時語音會拿掉它，見 ChimeSoundComposer.bestSpoken）。
+        let spokePurpose = ChimeSoundComposer.purposeMark(ofFile: soundFile) == .spoken
         content.body = ChimeSoundComposer.phrase(hour: hour, minute: minute, locale: locale,
                                                  remainingMinutes: remainingMinutes,
-                                                 purpose: remainingMinutes == nil ? nil : alarm.effectiveCountdownPurpose)
+                                                 purpose: remainingMinutes != nil && spokePurpose ? alarm.effectiveCountdownPurpose : nil)
         content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundFile))
         content.categoryIdentifier = "SUNNYWAKE_ALARM"
         content.threadIdentifier = alarm.id.uuidString

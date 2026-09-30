@@ -285,8 +285,8 @@ final class Alarm {
     var chimeCountdownPurpose: String? = nil
 
     /// 倒數要念的事上限（UTF-8 位元組）：10 → 中文 3 個字（要上學／要睡覺）、英文 10 個字母（bedtime／school）。
-    /// 上限由「最長那句實際合成的秒數」決定——通知音超過 ~4.6 秒 iOS 會整顆換成預設音（見 ChimeRenderTests）。
-    /// 模擬器實測：中文 4 字時最長一句「剩五小時五十七分鐘要去上學」4.29 秒，離上限太近（實機語音可能更慢）→ 取 3 字。
+    /// 字數上限只是第一道：合成後一律量實際秒數，超過 `ChimeSoundComposer.maxSpokenSeconds`（3.5s）就加快語速、
+    /// 再不行就拿掉這段只念剩幾分鐘（見 ChimeSoundComposer.render）。模擬器：中文 4 字最長一句 4.29s → 取 3 字。
     static let countdownPurposeMaxBytes = 10
 
     /// 輸入中的截斷：只砍長度（不 trim，英文要能打空白），按字切、不切壞中文字。

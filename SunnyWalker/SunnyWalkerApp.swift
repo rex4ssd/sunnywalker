@@ -45,6 +45,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // 有時整個 crash」但拉不到 log——之後用 devicectl 拉 Documents/diagnostics 就有 stack。
         KidsDiagnostics.start()
 
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-ChimeLengthProbe") {
+            // 語音合成要在背景執行緒（見 ChimeSoundComposer 檔頭）。
+            Thread.detachNewThread { ChimeSoundComposer.runLengthProbe() }
+        }
+        #endif
+
         // Restore screen brightness if app was force-quit during bed-side mode
         BedSideManager.shared.restoreOnLaunch()
 

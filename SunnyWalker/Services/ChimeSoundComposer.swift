@@ -42,14 +42,17 @@ enum ChimeSoundComposer {
         let h = min(max(hour, 0), 23)
         let m = min(max(minute, 0), 59)
         let isChinese = isChineseLocale(locale)
-        // 內容指紋：一般＝HHMM；倒數＝cdNNN（同一時刻切換倒數／改迄時刻，念的字不同 → 檔名也要不同）。
-        let fingerprint = remainingMinutes.map { String(format: "cd%03d", $0) } ?? String(format: "%02d%02d", h, m)
+        guard let spoken = bestSpoken(hour: h, minute: m, locale: locale, voice: voice,
+                                      remainingMinutes: remainingMinutes, purpose: purpose) else { return nil }
+        // 內容指紋：一般＝HHMM；倒數＝cdNNN（同一時刻切換倒數／改迄時刻，念的字不同 → 檔名也要不同），
+        // 倒數再加「要做什麼」標記（p＝有念、x＝太長拿掉了）——橫幅文字照檔名走，跟實際念的一致。
+        let fingerprint = remainingMinutes.map { String(format: "cd%03d", $0) + spoken.purposeMark.rawValue }
+            ?? String(format: "%02d%02d", h, m)
         // 檔名帶內容指紋（時刻+語言+人聲）＋ epoch：系統音伺服器會用「檔名」快取 CAF，重用同名會放到舊內容；
         // 改時間 / 語言 / 人聲都會換檔名，確保放到最新報時。前綴 chime_ ＝ Alarm.isChimeAlarm 判斷依據。
         let cafName = "\(Alarm.chimeFilePrefix)\(fingerprint)_\(isChinese ? "zh" : "en")_\(voice == .male ? "m" : "f")_\(Int(Date().timeIntervalSince1970)).caf"
         let cafURL = AppPaths.ensureSoundsDirectory().appendingPathComponent(cafName)
-        guard render(hour: h, minute: m, locale: locale, voice: voice,
-                     remainingMinutes: remainingMinutes, purpose: purpose, to: cafURL) else { return nil }
+        guard write(spoken, to: cafURL, voice: voice) else { return nil }
         return cafName
     }
 
@@ -80,8 +83,9 @@ enum ChimeSoundComposer {
                                purpose: String? = nil, tag: String = "") -> URL? {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("chime_preview\(tag.isEmpty ? "" : "_" + tag).caf")
         try? FileManager.default.removeItem(at: url)
-        return render(hour: hour, minute: minute, locale: locale, voice: voice,
-                      remainingMinutes: remainingMinutes, purpose: purpose, to: url) ? url : nil
+        guard let spoken = bestSpoken(hour: hour, minute: minute, locale: locale, voice: voice,
+                                      remainingMinutes: remainingMinutes, purpose: purpose) else { return nil }
+        return write(spoken, to: url, voice: voice) ? url : nil
     }
 
     /// 刪掉某個舊報時檔（呼叫端在「換掉某顆鬧鐘的報時檔」時用，避免 Library/Sounds 累積）。
@@ -142,21 +146,131 @@ enum ChimeSoundComposer {
 
     // MARK: - Render
 
-    /// 一句報時 → 前後各留 0.15s 靜音 → 16-bit PCM CAF 寫到 `url`。成功回 true。
-    private static func render(hour: Int, minute: Int, locale: Locale,
-                               voice: ChimeVoiceGender, remainingMinutes: Int? = nil,
-                               purpose: String? = nil, to url: URL) -> Bool {
-        let phrase = phrase(hour: hour, minute: minute, locale: locale, remainingMinutes: remainingMinutes,
-                            purpose: purpose)
-        let lang = voiceLanguage(for: locale)
+    /// 一句報時（含前後靜音）最多幾秒——**硬上限**，超過的檔一律不寫。
+    /// 依據（2026-10-01 整理 repo／Vein／Apple 論壇）：真機只驗過 3.0s、4.6s 播完整（iPhone 15，鎖屏＋App 被殺）；
+    /// 29s 某天播完整、隔天被換成約 2 秒的系統預設音（門檻會隨 iOS 狀態變動）；5.4s 失敗是使用者回報推論、非對照實驗。
+    /// 「~2 秒」是 iOS 換上的預設音長度，不是門檻。3.5s 在已驗證的 4.6s 之下留 1 秒以上餘裕。
+    /// 模擬器量的是模擬器女聲；實機可能是加強版語音、男聲更慢（Mac 代理實測英文男聲 4.9s）→ 一律合成後量實際長度。
+    static let maxSpokenSeconds: Double = 3.5
+    /// 平常語速（給小朋友聽，比預設慢；0.92× 被嫌太快）、太長時的加快語速、最後手段的標準語速。
+    static let normalRateFactor: Float = 0.7
+    static let fastRateFactor: Float = 0.85
+    static let lastResortRateFactor: Float = 1.0
 
-        guard let speech = renderPhrase(phrase, voice: selectVoice(language: lang, gender: voice)),
-              speech.frameLength > 0 else {
-            print("🔔 ChimeSoundComposer: render FAILED for phrase=\(phrase)")
+    /// 念哪一句、用什麼語速——由長到短依序試，第一個 ≤ `maxSpokenSeconds` 的就寫檔。
+    /// 先保住「要做什麼」（加快一點），真的放不下才拿掉它；最後才用標準語速念最短那句。
+    static func renderLadder(full: String, plain: String) -> [(text: String, rate: Float)] {
+        var ladder: [(text: String, rate: Float)] = [(full, normalRateFactor), (full, fastRateFactor)]
+        if plain != full { ladder += [(plain, normalRateFactor), (plain, fastRateFactor)] }
+        ladder.append((plain, lastResortRateFactor))
+        return ladder
+    }
+
+    /// 檔名裡「要做什麼」的標記：p＝有念、x＝有設但整句太長、拿掉了、空＝沒設（或這個功能之前的舊檔）。
+    enum PurposeMark: String { case spoken = "p", dropped = "x", none = "" }
+
+    /// 實際要寫進檔的那一版（已過長度保險）。
+    struct SpokenChime {
+        let buffer: AVAudioPCMBuffer
+        let text: String
+        let seconds: Double
+        let rate: Float
+        let purposeMark: PurposeMark
+    }
+
+    /// 依退階（`renderLadder`）找第一個 ≤ `maxSpokenSeconds` 的版本，不寫檔。每一版都量實際秒數（硬上限）；
+    /// 全部都太長就回 nil（呼叫端保留舊檔／不排這一句），絕不把會被 iOS 換成預設音的長檔交出去。
+    /// **不可在 main thread 呼叫**（見檔頭）。
+    static func bestSpoken(hour: Int, minute: Int, locale: Locale, voice: ChimeVoiceGender,
+                           remainingMinutes: Int? = nil, purpose: String? = nil) -> SpokenChime? {
+        let full = phrase(hour: hour, minute: minute, locale: locale, remainingMinutes: remainingMinutes,
+                          purpose: purpose)
+        let plain = phrase(hour: hour, minute: minute, locale: locale, remainingMinutes: remainingMinutes)
+        let voiceObj = selectVoice(language: voiceLanguage(for: locale), gender: voice)
+
+        for step in renderLadder(full: full, plain: plain) {
+            guard let sequence = paddedSpeech(step.text, voice: voiceObj, rateFactor: step.rate) else {
+                print("🔔 ChimeSoundComposer: render FAILED for phrase=\(step.text)")
+                return nil
+            }
+            let secs = Double(sequence.frameLength) / sequence.format.sampleRate
+            guard secs <= maxSpokenSeconds else {
+                print("🔔 ChimeSoundComposer: \"\(step.text)\" rate×\(step.rate) = \(String(format: "%.2f", secs))s > \(maxSpokenSeconds)s — trying a shorter version")
+                continue
+            }
+            let mark: PurposeMark = full == plain ? .none : (step.text == full ? .spoken : .dropped)
+            return SpokenChime(buffer: sequence, text: step.text, seconds: secs, rate: step.rate, purposeMark: mark)
+        }
+        print("🔔 ChimeSoundComposer: ⚠️ every version of \"\(full)\" is over \(maxSpokenSeconds)s — not writing")
+        return nil
+    }
+
+    private static func write(_ spoken: SpokenChime, to url: URL, voice: ChimeVoiceGender) -> Bool {
+        do {
+            try AlarmSoundExporter.writePCMCAF(spoken.buffer, to: url)
+        } catch {
+            print("🔔 ChimeSoundComposer: write CAF FAILED — \(error.localizedDescription)")
             return false
         }
+        print("🔔 ChimeSoundComposer: wrote \(url.lastPathComponent) — \"\(spoken.text)\" (\(String(format: "%.2f", spoken.seconds))s, \(voice.rawValue), rate×\(spoken.rate))")
+        return true
+    }
 
-        // 前後各留一點靜音（避免開頭/結尾被截）。
+    /// 從報時檔名讀出「要做什麼」有沒有念（橫幅文字要跟實際念的一樣）。
+    /// chime_cd030p_zh_f_…caf → .spoken；chime_cd030x_… → .dropped；chime_cd030_… / chime_0705_… → .none。
+    static func purposeMark(ofFile name: String) -> PurposeMark {
+        guard name.hasPrefix(Alarm.chimeFilePrefix) else { return .none }
+        let fingerprint = name.dropFirst(Alarm.chimeFilePrefix.count).prefix { $0 != "_" }
+        guard fingerprint.hasPrefix("cd"), let last = fingerprint.last else { return .none }
+        return PurposeMark(rawValue: String(last)) ?? .none
+    }
+
+    /// 已寫好的報時檔長度（秒）；讀不到回 nil。排程時用來揪出上限之前合成的過長舊檔。
+    static func fileSeconds(named name: String) -> Double? {
+        guard let f = try? AVAudioFile(forReading: AppPaths.soundURL(named: name)), f.fileFormat.sampleRate > 0 else { return nil }
+        return Double(f.length) / f.fileFormat.sampleRate
+    }
+
+    /// 量一句話實際念出來（含前後靜音）幾秒，不寫檔——測試與 DEBUG 實機量測用。**不可在 main thread 呼叫。**
+    static func spokenSeconds(_ text: String, locale: Locale, voice: ChimeVoiceGender = .female,
+                              rateFactor: Float = normalRateFactor) -> Double? {
+        let v = selectVoice(language: voiceLanguage(for: locale), gender: voice)
+        guard let b = paddedSpeech(text, voice: v, rateFactor: rateFactor) else { return nil }
+        return Double(b.frameLength) / b.format.sampleRate
+    }
+
+    #if DEBUG
+    /// 實機量測（啟動參數 -ChimeLengthProbe 1）：印出最長幾句在「這台裝置的語音」下的實際秒數。
+    /// 模擬器語音和實機不同，上限要用實機數字定。
+    static func runLengthProbe() {
+        let zh = Locale(identifier: "zh-Hant"), en = Locale(identifier: "en")
+        let cases: [(String, Locale)] = [
+            (phrase(hour: 23, minute: 57, locale: zh), zh),
+            (phrase(hour: 23, minute: 57, locale: en), en),
+            (phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 30), zh),
+            (phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 357), zh),
+            (phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 357), en),
+            (phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 30, purpose: "要上學"), zh),
+            (phrase(hour: 7, minute: 0, locale: zh, remainingMinutes: 357, purpose: "要上學"), zh),
+            (phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 30, purpose: "piano time"), en),
+            (phrase(hour: 7, minute: 0, locale: en, remainingMinutes: 357, purpose: "piano time"), en),
+        ]
+        for (text, loc) in cases {
+            for voice in ChimeVoiceGender.allCases {
+                let normal = spokenSeconds(text, locale: loc, voice: voice)
+                let fast = spokenSeconds(text, locale: loc, voice: voice, rateFactor: fastRateFactor)
+                print("⏱PROBE \(voice.rawValue) \"\(text)\" normal=\(normal.map { String(format: "%.2f", $0) } ?? "nil")s fast=\(fast.map { String(format: "%.2f", $0) } ?? "nil")s")
+            }
+        }
+        print("⏱PROBE done (limit \(maxSpokenSeconds)s)")
+    }
+    #endif
+
+    /// 念一句 → 前後各補 0.15 秒靜音（避免開頭／結尾被截）。
+    private static func paddedSpeech(_ text: String, voice: AVSpeechSynthesisVoice?, rateFactor: Float) -> AVAudioPCMBuffer? {
+        guard let speech = renderPhrase(text, voice: voice, rateFactor: rateFactor), speech.frameLength > 0 else {
+            return nil
+        }
         let format = speech.format
         let sr = format.sampleRate
         let leadFrames = AVAudioFrameCount(sr * 0.15)
@@ -168,7 +282,7 @@ enum ChimeSoundComposer {
               let dst = sequence.floatChannelData,
               let src = speech.floatChannelData else {
             print("🔔 ChimeSoundComposer: sequence buffer alloc FAILED")
-            return false
+            return nil
         }
         let channels = Int(format.channelCount)
         for c in 0..<channels {
@@ -176,16 +290,7 @@ enum ChimeSoundComposer {
             memcpy(dst[c] + Int(leadFrames), src[c], Int(one) * MemoryLayout<Float>.size)
         }
         sequence.frameLength = total
-
-        do {
-            try AlarmSoundExporter.writePCMCAF(sequence, to: url)
-        } catch {
-            print("🔔 ChimeSoundComposer: write CAF FAILED — \(error.localizedDescription)")
-            return false
-        }
-        let secs = Double(total) / sr
-        print("🔔 ChimeSoundComposer: wrote \(url.lastPathComponent) — \"\(phrase)\" (\(String(format: "%.1f", secs))s, \(voice.rawValue))")
-        return true
+        return sequence
     }
 
     /// 用 AVSpeechSynthesizer 離線把一句話 render 成連續 float PCM buffer。
@@ -198,7 +303,8 @@ enum ChimeSoundComposer {
     private static let sharedSynth = AVSpeechSynthesizer()
     private static let renderLock = NSLock()
 
-    private static func renderPhrase(_ phrase: String, voice: AVSpeechSynthesisVoice?) -> AVAudioPCMBuffer? {
+    private static func renderPhrase(_ phrase: String, voice: AVSpeechSynthesisVoice?,
+                                     rateFactor: Float = normalRateFactor) -> AVAudioPCMBuffer? {
         renderLock.lock()
         defer { renderLock.unlock() }
         let synth = sharedSynth
@@ -206,7 +312,7 @@ enum ChimeSoundComposer {
         utterance.voice = voice
         // 報時念慢一點、咬字清楚（給小朋友聽）。AVSpeechUtteranceDefaultSpeechRate=0.5；
         // 之前 0.92×（≈0.46）使用者反映太快 → 降到 0.7×（≈0.35）放慢。
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * rateFactor
 
         // callback 在 TTS 內部 queue：chunks / finished 用鎖保護，別跟 wait 端搶。
         let state = RenderState()
