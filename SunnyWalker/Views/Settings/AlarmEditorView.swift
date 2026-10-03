@@ -282,7 +282,10 @@ struct AlarmEditorView: View {
             let span = d.burstSpanSeconds ?? Alarm.nearestBurstSpan(
                 to: MainActor.assumeIsolated { AppSettings.shared.effectiveBurstSpanSeconds })
             _burstSpan        = State(initialValue: span)
-            _selectedGroupIndex = State(initialValue: d.groupIndex)
+            // 上次用的群組可能已被「群組數量」收掉 → 改用排第一的那組，免得新鬧鐘建在看不到的群組裡。
+            let shownGroups = MainActor.assumeIsolated { AppSettings.shared.visibleGroups }
+            _selectedGroupIndex = State(initialValue: shownGroups.contains(d.groupIndex)
+                                        ? d.groupIndex : (shownGroups.first ?? 0))
             _chimeCount       = State(initialValue: d.chimeCount)
             _chimeIntervalOn  = State(initialValue: d.chimeIntervalOn)
             // 區間報時的迄＝現在 + 上次的區間長度（預設 30 分）。
@@ -578,7 +581,7 @@ struct AlarmEditorView: View {
                     ScrollViewReader { proxy in
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 10) {
-                                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { i in
+                                ForEach(settings.visibleGroups, id: \.self) { i in
                                     GroupChip(
                                         letter: String(Character(UnicodeScalar(UInt8(65 + i)))),
                                         customName: settings.groupCustomName(i),

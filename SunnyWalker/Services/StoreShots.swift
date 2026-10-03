@@ -51,6 +51,7 @@ enum StoreShots {
         let zh = isChinese
         d.set(true, forKey: "groupEnabled")
         d.set(3, forKey: "groupCount")
+        d.removeObject(forKey: "groupOrder")   // 截圖固定 A、B、C 的順序
         d.set(zh ? ["哥哥", "妹妹", "出門倒數"] : ["Leo", "Mia", "Out the door"], forKey: "groupNames")
         d.set(["sunny", "bunny", "giraffe", "", ""], forKey: "groupMascots")
         d.set([true, true, true, true, true], forKey: "groupActiveStates")

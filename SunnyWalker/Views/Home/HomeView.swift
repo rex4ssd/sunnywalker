@@ -45,6 +45,7 @@ struct HomeView: View {
     // Multi-person alarm groups: which group page the home list is currently showing.
     // 0 = group A. Clamped whenever the parent lowers the group count / disables grouping.
     @State private var homeGroupSelection = StoreShots.initialGroup
+    @State private var didPickInitialGroup = false
 
     // Day 19: bed-side mode
     @StateObject private var bedSide = BedSideManager.shared
@@ -154,11 +155,19 @@ struct HomeView: View {
         // 長按鬧鐘卡 →「複製」：跟「＋」同一條路（上限 → 家長閘 → 新增頁），只是新增頁帶入範本。
         .environment(\.duplicateAlarm, { openAddAlarmFlow(template: $0) })
         .ignoresSafeArea(edges: .top)
-        // Keep the visible group page valid when the parent lowers the count or disables grouping.
-        .onChange(of: settings.effectiveGroupCount) { _, n in
-            if homeGroupSelection >= n { homeGroupSelection = max(0, n - 1) }
+        // Keep the visible group page valid when the parent lowers the count, reorders, or disables grouping.
+        .onChange(of: settings.visibleGroups) { _, groups in
+            if !groups.contains(homeGroupSelection) { homeGroupSelection = groups.first ?? 0 }
         }
         .onAppear {
+            // 開 app 停在家長排第一的那組（以前固定是 A）；之後回到首頁維持原本看的那頁。
+            if !didPickInitialGroup {
+                didPickInitialGroup = true
+                if !StoreShots.isActive { homeGroupSelection = settings.visibleGroups.first ?? 0 }
+            }
+            if !settings.visibleGroups.contains(homeGroupSelection) {
+                homeGroupSelection = settings.visibleGroups.first ?? 0
+            }
             checkPendingAlarm()
         }
         // Use .task(id:) instead of onAppear so sync re-fires when @Query finishes loading.
@@ -760,8 +769,8 @@ struct HomeView: View {
                 if showBanner, let g = group {
                     GroupBanner(
                         name: settings.groupDisplayName(g),
-                        index: g,
-                        total: settings.effectiveGroupCount,
+                        index: settings.visibleGroups.firstIndex(of: g) ?? 0,
+                        total: settings.visibleGroups.count,
                         active: settings.isGroupActive(g),
                         onTap: { requestToggleGroup(g) }
                     )
@@ -779,7 +788,7 @@ struct HomeView: View {
     private func iphoneAlarmList() -> some View {
         if settings.groupEnabled && settings.effectiveGroupCount > 1 {
             TabView(selection: $homeGroupSelection) {
-                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { g in
+                ForEach(settings.visibleGroups, id: \.self) { g in
                     AlarmListView(
                         alarms: alarms.filter { $0.effectiveGroupIndex == g },
                         header: iphoneHeader(group: g, showBanner: true),
@@ -794,10 +803,12 @@ struct HomeView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
         } else {
             // Grouping off → only group A shows (B–E stay assigned but hidden until re-enabled).
-            // Enabled-but-single-group still shows group A's mascot, just without the swipe banner.
+            // Enabled-but-single-group shows the group ranked first (A unless the parent reordered),
+            // just without the swipe banner.
+            let only = settings.visibleGroups.first ?? 0
             AlarmListView(
-                alarms: alarms.filter { $0.effectiveGroupIndex == 0 },
-                header: iphoneHeader(group: settings.groupEnabled ? 0 : nil, showBanner: false),
+                alarms: alarms.filter { $0.effectiveGroupIndex == only },
+                header: iphoneHeader(group: settings.groupEnabled ? only : nil, showBanner: false),
                 layout: settings.homeListLayout
             )
         }
@@ -809,14 +820,14 @@ struct HomeView: View {
     private func alarmColumn() -> some View {
         if settings.groupEnabled && settings.effectiveGroupCount > 1 {
             TabView(selection: $homeGroupSelection) {
-                ForEach(Array(0..<settings.effectiveGroupCount), id: \.self) { g in
+                ForEach(settings.visibleGroups, id: \.self) { g in
                     AlarmListView(
                         alarms: alarms.filter { $0.effectiveGroupIndex == g },
                         header: AnyView(
                             GroupBanner(
                                 name: settings.groupDisplayName(g),
-                                index: g,
-                                total: settings.effectiveGroupCount,
+                                index: settings.visibleGroups.firstIndex(of: g) ?? 0,
+                                total: settings.visibleGroups.count,
                                 active: settings.isGroupActive(g),
                                 onTap: { requestToggleGroup(g) }
                             )
@@ -832,7 +843,8 @@ struct HomeView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         } else {
-            AlarmListView(alarms: alarms.filter { $0.effectiveGroupIndex == 0 },
+            let only = settings.visibleGroups.first ?? 0
+            AlarmListView(alarms: alarms.filter { $0.effectiveGroupIndex == only },
                           layout: settings.homeListLayout)
         }
     }
@@ -1068,9 +1080,9 @@ struct HomeView: View {
         if settings.groupEnabled {
             switch req.kind {
             case .chime:
-                groupIndex = (0..<settings.effectiveGroupCount).first { settings.isGroupChimeEnabled($0) }
+                groupIndex = settings.visibleGroups.first { settings.isGroupChimeEnabled($0) }
             case .todo:
-                groupIndex = (0..<settings.effectiveGroupCount).first { settings.isGroupTodoEnabled($0) }
+                groupIndex = settings.visibleGroups.first { settings.isGroupTodoEnabled($0) }
             case .alarm:
                 groupIndex = homeGroupSelection
             }

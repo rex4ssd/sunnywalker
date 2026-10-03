@@ -255,11 +255,13 @@ struct SettingsView: View {
                 }
 
                 // 每組一列：字母徽章 + 命名欄（空白＝沿用「群組 A / Group A」）+ 吉祥物下拉選單
-                // ＋最右側「報時」鈴鐺開關（長按顯示提示）。用 Array 包 range 避免動態 range 的
-                // ForEach 警告（groupCount 會變）。
-                ForEach(Array(0..<settings.groupCount), id: \.self) { i in
+                // ＋最右側「報時」鈴鐺開關（長按顯示提示）。
+                // 長按整列可拖曳換順序（List 的 onMove，iOS 16 起不必進編輯模式）；
+                // 這個順序就是首頁左右滑的分頁順序（Rex 2026-10-03）。id 用群組索引，拖完列跟著資料走。
+                ForEach(settings.visibleGroups, id: \.self) { i in
                     groupRow(i)
                 }
+                .onMove { settings.moveGroups(fromOffsets: $0, toOffset: $1) }
             }
         }
     }

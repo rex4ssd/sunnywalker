@@ -176,6 +176,9 @@ final class AppSettings: ObservableObject {
         self.groupEnabled = UserDefaults.standard.object(forKey: "groupEnabled") as? Bool ?? false
         let storedCount = UserDefaults.standard.object(forKey: "groupCount") as? Int ?? 1
         self.groupCount = min(max(storedCount, 1), AppSettings.maxGroups)
+        // 群組排列順序（設定頁長按拖曳）：沒存過 → A,B,C,D,E，行為跟以前一模一樣。
+        self.groupOrder = AppSettings.sanitizedGroupOrder(
+            (UserDefaults.standard.array(forKey: "groupOrder") as? [Int]) ?? [])
         let storedNames = UserDefaults.standard.stringArray(forKey: "groupNames") ?? []
         // 永遠補齊到 maxGroups 長度，空字串＝沿用在地化預設名（群組 A / Group A）。
         self.groupNames = (0..<AppSettings.maxGroups).map { i in
@@ -317,6 +320,50 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// 群組的排列順序：0…maxGroups-1 的排列（例 [2,0,1,3,4] ＝ C、A、B…）。
+    /// 設定頁長按拖曳群組列改的就是這個；首頁左右滑的分頁、編輯頁的群組選擇都照這個順序。
+    /// 群組的身分（字母、鬧鐘的 groupIndex、名稱／吉祥物／開關陣列的位置）**完全不動**——
+    /// 換順序只改這一個陣列，不必搬任何鬧鐘資料、也不用重排通知。
+    /// 「群組數量」取的是這個順序的前 N 個（見 `visibleGroups`）：按「－」收掉的是排在最下面那組。
+    @Published var groupOrder: [Int] {
+        didSet {
+            let clean = Self.sanitizedGroupOrder(groupOrder)
+            if clean != groupOrder { groupOrder = clean; return }   // 二次寫入帶回合法值後即返回
+            UserDefaults.standard.set(groupOrder, forKey: "groupOrder")
+        }
+    }
+
+    /// 把任意陣列整理成合法排列：去掉越界／重複，缺的索引照字母順序補在後面。
+    nonisolated static func sanitizedGroupOrder(_ raw: [Int]) -> [Int] {
+        var seen = Set<Int>()
+        var order = raw.filter { (0..<maxGroups).contains($0) && seen.insert($0).inserted }
+        order += (0..<maxGroups).filter { !seen.contains($0) }
+        return order
+    }
+
+    /// 目前看得到的群組（依排列順序）：未啟用分組 → 只有 A（跟以前一樣）；否則取順序的前 count 個。
+    nonisolated static func visibleGroups(order: [Int], count: Int, enabled: Bool) -> [Int] {
+        guard enabled else { return [0] }
+        let n = min(max(count, 1), maxGroups)
+        return Array(sanitizedGroupOrder(order).prefix(n))
+    }
+
+    /// 首頁分頁／設定頁列表／編輯頁群組選擇要用的群組清單（依家長排的順序）。
+    var visibleGroups: [Int] {
+        Self.visibleGroups(order: groupOrder, count: groupCount, enabled: groupEnabled)
+    }
+
+    /// 設定頁 List `.onMove` 用：在「看得到的那幾組」裡搬動，被數量藏起來的組維持在後面不動。
+    /// 看得到的集合不變 → 響鈴閘結果不變，不需要重排任何鬧鐘。
+    func moveGroups(fromOffsets source: IndexSet, toOffset destination: Int) {
+        let n = min(max(groupCount, 1), Self.maxGroups)
+        var order = groupOrder
+        var shown = Array(order.prefix(n))
+        shown.move(fromOffsets: source, toOffset: destination)
+        order.replaceSubrange(0..<n, with: shown)
+        groupOrder = order
+    }
+
     /// 每個群組的自訂名稱（長度固定 maxGroups）。空字串＝沿用在地化預設名（群組 A / Group A）。
     /// 顯示請用 `groupDisplayName(_:)`，不要直接讀這個陣列。
     @Published var groupNames: [String] {
@@ -427,7 +474,7 @@ final class AppSettings: ObservableObject {
 
     /// 響鈴閘（firing gate）：某顆鬧鐘的「群組」是否允許它響。規則：
     ///   1. 沒啟用分組 → 一律允許（維持單一群組的舊行為）。
-    ///   2. 群組索引超出目前 groupCount（被「縮小數量」隱藏）→ 不響。
+    ///   2. 群組不在目前看得到的那幾組裡（排列順序的前 groupCount 個；被「縮小數量」隱藏）→ 不響。
     ///   3. 該組被首頁橫幅關掉（groupActiveStates[idx] == false）→ 不響。
     /// **nonisolated + 直接讀 UserDefaults**，讓 AlarmScheduler / AlarmKitService（可能不在 main actor）
     /// 也能在排程決策時呼叫。注意這是「群組層」的閘，鬧鐘本身的 `isEnabled` 仍要另外判斷。
@@ -435,9 +482,10 @@ final class AppSettings: ObservableObject {
         let d = UserDefaults.standard
         let enabled = d.object(forKey: "groupEnabled") as? Bool ?? false
         guard enabled else { return true }
-        let count = min(max(d.object(forKey: "groupCount") as? Int ?? 1, 1), maxGroups)
+        let count = d.object(forKey: "groupCount") as? Int ?? 1
+        let order = (d.array(forKey: "groupOrder") as? [Int]) ?? []
         let idx = min(max(groupIndex, 0), maxGroups - 1)
-        guard idx < count else { return false }
+        guard visibleGroups(order: order, count: count, enabled: true).contains(idx) else { return false }
         let active = (d.array(forKey: "groupActiveStates") as? [Bool]) ?? []
         return idx < active.count ? active[idx] : true
     }
