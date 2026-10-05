@@ -1,16 +1,10 @@
-# store_risk_check — SunnyWalker `[swift-app]`  (260916)
+# store_risk_check — SunnyWalker `[swift-app]`  (261005)
 
 > 本檔由 `lode/scripts/store_risk_check.py` 自動產生，**給 AI coding agent（Claude Code / Codex）讀**。
 > 請依 **P0 → P1 → P2** 順序修復；每項附【位置/影響】與【修法】。修完重跑該腳本驗證。
 > 判讀準則：`lode/docs/STORE_RISK_SELFCHECK.md`。
 
-**摘要：P0 0　P1 1　P2 2**
-
-## P1 — 應修
-
-- [ ] !!!, **寫死字級(文字範圍≤34) ×1（Dynamic Type 易破版/被退）**  `GUI(4.1/破版)`
-  - 位置/影響：SunnyWalker/Views/Alarm/AlarmListView.swift:664
-  - 修法：SwiftUI 改用語意字體 .font(.body/.headline…) 或 @ScaledMetric 讓字隨系統縮放；
+**摘要：P0 0　P1 0　P2 2**
 
 ## P2 — 參考
 
