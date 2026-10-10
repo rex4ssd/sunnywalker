@@ -3,9 +3,8 @@
 #
 #   scripts/shoot_store_shots.sh <UDID> <輸出資料夾> [裝置標籤]
 #
-# 🔴 只准用在專用的截圖模擬器（會灌示範資料、改群組設定）。建法：
-#   xcrun simctl create "SW-Shots-iPhone" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max <runtime>
-#   xcrun simctl create "SW-Shots-iPad"   com.apple.CoreSimulator.SimDeviceType.iPad-Air-13-inch-M4 <runtime>
+# 🔴 會灌示範資料、改群組設定：從家族 Pool 挑一台（不准自己 simctl create），截完 shutdown + erase 還原：
+#   UDID=$(~/.claude/bin/sim_pick.sh iphone)   # 6.9"；iPad 13" 用 ipad
 # 產出檔名 `NN_<畫面>_<裝置標籤>_<en|zh>.png`——尾巴的 _en/_zh 給 asc_push.py --screenshots 認 locale。
 set -e
 UDID=$1; OUT=$2; TAG=${3:-device}
